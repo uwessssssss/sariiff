@@ -170,7 +170,8 @@ async function currencyNear(page, name) {
   {
     const ctx = await browser.newContext(desk), page = await ctx.newPage(), errs = watch(page);
     if (await signIn(page, errs, S.ugOffice, "Ugandan office")) {
-      await screen(page, errs, "Office dashboard", { mustHave: ["UGX"] });
+      const dashText = await screen(page, errs, "Office dashboard", { mustHave: ["UGX", "No USD rate yet"] });
+      check("Office dashboard: no USD total is invented without a USD rate", !/Everything in[\s\S]{0,40}USD\s*[\d,]+\.\d\d/.test(dashText), dashText.slice(0, 400));
       const tabs = [
         ["clients", "Office clients", ["Test Amina", "600,000"]],
         ["cash", "Office cash at hand", ["UGX"]],

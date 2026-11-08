@@ -246,7 +246,9 @@ export function OfficeUserDashboard({
   // Home currency (KES / UGX): rates are "home per 1 foreign"
   const { base, baseCode } = useBaseCurrency();
   const [totalIn, setTotalIn] = useState<string>("USD");
-  const [exchangeRate, setExchangeRate] = useState(129);
+  // 0 = no USD rate set. It used to start at 129 (a KES rate), so a bureau with no
+  // rate — or a Ugandan one — saw a made-up "Everything in USD" total.
+  const [exchangeRate, setExchangeRate] = useState(0);
   // Home-currency value of 1 unit of each other foreign currency (mid rate), when set
   const [otherRates, setOtherRates] = useState<Record<number, number>>({});
   const [rateEdited, setRateEdited] = useState(false);
@@ -324,8 +326,10 @@ export function OfficeUserDashboard({
         setTodayTxns(items);
       }
 
-      if (rateResult.success && rateResult.data && !rateEdited) {
-        setExchangeRate((rateResult.data.buyRate + rateResult.data.sellRate) / 2);
+      if (!rateEdited) {
+        setExchangeRate(
+          rateResult.success && rateResult.data ? (rateResult.data.buyRate + rateResult.data.sellRate) / 2 : 0,
+        );
       }
       // Other foreign rates (optional) — used to fold them into "Everything in"
       const others = foreignCurrenciesFor(base).filter((c) => c !== 1);
@@ -420,8 +424,9 @@ export function OfficeUserDashboard({
       const k = kesPer(h.currency);
       return k === null ? sum : sum + totalOf(h) * k;
     }, 0);
-    const rate = exchangeRate > 0 ? exchangeRate : 1;
-    const converted = totalIn === "USD" ? totalKesValue / rate : totalKesValue;
+    // No USD rate: there is no honest USD total to show.
+    const converted: number | null =
+      totalIn === "USD" ? (exchangeRate > 0 ? totalKesValue / exchangeRate : null) : totalKesValue;
 
     const flows = stats.flows
       .filter((f) => activeCurrencies.includes(f.currency) || f.credits || f.debits)
@@ -561,13 +566,18 @@ export function OfficeUserDashboard({
             </div>
             <div className="relative mt-6 text-3xl font-semibold leading-none tracking-tight tabular-nums sm:text-3xl">
               <span className="mr-2 text-lg font-medium text-blue-300">{totalIn}</span>
-              {totalIn === "USD" ? fmtUSD(converted) : fmtKES(converted)}
+              {converted === null ? "—" : totalIn === "USD" ? fmtUSD(converted) : fmtKES(converted)}
             </div>
             <p className="relative mt-2 text-sm text-slate-300">
               Cash, bank, mobile money and FX float combined
               {shown.length > 2 ? ", every currency at today's rate" : ""}.
             </p>
-            {unconverted.length > 0 && (
+            {converted === null && (
+              <p className="relative mt-3 rounded-lg bg-amber-400/15 px-3 py-2 text-sm text-amber-200">
+                No USD rate yet — set one on the Exchange page, or type one below.
+              </p>
+            )}
+            {unconverted.length > 0 && converted !== null && (
               <p className="relative mt-3 rounded-lg bg-amber-400/15 px-3 py-2 text-sm text-amber-200">
                 {unconverted.join(" and ")} {unconverted.length === 1 ? "isn't" : "aren't"} included —
                 set {unconverted.length === 1 ? "a rate" : "rates"} on the Exchange page.
@@ -581,7 +591,8 @@ export function OfficeUserDashboard({
                   type="number"
                   step="0.01"
                   min="0"
-                  value={Number.isFinite(exchangeRate) ? exchangeRate : ""}
+                  value={Number.isFinite(exchangeRate) && exchangeRate > 0 ? exchangeRate : ""}
+                  placeholder="No rate set"
                   onChange={(e) => {
                     setExchangeRate(parseFloat(e.target.value) || 0);
                     setRateEdited(true);

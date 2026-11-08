@@ -43,27 +43,36 @@ name: Office user (Ugandan bureau)
     commands:
       - tapOn: "Verify Code"
 - extendedWaitUntil:
-    visible: ", Transactions"
+    visible: "Welcome back,"
     timeout: 45000
 - waitForAnimationToEnd
 - takeScreenshot: 02-office-dashboard
 - runFlow: broken.yaml
 - assertVisible: ".*UGX.*"
-- tapOn: ", Clients"
+- assertVisible: "Ugandan Shilling.*"
+# bottom tab "Clients" (tabs are not exposed by name to the test driver)
+- tapOn:
+    point: "30%,96%"
 - extendedWaitUntil:
     visible: ".*Test Amina.*"
     timeout: 20000
 - takeScreenshot: 03-office-clients
 - runFlow: broken.yaml
-- tapOn: ", Exchange"
+# bottom tab "Exchange" (tabs are not exposed by name to the test driver)
+- tapOn:
+    point: "50%,96%"
 - waitForAnimationToEnd
 - takeScreenshot: 04-office-exchange
 - runFlow: broken.yaml
-- tapOn: ", Transactions"
+# bottom tab "Transactions" (tabs are not exposed by name to the test driver)
+- tapOn:
+    point: "70%,96%"
 - waitForAnimationToEnd
 - takeScreenshot: 05-office-transactions
 - runFlow: broken.yaml
-- tapOn: ", More"
+# bottom tab "More" (tabs are not exposed by name to the test driver)
+- tapOn:
+    point: "90%,96%"
 - waitForAnimationToEnd
 - takeScreenshot: 06-office-more
 - runFlow: broken.yaml

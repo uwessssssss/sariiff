@@ -166,6 +166,46 @@ export default function OfficeDashboardScreen() {
   const homeCash = homeRow ? homeRow.cash : base === Currency.KES ? s?.cashKES || 0 : 0;
   const homeBank = homeRow ? homeRow.bank : base === Currency.KES ? s?.totalBankKES || 0 : 0;
 
+  // One currency's money in / out / net for today.
+  const renderFlow = (f: { currency: number; totalDebit: number; totalCredit: number; netFlow: number }) => (
+                <View key={f.currency}>
+                  <Text style={[styles.currencyTag, { marginTop: spacing.lg }]}>
+                    <View style={[styles.tagDot, { backgroundColor: CURRENCY_COLOR[f.currency] || "#475569" }]} />{" "}
+                    {CURRENCY_INFO[f.currency]?.label || currencyCode(f.currency)}
+                  </Text>
+                  <View style={styles.flowRow}>
+                    <View style={[styles.flowCard, { backgroundColor: "rgba(57,217,176,0.12)", borderColor: "rgba(57,217,176,0.32)" }]}>
+                      <View style={styles.flowCardHead}>
+                        <Ionicons name="arrow-down-circle" size={16} color="#059669" />
+                        <Text style={[styles.flowLabel, { color: "#39D9B0" }]}>MONEY IN</Text>
+                      </View>
+                      <Text style={[styles.flowValue, { color: "#39D9B0" }]}>{formatCurrency(f.totalDebit, f.currency)}</Text>
+                    </View>
+                    <View style={[styles.flowCard, { backgroundColor: "rgba(255,107,129,0.12)", borderColor: "rgba(255,107,129,0.32)" }]}>
+                      <View style={styles.flowCardHead}>
+                        <Ionicons name="arrow-up-circle" size={16} color="#DC2626" />
+                        <Text style={[styles.flowLabel, { color: "#FF6B81" }]}>MONEY OUT</Text>
+                      </View>
+                      <Text style={[styles.flowValue, { color: "#FF6B81" }]}>{formatCurrency(f.totalCredit, f.currency)}</Text>
+                    </View>
+                  </View>
+                  <View
+                    style={[
+                      styles.netRow,
+                      f.netFlow >= 0
+                        ? { backgroundColor: "rgba(57,217,176,0.12)", borderColor: "rgba(57,217,176,0.32)" }
+                        : { backgroundColor: "rgba(255,107,129,0.12)", borderColor: "rgba(255,107,129,0.32)" },
+                    ]}
+                  >
+                    <Text style={styles.netLabel}>Net Flow ({currencyCode(f.currency)})</Text>
+                    <Text style={[styles.netValue, { color: f.netFlow >= 0 ? "#39D9B0" : "#FF6B81" }]}>
+                      {f.netFlow >= 0 ? "+" : ""}
+                      {formatCurrency(f.netFlow, f.currency)}
+                    </Text>
+                  </View>
+                </View>
+  );
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Dark Header — matches web sidebar aesthetic */}
@@ -405,6 +445,14 @@ export default function OfficeDashboardScreen() {
               })}
             </Text>
 
+            {/* The bureau's home currency first (UGX in Uganda), even on a quiet day.
+                It used to come last, under Kenyan shillings and dollars. */}
+            {base > 1 &&
+              renderFlow(
+                (s?.todayTransactions?.byCurrency || []).find((f) => f.currency === base) ||
+                  { currency: base, totalDebit: 0, totalCredit: 0, netFlow: 0 },
+              )}
+
             {/* KES Flow */}
             {showKES && (
             <>
@@ -561,47 +609,10 @@ export default function OfficeDashboardScreen() {
             </>
             )}
 
-            {/* UGX / EUR / ... flows — any other currency with activity today */}
+            {/* UGX / EUR / ... flows — any other currency with activity today (home shown first, above) */}
             {(s?.todayTransactions?.byCurrency || [])
-              .filter((f) => f.currency > 1 && (f.totalDebit || f.totalCredit))
-              .map((f) => (
-                <View key={f.currency}>
-                  <Text style={[styles.currencyTag, { marginTop: spacing.lg }]}>
-                    <View style={[styles.tagDot, { backgroundColor: CURRENCY_COLOR[f.currency] || "#475569" }]} />{" "}
-                    {CURRENCY_INFO[f.currency]?.label || currencyCode(f.currency)}
-                  </Text>
-                  <View style={styles.flowRow}>
-                    <View style={[styles.flowCard, { backgroundColor: "rgba(57,217,176,0.12)", borderColor: "rgba(57,217,176,0.32)" }]}>
-                      <View style={styles.flowCardHead}>
-                        <Ionicons name="arrow-down-circle" size={16} color="#059669" />
-                        <Text style={[styles.flowLabel, { color: "#39D9B0" }]}>MONEY IN</Text>
-                      </View>
-                      <Text style={[styles.flowValue, { color: "#39D9B0" }]}>{formatCurrency(f.totalDebit, f.currency)}</Text>
-                    </View>
-                    <View style={[styles.flowCard, { backgroundColor: "rgba(255,107,129,0.12)", borderColor: "rgba(255,107,129,0.32)" }]}>
-                      <View style={styles.flowCardHead}>
-                        <Ionicons name="arrow-up-circle" size={16} color="#DC2626" />
-                        <Text style={[styles.flowLabel, { color: "#FF6B81" }]}>MONEY OUT</Text>
-                      </View>
-                      <Text style={[styles.flowValue, { color: "#FF6B81" }]}>{formatCurrency(f.totalCredit, f.currency)}</Text>
-                    </View>
-                  </View>
-                  <View
-                    style={[
-                      styles.netRow,
-                      f.netFlow >= 0
-                        ? { backgroundColor: "rgba(57,217,176,0.12)", borderColor: "rgba(57,217,176,0.32)" }
-                        : { backgroundColor: "rgba(255,107,129,0.12)", borderColor: "rgba(255,107,129,0.32)" },
-                    ]}
-                  >
-                    <Text style={styles.netLabel}>Net Flow ({currencyCode(f.currency)})</Text>
-                    <Text style={[styles.netValue, { color: f.netFlow >= 0 ? "#39D9B0" : "#FF6B81" }]}>
-                      {f.netFlow >= 0 ? "+" : ""}
-                      {formatCurrency(f.netFlow, f.currency)}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+              .filter((f) => f.currency > 1 && f.currency !== base && (f.totalDebit || f.totalCredit))
+              .map((f) => renderFlow(f))}
           </View>
         </Animated.View>
 
