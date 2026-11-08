@@ -1,0 +1,19 @@
+# Every push and pull request: install and type-check the app. (Store builds run on EAS.)
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx expo-doctor
+        continue-on-error: true   # advice, not a gate

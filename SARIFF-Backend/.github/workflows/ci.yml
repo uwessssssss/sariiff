@@ -1,0 +1,34 @@
+# Every push and pull request: build, run ALL tests (including the PostgreSQL ones),
+# and prove the Docker image Render will build still builds.
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - run: dotnet restore SARIFF.sln
+      - run: dotnet build SARIFF.sln --no-restore -c Release
+      - name: Tests (PostgreSQL tests included)
+        run: dotnet test SARIFF.sln --no-build -c Release
+        env:
+          SARIFF_TEST_PG: Host=localhost;Port=5432;Username=postgres;Password=test;Database=postgres
+      - name: Docker image builds
+        run: docker build -f docker/Dockerfile -t sariff-api:ci .

@@ -1,0 +1,31 @@
+-- Run BEFORE `dotnet ef database update` for the foreign-key migration.
+-- Every line must show 0. Any other number = rows pointing at something that
+-- doesn't exist; the migration would fail on them. Send the output to fix first.
+--   psql "$DB" -f scripts/check-orphans-before-fk.sql
+SELECT 'BankAccounts.CompanyId'            AS fk, COUNT(*) FROM "BankAccounts" x            WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'MpesaAgents.CompanyId',            COUNT(*) FROM "MpesaAgents" x             WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'CashAccounts.CompanyId',           COUNT(*) FROM "CashAccounts" x            WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'Transactions.CompanyId',           COUNT(*) FROM "Transactions" x            WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'ExpenseCategories.CompanyId',      COUNT(*) FROM "ExpenseCategories" x       WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'Expenses.CompanyId',               COUNT(*) FROM "Expenses" x                WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'Expenses.CategoryId',              COUNT(*) FROM "Expenses" x                WHERE NOT EXISTS (SELECT 1 FROM "ExpenseCategories" c WHERE c."Id" = x."CategoryId")
+UNION ALL SELECT 'ExchangeRates.CompanyId',          COUNT(*) FROM "ExchangeRates" x           WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'ExchangeFloats.CompanyId',         COUNT(*) FROM "ExchangeFloats" x          WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'ExchangeFloatBalances.CompanyId',  COUNT(*) FROM "ExchangeFloatBalances" x   WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'FloatMovements.CompanyId',         COUNT(*) FROM "FloatMovements" x          WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'FloatMovements.ExchangeFloatId',   COUNT(*) FROM "FloatMovements" x          WHERE x."ExchangeFloatId" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "ExchangeFloats" f WHERE f."Id" = x."ExchangeFloatId")
+UNION ALL SELECT 'ExchangeTransactions.CompanyId',   COUNT(*) FROM "ExchangeTransactions" x    WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'ExchangeTransactions.ClientId',    COUNT(*) FROM "ExchangeTransactions" x    WHERE x."ClientId" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "Users" u WHERE u."Id" = x."ClientId")
+UNION ALL SELECT 'DailyExchangeSummaries.CompanyId', COUNT(*) FROM "DailyExchangeSummaries" x  WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'DailyExchangeCurrencySummaries.CompanyId', COUNT(*) FROM "DailyExchangeCurrencySummaries" x WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'DailyExchangeCurrencySummaries.SummaryId', COUNT(*) FROM "DailyExchangeCurrencySummaries" x WHERE NOT EXISTS (SELECT 1 FROM "DailyExchangeSummaries" s WHERE s."Id" = x."DailyExchangeSummaryId")
+UNION ALL SELECT 'Invoices.CompanyId',               COUNT(*) FROM "Invoices" x                WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'Invoices.ClientId',                COUNT(*) FROM "Invoices" x                WHERE x."ClientId" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "Users" u WHERE u."Id" = x."ClientId")
+UNION ALL SELECT 'InvoiceItems.InvoiceId',           COUNT(*) FROM "InvoiceItems" x            WHERE NOT EXISTS (SELECT 1 FROM "Invoices" i WHERE i."Id" = x."InvoiceId")
+UNION ALL SELECT 'Reconciliations.CompanyId',        COUNT(*) FROM "Reconciliations" x         WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'ClientCurrencyBalances.CompanyId', COUNT(*) FROM "ClientCurrencyBalances" x  WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'ClientCurrencyBalances.ClientId',  COUNT(*) FROM "ClientCurrencyBalances" x  WHERE NOT EXISTS (SELECT 1 FROM "Users" u WHERE u."Id" = x."ClientId")
+UNION ALL SELECT 'SubscriptionPayments.CompanyId',   COUNT(*) FROM "SubscriptionPayments" x    WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'BalanceAlertRules.CompanyId',      COUNT(*) FROM "BalanceAlertRules" x       WHERE NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'Users.CompanyId',                  COUNT(*) FROM "Users" x                   WHERE x."CompanyId" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "Companies" c WHERE c."Id" = x."CompanyId")
+UNION ALL SELECT 'CashAccounts duplicate currency',  COUNT(*) FROM (SELECT 1 FROM "CashAccounts" WHERE "IsDeleted" = false GROUP BY "CompanyId","Currency" HAVING COUNT(*) > 1) d;

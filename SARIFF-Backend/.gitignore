@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+*.user
+logs/
+*.log
+.env
+docker/.env
+appsettings.*.local.json

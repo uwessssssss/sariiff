@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "849695683256",
+    "project_id": "sariff-5e9bf",
+    "storage_bucket": "sariff-5e9bf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849695683256:android:f32e9222b48acff833ba4d",
+        "android_client_info": {
+          "package_name": "com.sariff.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCXlfTnhKtI2uEkDyn0u6uGvKQI_G5dHAs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

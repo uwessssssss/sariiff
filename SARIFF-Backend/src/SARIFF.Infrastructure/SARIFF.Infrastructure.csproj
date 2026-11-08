@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.1.2" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <!-- CVE-2024-32655 (High): Npgsql < 8.0.3 lets oversized parameters inject protocol
+         messages / SQL. The EF provider 8.0.0 pulls Npgsql 8.0.0, so pin the fixed driver. -->
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SARIFF.Core\SARIFF.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Lets the test project reach internal helpers (CodeGenerator.NextAsync). -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="SARIFF.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.Extensions.Http">
+      <HintPath>..\..\..\..\..\..\.nuget\packages\microsoft.extensions.http\10.0.3\lib\net8.0\Microsoft.Extensions.Http.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

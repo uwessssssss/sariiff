@@ -1,0 +1,12 @@
+# Keep the Docker build small and secret-free.
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/*.user
+**/logs/
+.git/
+docker/.env
+**/.env
+**/*.dump
+tests/

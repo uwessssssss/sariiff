@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Sarif",
+    "slug": "sariff-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "backgroundColor": "#0F172A",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sariff.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0F172A"
+      },
+      "package": "com.sariff.mobile",
+      "googleServicesFile": "./google-services.json"
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        { "faceIDPermission": "Sarif uses Face ID to confirm it's you before skipping the SMS code." }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#0F172A"
+        }
+      ]
+    ],
+    "extra": {
+      "apiBaseUrl": "https://sariff-backend.onrender.com",
+      "eas": {
+        "projectId": "cfd51453-36f4-4456-bc09-c8a7f5b24ad2"
+      }
+    },
+    "owner": "jawancade"
+  }
+}
