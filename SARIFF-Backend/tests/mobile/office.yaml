@@ -43,27 +43,27 @@ name: Office user (Ugandan bureau)
     commands:
       - tapOn: "Verify Code"
 - extendedWaitUntil:
-    visible: "Transactions, tab.*"
+    visible: ", Transactions"
     timeout: 45000
 - waitForAnimationToEnd
 - takeScreenshot: 02-office-dashboard
 - runFlow: broken.yaml
 - assertVisible: ".*UGX.*"
-- tapOn: "Clients, tab.*"
+- tapOn: ", Clients"
 - extendedWaitUntil:
     visible: ".*Test Amina.*"
     timeout: 20000
 - takeScreenshot: 03-office-clients
 - runFlow: broken.yaml
-- tapOn: "Exchange, tab.*"
+- tapOn: ", Exchange"
 - waitForAnimationToEnd
 - takeScreenshot: 04-office-exchange
 - runFlow: broken.yaml
-- tapOn: "Transactions, tab.*"
+- tapOn: ", Transactions"
 - waitForAnimationToEnd
 - takeScreenshot: 05-office-transactions
 - runFlow: broken.yaml
-- tapOn: "More, tab.*"
+- tapOn: ", More"
 - waitForAnimationToEnd
 - takeScreenshot: 06-office-more
 - runFlow: broken.yaml

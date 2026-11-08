@@ -130,6 +130,7 @@ const list = (d) => (Array.isArray(d) ? d : d?.items || d?.Items || []);
   const tillAfter = list((await api("GET", "/api/cash", ug.token)).data).find((c) => c.id === till.id);
   check("Cash till goes up by exactly 100,000 UGX (debit raises an asset)", tillAfter?.balance === tillBefore + 100000, `before ${tillBefore}, after ${tillAfter?.balance}`);
   const txDate = tx.data?.transactionDate || tx.data?.date || tx.data?.createdAt;
+  state.depositAt = txDate;
   check("API sends the time marked as UTC (ends in Z)", typeof txDate === "string" && txDate.endsWith("Z"), `got ${txDate}`);
   check("…and it is the real time (within 2 minutes)", txDate && Math.abs(Date.parse(txDate) - before) < 120000, `got ${txDate}`);
 

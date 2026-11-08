@@ -39,7 +39,9 @@ name: Client phone login (two bureaus)
 - takeScreenshot: 08-client-dashboard
 - runFlow: broken.yaml
 - assertVisible: ".*600,000.*"
-- tapOn: "Statements, tab.*"
+# the deposit's time as a phone in Nairobi/Kampala must show it (East Africa Time)
+- assertVisible: "UGX · ${DEP_TIME}"
+- tapOn: ", Statements"
 - waitForAnimationToEnd
 - takeScreenshot: 09-client-statements
 - runFlow: broken.yaml

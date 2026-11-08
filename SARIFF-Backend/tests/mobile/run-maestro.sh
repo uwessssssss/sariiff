@@ -9,15 +9,25 @@ for i in $(seq 1 60); do [ "$(adb shell getprop sys.boot_completed | tr -d '\r')
 # dialog then covers our app. The test never needs it: switch it off, close any dialog.
 for p in com.google.android.apps.nexuslauncher com.android.launcher3; do adb shell pm disable-user --user 0 "$p" >/dev/null 2>&1; done
 adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1
+# a phone in Nairobi/Kampala: times on screen must read as East Africa Time
+adb shell settings put global auto_time_zone 0 >/dev/null 2>&1
+adb shell service call alarm 3 s16 Africa/Nairobi >/dev/null 2>&1 || adb shell setprop persist.sys.timezone Africa/Nairobi
+echo "phone time zone: $(adb shell getprop persist.sys.timezone)  phone clock: $(adb shell date)"
 adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
 sleep 5
 adb install -r "$APK" || exit 1
 j() { node -e "console.log(require('$STATE')$1)"; }
 export PATH="$HOME/.maestro/bin:$PATH"
 cd "$(dirname "$0")"
+echo "deposit should show as: $(node -e 'const d=new Date(Date.parse(require(process.argv[1]).depositAt)+3*3600e3);console.log(d.toISOString())' "$STATE") (EAT)"
 maestro test --format junit --output "$OUT/maestro.xml" --test-output-dir "$OUT" \
   -e UG_CODE="$(j .ugOffice.code)" -e UG_PHONE="$(j .ugOffice.phone)" -e UG_PASS="$(j .ugOffice.password)" \
   -e CL_PHONE="$(j .client.phone)" \
+  -e DEP_TIME="$(node -e '
+      const d = new Date(Date.parse(require(process.argv[1]).depositAt) + 3 * 3600e3);
+      const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
+      const h = d.getUTCHours() % 12 || 12, mm = String(d.getUTCMinutes()).padStart(2, "0");
+      console.log(`${m} ${d.getUTCDate()}, ${h}:${mm} ${d.getUTCHours() < 12 ? "AM" : "PM"}`);' "$STATE")" \
   office.yaml client.yaml
 rc=$?
 adb logcat -d > "$OUT/logcat.txt" 2>/dev/null
