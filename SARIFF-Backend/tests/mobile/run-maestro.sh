@@ -12,6 +12,13 @@ maestro test --format junit --output "$OUT/maestro.xml" --test-output-dir "$OUT"
   -e CL_PHONE="$(j .client.phone)" \
   office.yaml client.yaml
 rc=$?
-adb logcat -d -s ReactNativeJS:V ReactNative:V AndroidRuntime:E > "$OUT/logcat.txt" 2>/dev/null
-grep -E "FATAL|AndroidRuntime" "$OUT/logcat.txt" | head -20
+adb logcat -d > "$OUT/logcat.txt" 2>/dev/null
+if [ $rc -ne 0 ]; then
+  echo "================ what is on the phone screen now ================"
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml \
+    | grep -oE '(text|content-desc)="[^"]+"' | sed 's/^/  /' | head -80
+  echo "================ app log (JS + crashes) ================"
+  grep -E "ReactNativeJS|AndroidRuntime|FATAL EXCEPTION|com.sariff.mobile" "$OUT/logcat.txt" | tail -80
+  adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | head -3
+fi
 exit $rc
