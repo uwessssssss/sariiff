@@ -26,19 +26,26 @@ async function codeFor(phone, afterLen) {
   for (let i = 0; i < 60; i++) {
     const all = [...readFileSync(LOG, "utf8").slice(afterLen).matchAll(re)];
     if (all.length) return all[all.length - 1][1];
+    // A second sign-in within a minute reuses the code just sent (no new SMS).
+    if (i >= 12) { const any = [...readFileSync(LOG, "utf8").matchAll(re)]; if (any.length) return any[any.length - 1][1]; }
     await sleep(250);
   }
   return null;
 }
 
 const BAD = /\bNaN\b|\bundefined\b|Invalid Date|\[object Object\]|Something went wrong|Application error/;
-const IGNORE_CONSOLE = /favicon|Download the React DevTools|\[Fast Refresh\]/i;
+const IGNORE_CONSOLE = /favicon|Download the React DevTools|\[Fast Refresh\]|Failed to load resource/i; // failed requests are reported with their address below
+const EXPECTED_HTTP = /favicon/;
 
 function watch(page) {
   const errs = [];
   page.on("pageerror", (e) => errs.push(`page error: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && !IGNORE_CONSOLE.test(m.text()) && errs.push(`console: ${m.text()}`));
-  page.on("response", (r) => r.status() >= 500 && errs.push(`HTTP ${r.status()} ${r.url()}`));
+  page.on("response", async (r) => {
+    if (r.status() < 400 || EXPECTED_HTTP.test(r.url())) return;
+    let body = ""; try { body = (await r.text()).slice(0, 200); } catch {}
+    errs.push(`HTTP ${r.status()} ${r.request().method()} ${r.url().replace(/^https?:\/\/[^/]+/, "")} ${body}`);
+  });
   return errs;
 }
 
@@ -89,8 +96,17 @@ async function signIn(page, errs, { code, phone, password }, label) {
   await page.fill("#code", code);
   await page.fill("#phone", phone);
   await page.fill("#password", password);
-  const mark = logLen();
+  let mark = logLen();
   await page.locator('form button[type="submit"]').first().click();
+  // Same phone signed in less than a minute ago (the API test did): wait it out, like a person would.
+  const wait = await page.getByText(/Please wait (\d+) seconds/).first().textContent({ timeout: 4000 }).catch(() => null);
+  if (wait) {
+    const secs = Number(wait.match(/(\d+) seconds/)[1]);
+    console.log(`        (${label}: the API asks to wait ${secs} s between codes to one phone — waiting)`);
+    await sleep((secs + 2) * 1000);
+    mark = logLen();
+    await page.locator('form button[type="submit"]').first().click();
+  }
   const otpBox = page.locator('input[aria-label="Digit 1 of 6"]');
   const landed = page.waitForURL(/\/(office|admin|client)(\/|$)/, { timeout: 30000 }).then(() => "in").catch(() => "no");
   const asked = otpBox.waitFor({ timeout: 30000 }).then(() => "otp").catch(() => "no");

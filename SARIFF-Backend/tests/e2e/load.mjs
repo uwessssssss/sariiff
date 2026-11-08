@@ -25,12 +25,17 @@ async function api(method, path, token, body) {
 }
 
 async function login({ code, phone, password }) {
-  const mark = readFileSync(LOG, "utf8").length;
-  const r = await fetch(BASE + "/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, phoneNumber: phone, password }) }).then((x) => x.json());
+  let mark = readFileSync(LOG, "utf8").length;
+  const go = () => fetch(BASE + "/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, phoneNumber: phone, password }) }).then((x) => x.json());
+  let r = await go();
+  const w = /Please wait (\d+) seconds/.exec(r.message || "");
+  if (w) { console.log(`        (waiting ${w[1]} s: a code went to this phone less than a minute ago)`); await sleep((+w[1] + 2) * 1000); mark = readFileSync(LOG, "utf8").length; r = await go(); }
+  if (!r.success) console.log(`        login: ${r.message}`);
   if (r.data?.accessToken) return r.data.accessToken;
   const re = new RegExp(`Message to "?${phone.replace(/[+]/g, "\\+")}"?: "?Sarif: Your verification code is (\\d{6})`, "g");
   for (let i = 0; i < 60; i++) {
-    const all = [...readFileSync(LOG, "utf8").slice(mark).matchAll(re)];
+    let all = [...readFileSync(LOG, "utf8").slice(mark).matchAll(re)];
+    if (!all.length && i >= 12) all = [...readFileSync(LOG, "utf8").matchAll(re)]; // reused recent code
     if (all.length) {
       const v = await fetch(BASE + "/api/auth/verify-otp", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, phoneNumber: phone, otp: all.at(-1)[1] }) }).then((x) => x.json());
       return v.data?.accessToken;
@@ -46,7 +51,7 @@ const ugx = (c) => (c?.otherBalances || []).find((b) => b.currency === UGX)?.bal
 (async () => {
   console.log(`SARIFF load test — ${BASE}\n`);
   const tok = await login(S.ugOffice);
-  check("Office signs in for the load test", !!tok);
+  check("Office signs in for the load test", !!tok, "no token");
   if (!tok) return done();
   const clientBefore = ugx((await api("GET", `/api/client/${S.client.id}`, tok)).data);
   const tillBefore = list((await api("GET", "/api/cash", tok)).data).find((c) => c.id === S.tillId)?.balance;
