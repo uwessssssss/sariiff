@@ -79,7 +79,7 @@ jobs:
 
       - name: Live API on a fresh database
         run: |
-          ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:18080 \
+          ASPNETCORE_ENVIRONMENT=Development PORT=18080 \
           ConnectionStrings__DefaultConnection="$PG_CS;Database=sariff_e2e" \
             nohup dotnet run --project src/SARIFF.API -c Release --no-build --no-launch-profile > "$RUNNER_TEMP/api.log" 2>&1 &
           for i in $(seq 1 120); do curl -sf http://127.0.0.1:18080/health && exit 0; sleep 1; done
