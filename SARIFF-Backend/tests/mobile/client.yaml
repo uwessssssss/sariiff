@@ -4,9 +4,10 @@ name: Client phone login (two bureaus)
 ---
 - launchApp:
     clearState: true
+- runFlow: dismiss.yaml
 - extendedWaitUntil:
     visible: "Code & password"
-    timeout: 90000
+    timeout: 120000
 - tapOn:
     text: "Phone number"
     index: 0

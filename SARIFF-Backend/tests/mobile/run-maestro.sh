@@ -3,6 +3,14 @@
 set -uo pipefail
 APK="$1"; STATE="$2"; OUT="$3"
 mkdir -p "$OUT"
+adb wait-for-device
+for i in $(seq 1 60); do [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" = 1 ] && break; sleep 2; done
+# The emulator's own home screen (Pixel Launcher) stalls on CI and its "isn't responding"
+# dialog then covers our app. The test never needs it: switch it off, close any dialog.
+for p in com.google.android.apps.nexuslauncher com.android.launcher3; do adb shell pm disable-user --user 0 "$p" >/dev/null 2>&1; done
+adb shell settings put global hide_error_dialogs 1 >/dev/null 2>&1
+adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1
+sleep 5
 adb install -r "$APK" || exit 1
 j() { node -e "console.log(require('$STATE')$1)"; }
 export PATH="$HOME/.maestro/bin:$PATH"

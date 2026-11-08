@@ -4,9 +4,10 @@ name: Office user (Ugandan bureau)
 ---
 - launchApp:
     clearState: true
+- runFlow: dismiss.yaml
 - extendedWaitUntil:
     visible: "Enter your credentials to continue"
-    timeout: 90000
+    timeout: 120000
 - takeScreenshot: 01-login
 - tapOn: "e.g. AFB-2026-0001"
 - inputText: ${UG_CODE}

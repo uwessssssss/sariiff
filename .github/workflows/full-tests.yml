@@ -154,6 +154,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
+          ram-size: 4096M
+          cores: 4
+          heap-size: 512M
           disable-animations: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: bash SARIFF-Backend/tests/mobile/run-maestro.sh "$GITHUB_WORKSPACE/sariff-mobile/android/app/build/outputs/apk/release/app-release.apk" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/maestro"
