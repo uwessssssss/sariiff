@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: full-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   PG_CS: Host=localhost;Port=5432;Username=postgres;Password=test
