@@ -10,8 +10,13 @@ name: Office user (Ugandan bureau)
 - takeScreenshot: 01-login
 - tapOn: "e.g. AFB-2026-0001"
 - inputText: ${UG_CODE}
+- hideKeyboard
 - tapOn: "e.g. +254711111111"
 - inputText: ${UG_PHONE}
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Enter password"
+    direction: DOWN
 - tapOn: "Enter password"
 - inputText: ${UG_PASS}
 - hideKeyboard

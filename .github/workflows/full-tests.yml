@@ -119,13 +119,23 @@ jobs:
 
       - name: Build the Android app (release, JS bundled, pointing at the test API)
         working-directory: sariff-mobile
+        env:
+          # read by app.config.js at prebuild AND again when Gradle bundles the app
+          API_BASE_URL: http://10.0.2.2:18080
         run: |
           npm ci --no-audit --no-fund
-          API_BASE_URL=http://10.0.2.2:18080 npx expo prebuild --platform android --no-install
+          npx expo prebuild --platform android --no-install
           # test build only: allow plain http to the emulator's host (never in the real app)
           sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml
+          grep -q 'usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml || { echo "cleartext not set"; exit 1; }
           cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon -q
           ls -la app/build/outputs/apk/release/
+          # prove the app inside the APK points at the test API
+          APK=app/build/outputs/apk/release/app-release.apk
+          CFG=$(unzip -l "$APK" | awk '{print $4}' | grep -E 'app\.config$' | head -1)
+          echo "embedded config: $CFG"
+          unzip -p "$APK" "$CFG" | grep -o '"apiBaseUrl":"[^"]*"'
+          unzip -p "$APK" "$CFG" | grep -q '10.0.2.2:18080' || { echo "APK does not point at the test API"; exit 1; }
 
       - name: Install Maestro
         run: |
