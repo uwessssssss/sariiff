@@ -1,0 +1,164 @@
+# SARIFF — full CI for the whole repository (backend + web + mobile).
+# GitHub only reads workflows from THIS folder at the repo root; the copies inside
+# SARIFF-Backend/, web/ and sariff-mobile/ are ignored in a one-repo setup.
+#
+# Every push and pull request runs:
+#   backend: build, every unit + PostgreSQL test (none skipped), migrations check,
+#            a live API on a fresh database + the 33-step end-to-end test, Docker image
+#   web:     npm ci, type check, production build, 90 web+mobile logic tests
+#   mobile:  lock file check (EAS needs it), npm ci, type check, expo-doctor
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SARIFF-Backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PG_CS: Host=localhost;Port=5432;Username=postgres;Password=test
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: dotnet tool install -g dotnet-ef --version "8.*"
+
+      - name: Restore and build (Release)
+        run: |
+          dotnet restore SARIFF.sln
+          dotnet build SARIFF.sln --no-restore -c Release
+
+      # Render applies these migrations at start-up. Without them committed, a deploy
+      # from this repo creates NO tables. If missing, a temporary one is generated so the
+      # rest of the run can still test everything — and the job is marked failed at the end.
+      - name: Database migrations are committed and match the code
+        id: migrations
+        run: |
+          MIG=src/SARIFF.Infrastructure/Migrations
+          if ! ls $MIG/*_*.cs >/dev/null 2>&1; then
+            echo "::error title=Migrations missing::No EF Core migrations are committed in SARIFF-Backend/$MIG. Commit the Migrations folder from your working copy (it was left out of the zips on purpose)."
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            dotnet ef migrations add CiTemporarySnapshot -p src/SARIFF.Infrastructure -s src/SARIFF.API
+            dotnet build SARIFF.sln --no-restore -c Release
+            exit 0
+          fi
+          dotnet ef migrations has-pending-model-changes -p src/SARIFF.Infrastructure -s src/SARIFF.API
+          latest=$(ls -t $MIG/*_*.cs | grep -v Designer | head -1)
+          if awk '/void Up\(/,/void Down\(/' "$latest" | grep -nE 'DropTable|DropColumn|name: "xmin"'; then
+            echo "::error title=Destructive migration::$latest drops data in Up()"; exit 1
+          fi
+
+      - name: Every unit + PostgreSQL test (none skipped)
+        run: dotnet test SARIFF.sln --no-build -c Release --logger "console;verbosity=normal"
+        env:
+          SARIFF_TEST_PG: ${{ env.PG_CS }};Database=postgres
+
+      - name: Live API on a fresh database
+        run: |
+          ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:18080 \
+          ConnectionStrings__DefaultConnection="$PG_CS;Database=sariff_e2e" \
+            nohup dotnet run --project src/SARIFF.API -c Release --no-build --no-launch-profile > "$RUNNER_TEMP/api.log" 2>&1 &
+          for i in $(seq 1 120); do curl -sf http://127.0.0.1:18080/health && exit 0; sleep 1; done
+          echo "API did not start"; tail -60 "$RUNNER_TEMP/api.log"; exit 1
+
+      - name: End-to-end (two bureaus, wallets, money, times, portal, phone login)
+        run: node tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+
+      - name: Keep the API log if anything failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-log
+          path: ${{ runner.temp }}/api.log
+
+      - name: Production Docker image builds (what Render builds)
+        run: docker build -f docker/Dockerfile -t sariff-api:ci .
+
+      - name: Fail if migrations were missing
+        if: steps.migrations.outputs.missing == 'true'
+        run: |
+          echo "::error::Everything else ran, but the repo has no migrations: a Render deploy from it would start with an empty database."
+          exit 1
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Type check (every file)
+        run: npx tsc --noEmit
+      - name: Production build (what Vercel runs)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://sariff-backend.onrender.com
+          NEXT_TELEMETRY_DISABLED: "1"
+      - name: Web + mobile logic tests (90, at 01:30 Nairobi time)
+        run: bash ../SARIFF-Backend/tests/app-logic/run.sh "$PWD" "$PWD/../sariff-mobile"
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sariff-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      # EAS Build installs with `npm ci`, which refuses a lock file that disagrees with
+      # package.json. Checked first so the error says what to fix.
+      - name: package-lock.json matches package.json (EAS Build needs this)
+        id: lock
+        run: |
+          node -e '
+            const pj = require("./package.json"), lk = require("./package-lock.json").packages[""] || {};
+            const want = { ...pj.dependencies, ...pj.devDependencies }, have = { ...lk.dependencies, ...lk.devDependencies };
+            const off = Object.keys(want).filter((k) => have[k] !== want[k]);
+            if (off.length) {
+              console.log(`::error title=Lock file out of date::package-lock.json is missing or out of date for: ${off.join(", ")}. Run: npx expo install ${off.join(" ")} && commit package-lock.json`);
+              process.exit(1);
+            }' || { echo "stale=true" >> "$GITHUB_OUTPUT"; exit 0; }
+      - name: Install dependencies
+        run: |
+          if [ "${{ steps.lock.outputs.stale }}" = "true" ]; then npm install --no-audit --no-fund; else npm ci --no-audit --no-fund; fi
+      - name: Type check (every file)
+        run: npx tsc --noEmit
+      - name: Expo project health
+        run: npx expo-doctor
+      - name: Fail if the lock file was out of date
+        if: steps.lock.outputs.stale == 'true'
+        run: |
+          echo "::error::Everything else ran, but EAS Build would stop at npm ci until package-lock.json is updated and committed."
+          exit 1
