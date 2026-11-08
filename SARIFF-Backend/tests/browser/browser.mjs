@@ -44,6 +44,7 @@ function watch(page) {
   page.on("response", async (r) => {
     if (r.status() < 400 || EXPECTED_HTTP.test(r.url())) return;
     let body = ""; try { body = (await r.text()).slice(0, 200); } catch {}
+    if (/Please wait \d+ seconds/.test(body)) return; // the code cooldown; signIn waits it out on purpose
     errs.push(`HTTP ${r.status()} ${r.request().method()} ${r.url().replace(/^https?:\/\/[^/]+/, "")} ${body}`);
   });
   return errs;

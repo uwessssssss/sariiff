@@ -271,9 +271,13 @@ export function CashAtHand() {
   const fetchTransactions = useCallback(async () => {
     setIsLoadingTransactions(true);
     try {
-      // One statement per currency (KES, USD, UGX, EUR). Currencies without
-      // a cash account simply return nothing.
-      const currencies = [0, 1, 2, 3];
+      // One statement per cash till the bureau actually has (it used to ask for all
+      // four currencies and got "Cash account not found" for each missing one).
+      const acc = await getCashAccounts().catch(() => null);
+      const rows: any[] = acc?.success ? (Array.isArray(acc.data) ? acc.data : (acc.data as any)?.items || []) : [];
+      const currencies: number[] = rows.length
+        ? Array.from(new Set(rows.map((a: any) => Number(a.currency))))
+        : acc?.success ? [] : [0, 1, 2, 3];
       const responses = await Promise.all(
         currencies.map((c) => getCashAccountStatement(c).catch(() => null)),
       );
