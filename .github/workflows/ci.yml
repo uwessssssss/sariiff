@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: SARIFF-Backend
@@ -105,7 +105,7 @@ jobs:
           exit 1
 
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: web
@@ -128,7 +128,7 @@ jobs:
         run: bash ../SARIFF-Backend/tests/app-logic/run.sh "$PWD" "$PWD/../sariff-mobile"
 
   mobile:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: sariff-mobile
