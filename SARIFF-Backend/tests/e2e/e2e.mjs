@@ -2,7 +2,9 @@
 //   node tests/e2e/e2e.mjs <api-base-url> <api-log-file>
 // It signs in like the apps do (SMS codes are read from the API log, as Development
 // prints them instead of sending), then checks money, currencies, times and phone login.
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+// Optional: E2E_STATE=<file> saves the codes it created, for the browser and app tests.
+const state = {};
 
 const BASE = process.argv[2] || "http://127.0.0.1:18080";
 const LOG = process.argv[3] || "/tmp/sariff-e2e-api.log";
@@ -81,6 +83,7 @@ const list = (d) => (Array.isArray(d) ? d : d?.items || d?.Items || []);
     name: "Test Kampala Bureau", ownerName: "Test Owner", whatsAppNumber: ugPhone, email: null, password: ugPass, baseCurrency: UGX,
   });
   check("Super admin creates a Ugandan (UGX) bureau", co.success && !!co.data?.code, co.message);
+  if (co.success) state.ugOffice = { code: co.data.code, phone: ugPhone, password: ugPass, companyId: co.data.id };
   const ug = co.success ? await officeLogin(co.data.code, ugPhone, ugPass) : {};
   check("Ugandan office signs in", !!ug.token, ug.error);
   if (!ug.token) return finish();
@@ -110,6 +113,9 @@ const list = (d) => (Array.isArray(d) ? d : d?.items || d?.Items || []);
   const cl = await api("POST", "/api/client", ug.token, { fullName: "Test Amina", whatsAppNumber: P, email: null, idPassport: null, clientType: 0, password: cPass, openingBalanceKES: 0, openingBalanceUSD: 0, openingBalanceHome: 500000 });
   const ugxBal = (c) => (c?.otherBalances || []).find((b) => b.currency === UGX)?.balance;
   check("New client gets a UGX opening balance of 500,000", cl.success && ugxBal(cl.data) === 500000, `${cl.message || ""} other=${JSON.stringify(cl.data?.otherBalances)}`);
+  if (cl.success) state.client = { code: cl.data.code, phone: P, password: cPass, name: "Test Amina", id: cl.data.id };
+  if (till?.id) state.tillId = till.id;
+  state.ugOffice.token = ug.token;
   if (!cl.success || !till?.id) return finish();
 
   // ---------- 7. A real deposit: client brings UGX 100,000 in cash
@@ -157,6 +163,7 @@ const list = (d) => (Array.isArray(d) ? d : d?.items || d?.Items || []);
   if (en.data?.enabled) {
     const kc = await api("POST", "/api/client", ke.token, { fullName: "Test Amina", whatsAppNumber: P, email: null, idPassport: null, clientType: 0, password: cPass });
     check("Same person is also a client at the Kenyan bureau", kc.success, kc.message);
+    if (kc.success) state.clientKe = { code: kc.data.code };
     const mark = logLen();
     await api("POST", "/api/identity/request-code", null, { phone: P });
     const otp = await codeFor(P, mark);
@@ -182,6 +189,7 @@ const list = (d) => (Array.isArray(d) ? d : d?.items || d?.Items || []);
 })().catch((e) => { check("test run crashed", false, e.stack); finish(); });
 
 function finish() {
+  if (process.env.E2E_STATE) writeFileSync(process.env.E2E_STATE, JSON.stringify(state, null, 2));
   console.log(`\nEND-TO-END: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 }

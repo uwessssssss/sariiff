@@ -1,0 +1,63 @@
+# Ugandan bureau office user on Android: sign in with SMS code, open every tab.
+appId: com.sariff.mobile
+name: Office user (Ugandan bureau)
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Enter your credentials to continue"
+    timeout: 90000
+- takeScreenshot: 01-login
+- tapOn: "e.g. AFB-2026-0001"
+- inputText: ${UG_CODE}
+- tapOn: "e.g. +254711111111"
+- inputText: ${UG_PHONE}
+- tapOn: "Enter password"
+- inputText: ${UG_PASS}
+- hideKeyboard
+- tapOn:
+    text: "Sign In"
+    index: 1
+- extendedWaitUntil:
+    visible: "Verify OTP"
+    timeout: 30000
+- runScript:
+    file: otp.js
+    env:
+      PHONE: ${UG_PHONE}
+- inputText: ${output.d[0]}
+- inputText: ${output.d[1]}
+- inputText: ${output.d[2]}
+- inputText: ${output.d[3]}
+- inputText: ${output.d[4]}
+- inputText: ${output.d[5]}
+- runFlow:
+    when:
+      visible: "Verify Code"
+    commands:
+      - tapOn: "Verify Code"
+- extendedWaitUntil:
+    visible: "Transactions, tab.*"
+    timeout: 45000
+- waitForAnimationToEnd
+- takeScreenshot: 02-office-dashboard
+- runFlow: broken.yaml
+- assertVisible: ".*UGX.*"
+- tapOn: "Clients, tab.*"
+- extendedWaitUntil:
+    visible: ".*Test Amina.*"
+    timeout: 20000
+- takeScreenshot: 03-office-clients
+- runFlow: broken.yaml
+- tapOn: "Exchange, tab.*"
+- waitForAnimationToEnd
+- takeScreenshot: 04-office-exchange
+- runFlow: broken.yaml
+- tapOn: "Transactions, tab.*"
+- waitForAnimationToEnd
+- takeScreenshot: 05-office-transactions
+- runFlow: broken.yaml
+- tapOn: "More, tab.*"
+- waitForAnimationToEnd
+- takeScreenshot: 06-office-more
+- runFlow: broken.yaml

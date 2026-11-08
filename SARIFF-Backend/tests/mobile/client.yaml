@@ -1,0 +1,44 @@
+# Client on Android: phone number sign-in, pick the Ugandan bureau, see the balance.
+appId: com.sariff.mobile
+name: Client phone login (two bureaus)
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Code & password"
+    timeout: 90000
+- tapOn:
+    text: "Phone number"
+    index: 0
+- tapOn: "e.g. +254711111111"
+- inputText: ${CL_PHONE}
+- hideKeyboard
+- tapOn: "Send code"
+- extendedWaitUntil:
+    visible: "6 digits"
+    timeout: 30000
+- runScript:
+    file: otp.js
+    env:
+      PHONE: ${CL_PHONE}
+- tapOn: "6 digits"
+- inputText: ${output.otp}
+- hideKeyboard
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Test Kampala Bureau"
+    timeout: 30000
+- takeScreenshot: 07-client-choose-bureau
+- runFlow: broken.yaml
+- tapOn: "Test Kampala Bureau"
+- extendedWaitUntil:
+    visible: "Account Overview"
+    timeout: 45000
+- waitForAnimationToEnd
+- takeScreenshot: 08-client-dashboard
+- runFlow: broken.yaml
+- assertVisible: ".*600,000.*"
+- tapOn: "Statements, tab.*"
+- waitForAnimationToEnd
+- takeScreenshot: 09-client-statements
+- runFlow: broken.yaml

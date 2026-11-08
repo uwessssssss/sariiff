@@ -1,0 +1,8 @@
+# Shared: nothing broken on the current screen.
+appId: com.sariff.mobile
+---
+- assertNotVisible: ".*\\bNaN\\b.*"
+- assertNotVisible: ".*\\bundefined\\b.*"
+- assertNotVisible: ".*Invalid Date.*"
+- assertNotVisible: ".*\\[object Object\\].*"
+- assertNotVisible: ".*Something went wrong.*"
