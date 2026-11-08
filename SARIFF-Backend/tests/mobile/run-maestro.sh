@@ -20,16 +20,26 @@ j() { node -e "console.log(require('$STATE')$1)"; }
 export PATH="$HOME/.maestro/bin:$PATH"
 cd "$(dirname "$0")"
 echo "deposit should show as: $(node -e 'const d=new Date(Date.parse(require(process.argv[1]).depositAt)+3*3600e3);console.log(d.toISOString())' "$STATE") (EAT)"
-maestro test --format junit --output "$OUT/maestro.xml" --test-output-dir "$OUT" \
+screen() {
+  echo "================ $1: what is on the phone screen ================"
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml \
+    | grep -oE '(text|content-desc)="[^"]+"' | sed 's/^/  /' | head -70
+}
+rc=0
+for flow in office.yaml client.yaml; do
+  maestro test --format junit --output "$OUT/${flow%.yaml}.xml" --test-output-dir "$OUT" \
   -e UG_CODE="$(j .ugOffice.code)" -e UG_PHONE="$(j .ugOffice.phone)" -e UG_PASS="$(j .ugOffice.password)" \
   -e CL_PHONE="$(j .client.phone)" \
   -e DEP_TIME="$(node -e '
       const d = new Date(Date.parse(require(process.argv[1]).depositAt) + 3 * 3600e3);
       const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getUTCMonth()];
       const h = d.getUTCHours() % 12 || 12, mm = String(d.getUTCMinutes()).padStart(2, "0");
-      console.log(`${m} ${d.getUTCDate()}, ${h}:${mm} ${d.getUTCHours() < 12 ? "AM" : "PM"}`);' "$STATE")" \
-  office.yaml client.yaml
-rc=$?
+      console.log(`${m} ${d.getUTCDate()}, ${h}:${mm}.${d.getUTCHours() < 12 ? "AM" : "PM"}`);' "$STATE")" \
+  "$flow"
+  r=$?
+  [ $r -ne 0 ] && { rc=$r; screen "$flow"; }
+done
+true
 adb logcat -d > "$OUT/logcat.txt" 2>/dev/null
 if [ $rc -ne 0 ]; then
   echo "================ what is on the phone screen now ================"
