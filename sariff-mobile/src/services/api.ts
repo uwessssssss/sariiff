@@ -700,7 +700,8 @@ export async function downloadFile(endpoint: string): Promise<{ success: boolean
 // Download and share a file (PDF, CSV) using expo-file-system + expo-sharing
 export async function downloadAndShareFile(endpoint: string, filename: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const FileSystem = require('expo-file-system');
+    // SDK 54 (expo-file-system 19) moved these functions to /legacy; the main import throws for them.
+    const FileSystem = require('expo-file-system/legacy');
     const Sharing = require('expo-sharing');
     const token = await getToken();
 

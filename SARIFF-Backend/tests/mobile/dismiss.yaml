@@ -1,0 +1,8 @@
+# Shared: close an Android "isn't responding" dialog if one is covering the app.
+appId: com.sariff.mobile
+---
+- runFlow:
+    when:
+      visible: ".*isn't responding.*"
+    commands:
+      - tapOn: "Wait"

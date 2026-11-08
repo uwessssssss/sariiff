@@ -95,6 +95,9 @@ public class TransactionService : ITransactionService
             var isForex = dto.CounterCurrency.HasValue && dto.CounterCurrency != dto.Currency;
             // =========================================================
 
+            // Lock both accounts before reading their balances (see BalanceLock).
+            await BalanceLock.LockAsync(_context, (dto.SourceAccountType, dto.SourceAccountId), (dto.DestAccountType, dto.DestAccountId));
+
             // Validate accounts exist and belong to company
             var sourceBalance = await GetAccountBalanceAsync(companyId, dto.SourceAccountType, dto.SourceAccountId, primaryCurrency);
             var destBalance = await GetAccountBalanceAsync(companyId, dto.DestAccountType, dto.DestAccountId, counterCurrency);
@@ -211,8 +214,8 @@ public class TransactionService : ITransactionService
             _context.Transactions.Add(transaction);
 
             // Update account balances
-            await UpdateAccountBalanceAsync(companyId, dto.SourceAccountType, dto.SourceAccountId, primaryCurrency, newSourceBalance);
-            await UpdateAccountBalanceAsync(companyId, dto.DestAccountType, dto.DestAccountId, counterCurrency, newDestBalance);
+            await UpdateAccountBalanceAsync(companyId, dto.SourceAccountType, dto.SourceAccountId, primaryCurrency, sourceBalance.Value, newSourceBalance);
+            await UpdateAccountBalanceAsync(companyId, dto.DestAccountType, dto.DestAccountId, counterCurrency, destBalance.Value, newDestBalance);
 
             await _context.SaveChangesAsync();
             
@@ -517,7 +520,8 @@ public class TransactionService : ITransactionService
             var counterCurrency = transaction.CounterCurrency ?? transaction.Currency;
             var counterAmount = transaction.CounterAmount ?? transaction.Amount;
 
-            // Get current balances
+            // Lock both accounts, then read their current balances (see BalanceLock).
+            await BalanceLock.LockAsync(_context, (transaction.SourceAccountType, transaction.SourceAccountId), (transaction.DestAccountType, transaction.DestAccountId));
             var currentSourceBalance = await GetAccountBalanceAsync(companyId, transaction.SourceAccountType, transaction.SourceAccountId, primaryCurrency);
             var currentDestBalance = await GetAccountBalanceAsync(companyId, transaction.DestAccountType, transaction.DestAccountId, counterCurrency);
 
@@ -589,8 +593,8 @@ public class TransactionService : ITransactionService
             _context.Transactions.Add(reversalTransaction);
 
             // Update account balances to reversed values
-            await UpdateAccountBalanceAsync(companyId, transaction.SourceAccountType, transaction.SourceAccountId, primaryCurrency, reversedSourceBalance);
-            await UpdateAccountBalanceAsync(companyId, transaction.DestAccountType, transaction.DestAccountId, counterCurrency, reversedDestBalance);
+            await UpdateAccountBalanceAsync(companyId, transaction.SourceAccountType, transaction.SourceAccountId, primaryCurrency, currentSourceBalance.Value, reversedSourceBalance);
+            await UpdateAccountBalanceAsync(companyId, transaction.DestAccountType, transaction.DestAccountId, counterCurrency, currentDestBalance.Value, reversedDestBalance);
 
             // ============================================================
             // MARK ORIGINAL AS REVERSED — but do NOT soft-delete it
@@ -774,28 +778,40 @@ public class TransactionService : ITransactionService
         };
     }
 
-    private async Task UpdateAccountBalanceAsync(Guid companyId, AccountType type, Guid accountId, Currency currency, decimal newBalance)
+    /// <summary>
+    /// Writes an account's new balance. <paramref name="expectedBefore"/> is the balance the new
+    /// one was worked out from: if the row now holds something else, another posting got in
+    /// between, and writing would silently erase it — so this refuses (the caller rolls back and
+    /// asks the user to retry). With BalanceLock on PostgreSQL this never fires; it is the guard
+    /// for anything that skips the lock.
+    /// </summary>
+    private async Task UpdateAccountBalanceAsync(Guid companyId, AccountType type, Guid accountId, Currency currency, decimal expectedBefore, decimal newBalance)
     {
+        void Same(decimal now)
+        {
+            if (now != expectedBefore)
+                throw new DbUpdateConcurrencyException($"{type} {accountId}: balance is {now}, expected {expectedBefore}");
+        }
         switch (type)
         {
             case AccountType.Cash:
                 var cash = await _context.CashAccounts.FirstOrDefaultAsync(c => c.CompanyId == companyId && c.Id == accountId && !c.IsDeleted);
-                if (cash != null) { cash.Balance = newBalance; cash.UpdatedAt = DateTime.UtcNow; }
+                if (cash != null) { Same(cash.Balance); cash.Balance = newBalance; cash.UpdatedAt = DateTime.UtcNow; }
                 break;
             case AccountType.Bank:
                 var bank = await _context.BankAccounts.FirstOrDefaultAsync(b => b.Id == accountId && b.CompanyId == companyId && !b.IsDeleted);
-                if (bank != null) { bank.Balance = newBalance; bank.UpdatedAt = DateTime.UtcNow; }
+                if (bank != null) { Same(bank.Balance); bank.Balance = newBalance; bank.UpdatedAt = DateTime.UtcNow; }
                 break;
             case AccountType.Mpesa:
                 var mpesa = await _context.MpesaAgents.FirstOrDefaultAsync(m => m.Id == accountId && m.CompanyId == companyId && !m.IsDeleted);
-                if (mpesa != null) { mpesa.Balance = newBalance; mpesa.UpdatedAt = DateTime.UtcNow; }
+                if (mpesa != null) { Same(mpesa.Balance); mpesa.Balance = newBalance; mpesa.UpdatedAt = DateTime.UtcNow; }
                 break;
             case AccountType.Client:
                 var client = await _context.Users.FirstOrDefaultAsync(u => u.Id == accountId && u.CompanyId == companyId && !u.IsDeleted);
                 if (client != null)
                 {
-                    if (currency == Currency.KES) client.BalanceKES = newBalance;
-                    else if (currency == Currency.USD) client.BalanceUSD = newBalance;
+                    if (currency == Currency.KES) { Same(client.BalanceKES); client.BalanceKES = newBalance; }
+                    else if (currency == Currency.USD) { Same(client.BalanceUSD); client.BalanceUSD = newBalance; }
                     else
                     {
                         // Other currencies (UGX, EUR, ...): upsert the per-currency row.
@@ -813,6 +829,7 @@ public class TransactionService : ITransactionService
                             };
                             _context.ClientCurrencyBalances.Add(ccb);
                         }
+                        Same(ccb.Balance);
                         var delta = newBalance - ccb.Balance;
                         if (delta > 0) ccb.TotalIn += delta;
                         else ccb.TotalOut += Math.Abs(delta);

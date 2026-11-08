@@ -85,6 +85,10 @@ export function middleware(request: NextRequest) {
   // a nonce-based policy would remove 'unsafe-inline' later). The API, fonts and
   // WhatsApp links are allowed; plugins, <base> hijacking and framing are not.
   const dev = process.env.NODE_ENV !== "production";
+  // The API this build talks to is always allowed, even on plain http (a local or test
+  // API); without it a production build pointed at http://127.0.0.1 could not sign in.
+  let apiOrigin = "";
+  try { apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL || "").origin; } catch { /* unset */ }
   response.headers.set(
     "Content-Security-Policy",
     [
@@ -93,7 +97,7 @@ export function middleware(request: NextRequest) {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https: wss:" + (dev ? " http: ws:" : ""),
+      "connect-src 'self' https: wss:" + (dev ? " http: ws:" : "") + (apiOrigin ? ` ${apiOrigin}` : ""),
       "frame-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",

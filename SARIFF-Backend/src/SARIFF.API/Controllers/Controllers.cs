@@ -1763,7 +1763,10 @@ public class ExchangeController : BaseApiController
     {
         if (!CompanyId.HasValue) return Unauthorized();
         var result = await _exchangeService.GetCurrentRateAsync(CompanyId.Value, currency ?? Currency.USD);
-        return result.Success ? Ok(result) : BadRequest(result);
+        // "No rate set yet" is a normal state (a new bureau, or a currency it doesn't trade),
+        // not a bad request: the body still says success:false, but the HTTP status is 200 so
+        // every office page stops logging failed requests for each currency it checks.
+        return Ok(result);
     }
 
     /// <summary>

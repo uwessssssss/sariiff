@@ -725,7 +725,7 @@ public class ReportService : IReportService
     }
 
     return new ApiResponse<DailyReportDto>(true, "Success", 
-        new DailyReportDto(dateUtc, opening, summary, closing, txnDtos));
+        new DailyReportDto(DateTime.SpecifyKind(date.Date, DateTimeKind.Utc), opening, summary, closing, txnDtos)); // the day as picked
 }
 
     public async Task<ApiResponse<PagedResult<TransactionResponseDto>>> GetTransactionReportAsync(Guid companyId, ReportFilterDto filter, int page, int pageSize)

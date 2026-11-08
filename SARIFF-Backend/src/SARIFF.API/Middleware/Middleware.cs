@@ -236,7 +236,11 @@ public class RateLimitingMiddleware
     {
         // Apply rate limiting to auth endpoints
         // Login doors: classic login and the phone login (codes, device login, linking).
-        if (context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path.StartsWithSegments("/api/identity"))
+        // "/api/identity/enabled" is only the on/off switch the login page reads on every load;
+        // it opens nothing, and counting it locked a whole office (one shared IP) out of phone
+        // login after ten page loads in a minute.
+        if ((context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path.StartsWithSegments("/api/identity"))
+            && !context.Request.Path.StartsWithSegments("/api/identity/enabled"))
         {
             var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             // Normalise the path: routing is case-insensitive and ignores a trailing slash,

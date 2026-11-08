@@ -51,9 +51,12 @@ public class StatementTests
     [Fact]
     public async Task End_date_without_time_includes_that_whole_day()
     {
+        // The day is the BUREAU's day (EAT, UTC+3). 20:00 UTC = 23:00 on the 10th: in.
+        // 23:00 UTC = 02:00 on the 11th in Nairobi/Kampala: belongs to the 11th, not the 10th.
         await using var db = TestDb.InMemory();
         var bank = Guid.NewGuid(); var client = Guid.NewGuid();
-        db.Transactions.Add(TestDb.Txn(D(10, 23), TransactionType.Debit, 75, Currency.KES, AccountType.Bank, bank, AccountType.Client, client));
+        db.Transactions.Add(TestDb.Txn(D(10, 20), TransactionType.Debit, 75, Currency.KES, AccountType.Bank, bank, AccountType.Client, client));
+        db.Transactions.Add(TestDb.Txn(D(10, 23), TransactionType.Debit, 40, Currency.KES, AccountType.Bank, bank, AccountType.Client, client));
         await db.SaveChangesAsync();
 
         var st = await new StatementHelper(db).BuildPeriodStatementAsync(

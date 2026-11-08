@@ -149,9 +149,11 @@ public partial class AuthService : IAuthService
         }
 
         // Generate OTP and send via SMS
-        var (otp, otpError) = await GenerateAndSaveOtpAsync(request.PhoneNumber, request.Code, UserRole.SuperAdmin);
+        var (otp, otpError) = await GenerateAndSaveOtpAsync(request.PhoneNumber, request.Code, UserRole.SuperAdmin, reuseRecent: true);
         if (otpError != null)
             return new ApiResponse<object>(false, otpError, null);
+        if (otp == null) // a code was sent less than a minute ago and is still valid
+            return new ApiResponse<object>(true, "We sent you a code less than a minute ago. Enter that code.", new { requiresOtp = true, role = "SuperAdmin" });
         
         // Send OTP via Africa's Talking SMS
         var smsSent = await _smsService.SendOtpAsync(request.PhoneNumber, otp!);
@@ -242,9 +244,11 @@ public partial class AuthService : IAuthService
         }
 
         // Generate OTP and send via SMS
-        var (otp, otpError) = await GenerateAndSaveOtpAsync(request.PhoneNumber, request.Code, UserRole.OfficeUser);
+        var (otp, otpError) = await GenerateAndSaveOtpAsync(request.PhoneNumber, request.Code, UserRole.OfficeUser, reuseRecent: true);
         if (otpError != null)
             return new ApiResponse<object>(false, otpError, null);
+        if (otp == null) // a code was sent less than a minute ago and is still valid
+            return new ApiResponse<object>(true, "We sent you a code less than a minute ago. Enter that code.", new { requiresOtp = true, role = "OfficeUser" });
         
         // Send OTP via Africa's Talking SMS
         var smsSent = await _smsService.SendOtpAsync(request.PhoneNumber, otp!);
@@ -648,7 +652,14 @@ public partial class AuthService : IAuthService
     /// or too often — this caps SMS spend and brute-force attempts.
     /// The caller is responsible for sending the SMS (exactly once).
     /// </summary>
-    private async Task<(string? Code, string? Error)> GenerateAndSaveOtpAsync(string phoneNumber, string userCode, UserRole role)
+    /// <remarks>
+    /// With <paramref name="reuseRecent"/> (password sign-in), a second sign-in inside the
+    /// cooldown returns (null, null) while the code sent moments ago is still valid: the
+    /// caller then shows the code screen again without sending another SMS. Before, someone
+    /// who went back and pressed "Sign in" again was stuck on "Please wait 55 seconds" with
+    /// no way to type the code already on their phone.
+    /// </remarks>
+    private async Task<(string? Code, string? Error)> GenerateAndSaveOtpAsync(string phoneNumber, string userCode, UserRole role, bool reuseRecent = false)
     {
         var now = DateTime.UtcNow;
         var recent = await _context.OtpCodes
@@ -660,7 +671,12 @@ public partial class AuthService : IAuthService
         {
             var waitSeconds = (int)Math.Ceiling(OtpResendCooldownSeconds - (now - recent.Max()).TotalSeconds);
             if (waitSeconds > 0)
+            {
+                if (reuseRecent && await _context.OtpCodes.AnyAsync(o =>
+                        o.PhoneNumber == phoneNumber && o.UserCode == userCode && !o.IsUsed && o.ExpiresAt > now))
+                    return (null, null);
                 return (null, $"Please wait {waitSeconds} seconds before requesting a new code.");
+            }
 
             if (recent.Count >= OtpMaxPerHour)
             {

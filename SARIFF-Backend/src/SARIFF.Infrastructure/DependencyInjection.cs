@@ -9,10 +9,29 @@ namespace SARIFF.Infrastructure;
 
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Npgsql's default pool allows 100 connections per instance — as many as a small
+    /// PostgreSQL server accepts in total, so a busy minute could end in "too many clients"
+    /// instead of requests briefly queueing. Unless the connection string sets its own
+    /// "Maximum Pool Size", cap it (DB_MAX_POOL, default 40; the code counter adds 10).
+    /// </summary>
+    private static string? WithPoolCap(string? cs)
+    {
+        if (string.IsNullOrWhiteSpace(cs)) return cs;
+        try
+        {
+            var b = new Npgsql.NpgsqlConnectionStringBuilder(cs);
+            if (cs.Contains("Pool Size", StringComparison.OrdinalIgnoreCase)) return cs;
+            b.MaxPoolSize = int.TryParse(Environment.GetEnvironmentVariable("DB_MAX_POOL"), out var n) && n > 0 ? n : 40;
+            return b.ConnectionString;
+        }
+        catch (ArgumentException) { return cs; } // not a key=value string; leave it alone
+    }
+
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         // Database
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var connectionString = WithPoolCap(configuration.GetConnectionString("DefaultConnection"));
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
         // HTTP Client for Expo Push API

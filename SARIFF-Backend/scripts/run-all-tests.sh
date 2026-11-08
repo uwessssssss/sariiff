@@ -86,7 +86,7 @@ step "Backend: ALL unit + Postgres tests (none skipped)" \
 # ---------- live API on a fresh database, then the end-to-end scenario
 API_LOG="$OUT/api-under-test.log"
 start_api() {
-  ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS="http://127.0.0.1:$API_PORT" \
+  ASPNETCORE_ENVIRONMENT=Development PORT="$API_PORT" \
   ConnectionStrings__DefaultConnection="$PG_CS;Database=sariff_e2e" \
     dotnet run --project src/SARIFF.API -c Release --no-build --no-launch-profile >"$API_LOG" 2>&1 &
   API_PID=$!

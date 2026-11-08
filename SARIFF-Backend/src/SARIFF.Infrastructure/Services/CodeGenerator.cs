@@ -78,12 +78,27 @@ RETURNING ""Value"";";
     ///
     /// Other providers (the in-memory test database): the original in-process lock.
     /// </summary>
+    // The counter gets its OWN small connection pool. A posting asks for a number while it
+    // holds its account locks; if it had to wait for a connection from the shared pool —
+    // which the postings queued behind those very locks are holding — it would stall.
+    // A separate pool also caps what 200 simultaneous requests can open (the Postgres test
+    // failed with "too many clients" when each one opened its own connection).
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _counterCs = new();
+    private static string CounterConnectionString(string cs) => _counterCs.GetOrAdd(cs, c =>
+    {
+        try
+        {
+            return new NpgsqlConnectionStringBuilder(c) { ApplicationName = "sariff-codes", MaxPoolSize = 10 }.ConnectionString;
+        }
+        catch (ArgumentException) { return c; }
+    });
+
     internal static async Task<int> NextAsync(AppDbContext context, string scope, int dbMax)
     {
         var connectionString = context.Database.IsNpgsql() ? context.Database.GetConnectionString() : null;
         if (!string.IsNullOrEmpty(connectionString))
         {
-            await using var connection = new NpgsqlConnection(connectionString);
+            await using var connection = new NpgsqlConnection(CounterConnectionString(connectionString));
             await connection.OpenAsync();
             await using var command = new NpgsqlCommand(NextSql, connection);
             command.Parameters.AddWithValue("scope", scope);

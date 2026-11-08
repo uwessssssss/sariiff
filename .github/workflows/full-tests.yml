@@ -1,0 +1,172 @@
+# SARIFF — the slow, complete tests: a real browser on the web app, the Android app on an
+# emulator, money under load, old data + restarts. Runs on every push (separate from CI so
+# CI stays quick) and by hand from the Actions tab. Screenshots are kept as artifacts.
+name: Full tests
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: full-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;Password=test
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  web-browser-load-restart:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: API on a fresh database
+        run: bash SARIFF-Backend/tests/ci-api.sh sariff_full 18080 "$RUNNER_TEMP/api.log"
+
+      - name: Web app built against that API, then started
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          NEXT_PUBLIC_API_URL=http://127.0.0.1:18080 npm run build
+          nohup npx next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3000/login >/dev/null && exit 0; sleep 1; done
+          tail -40 "$RUNNER_TEMP/web.log"; exit 1
+
+      - name: Install Chromium for the browser test
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+
+      - name: Seed through the API (the 33-step end-to-end test)
+        run: E2E_STATE="$RUNNER_TEMP/state.json" node SARIFF-Backend/tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+
+      - name: Browser — every web screen, office + admin + client + phone login, desktop + phone size
+        if: success() || failure()
+        run: |
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/pw/node_modules/playwright" \
+            node SARIFF-Backend/tests/browser/browser.mjs http://127.0.0.1:3000 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/shots"
+
+      - name: Load — 300 parallel deposits must add up exactly, 30 s of 25 users reading
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/e2e/load.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json"
+
+      - name: Old data + restarts — wallet currencies filled in safely, no balance changes
+        if: success() || failure()
+        env:
+          API_CS: ${{ env.PG_CS }};Database=sariff_full
+        run: |
+          command -v psql >/dev/null || sudo apt-get install -y postgresql-client
+          bash SARIFF-Backend/tests/e2e/restart-legacy.sh "postgresql://postgres:test@localhost:5432/sariff_full" 18080 "$RUNNER_TEMP/api.log"
+
+      - name: Keep screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-screenshots-and-logs
+          path: |
+            ${{ runner.temp }}/shots
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/web.log
+
+  android-app:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: sariff-mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('sariff-mobile/package-lock.json') }}
+
+      - name: API on a fresh database + seed data
+        run: |
+          bash SARIFF-Backend/tests/ci-api.sh sariff_app 18080 "$RUNNER_TEMP/api.log"
+          E2E_STATE="$RUNNER_TEMP/state.json" node SARIFF-Backend/tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+          nohup node SARIFF-Backend/tests/mobile/otp-server.mjs "$RUNNER_TEMP/api.log" 18099 > "$RUNNER_TEMP/otp.log" 2>&1 &
+
+      - name: Build the Android app (release, JS bundled, pointing at the test API)
+        working-directory: sariff-mobile
+        env:
+          # read by app.config.js at prebuild AND again when Gradle bundles the app
+          API_BASE_URL: http://10.0.2.2:18080
+        run: |
+          npm ci --no-audit --no-fund
+          npx expo prebuild --platform android --no-install
+          # test build only: allow plain http to the emulator's host (never in the real app)
+          sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml
+          grep -q 'usesCleartextTraffic="true"' android/app/src/main/AndroidManifest.xml || { echo "cleartext not set"; exit 1; }
+          cd android && ./gradlew assembleRelease -PreactNativeArchitectures=x86_64 --no-daemon -q
+          ls -la app/build/outputs/apk/release/
+          # prove the app inside the APK points at the test API
+          APK=app/build/outputs/apk/release/app-release.apk
+          CFG=$(unzip -l "$APK" | awk '{print $4}' | grep -E 'app\.config$' | head -1)
+          echo "embedded config: $CFG"
+          unzip -p "$APK" "$CFG" | grep -o '"apiBaseUrl":"[^"]*"'
+          unzip -p "$APK" "$CFG" | grep -q '10.0.2.2:18080' || { echo "APK does not point at the test API"; exit 1; }
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Enable KVM (fast emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+
+      - name: Android emulator — office user and client phone login, every tab
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          cores: 4
+          heap-size: 512M
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
+          script: bash SARIFF-Backend/tests/mobile/run-maestro.sh "$GITHUB_WORKSPACE/sariff-mobile/android/app/build/outputs/apk/release/app-release.apk" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/maestro"
+
+      - name: Keep screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-screenshots-and-logs
+          path: |
+            ${{ runner.temp }}/maestro
+            ${{ runner.temp }}/api.log
+            sariff-mobile/android/app/build/outputs/apk/release/app-release.apk

@@ -1,0 +1,43 @@
+# Aligns the mobile app's packages with its Expo SDK and regenerates package-lock.json,
+# then commits the result to the same branch. Runs on GitHub (it needs the npm registry).
+# Trigger: a push whose commit message contains [fix-deps], or "Run workflow" in Actions.
+name: Fix mobile dependencies
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[fix-deps]')
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: sariff-mobile
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install current packages
+        run: npm install --no-audit --no-fund
+      - name: Align every package with the Expo SDK
+        run: npx expo install --fix
+      - name: Add packages the app needs but the lock file lacks
+        run: npx expo install react-native-worklets expo-print expo-local-authentication
+      - name: Expo project health after the fix
+        run: npx expo-doctor
+        continue-on-error: true
+      - name: Commit package.json + package-lock.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git diff --cached --stat
+          git diff --cached --quiet && { echo "Nothing to change"; exit 0; }
+          git commit -m "Mobile: align packages with Expo SDK 54 and regenerate lock file"
+          git push
