@@ -13,7 +13,8 @@ set -uo pipefail
 DB="$1"; CS="$2"; PORT="$3"; LOG="$4"
 HERE="$(cd "$(dirname "$0")/../.." && pwd)"
 PREV=20261106200157_ClientIdentities
-q() { psql "$DB" -XAtqc "$1"; }
+# A failed query prints a unique marker: two failures can never "match" in a check.
+q() { psql "$DB" -XAtqc "$1" || { echo "QUERY-FAILED-$RANDOM$RANDOM"; return 1; }; }
 pass=0; fail=0
 check() { if [ "$2" = "$3" ]; then pass=$((pass+1)); echo "PASS  $1"; else fail=$((fail+1)); echo "FAIL  $1"; echo "        expected [$3], got [$2]"; fi; }
 
@@ -55,18 +56,28 @@ w 22222222-0000-0000-0000-000000000001 OLD-MP-EMPTY 0 0         # M-Pesa, never 
 w 22222222-0000-0000-0000-000000000002 OLD-MP-MONEY 0 350000    # M-Pesa holding UGX for years -> left alone
 w 22222222-0000-0000-0000-000000000003 OLD-MTN      1 1250000   # MTN -> UGX
 q "SELECT ins('CashAccounts', '{\"Id\":\"33333333-0000-0000-0000-000000000001\",\"Code\":\"OLD-CASH\",\"CompanyId\":\"$CO\",\"Name\":\"Old till\",\"Currency\":\"2\",\"Balance\":\"4200000\",\"IsActive\":\"true\",\"IsDeleted\":\"false\"}')" >/dev/null \
-  || echo "        (cash till insert skipped: $(psql "$DB" -XAtqc "SELECT 1" 2>&1 | head -1))"
+  || echo "        cash till insert failed (see the error above)"
 for i in 1 2 3; do
-  q "SELECT ins('Transactions', '{\"CompanyId\":\"$CO\",\"Code\":\"OLD-TXN-$i\",\"Amount\":\"$((i*1000))\",\"Currency\":\"2\",\"IsDeleted\":\"false\"}')" >/dev/null 2>&1 || true
+  q "SELECT ins('Transactions', '{\"CompanyId\":\"$CO\",\"Code\":\"OLD-TXN-$i\",\"Amount\":\"$((i*1000))\",\"Currency\":\"2\",\"IsDeleted\":\"false\"}')" >/dev/null
 done
 
-money() { q 'SELECT md5(string_agg(x, '';'' ORDER BY x)) FROM (
-  SELECT ''m''||"Id"||''=''||"Balance"||''/''||"OpeningBalance" x FROM "MpesaAgents"
-  UNION ALL SELECT ''c''||"Id"||''=''||"Balance" FROM "CashAccounts"
-  UNION ALL SELECT ''t''||"Id"||''=''||"Amount" FROM "Transactions") s'; }
+# Fingerprint of every balance and amount (heredoc: see restart-legacy.sh for why).
+money() {
+  local out
+  out=$(psql "$DB" -XAtq -v ON_ERROR_STOP=1 <<'SQL'
+SELECT md5(string_agg(x, ';' ORDER BY x)) || ' ' || count(*) FROM (
+  SELECT 'm'||"Id"||'='||"Balance"||'/'||"OpeningBalance" x FROM "MpesaAgents"
+  UNION ALL SELECT 'c'||"Id"||'='||"Balance" FROM "CashAccounts"
+  UNION ALL SELECT 't'||"Id"||'='||"Amount" FROM "Transactions") s;
+SQL
+) || { echo "FINGERPRINT-QUERY-FAILED-$RANDOM$RANDOM"; return; }  # two failures never compare equal
+  echo "$out"
+}
 before=$(money); rows=$(q 'SELECT count(*) FROM "MpesaAgents"'); txns=$(q 'SELECT count(*) FROM "Transactions"')
 echo "old data: $rows wallets, $txns transactions, money fingerprint $before"
 check "Old data is in place (3 wallets)" "$rows" "3"
+check "Old cash till and transactions are in place" "$(q 'SELECT count(*) FROM "CashAccounts"')/$txns" "1/3"
+check "Money fingerprint covers real data (md5 of 7 values)" "$(echo "$before" | awk '{print (length($1)==32 && $2==7) ? "yes" : "no: " $0}')" "yes"
 
 echo "== start the NEW API on it (start-up migrates + backfills, as on Render)"
 ( cd src/SARIFF.API && PORT="$PORT" ASPNETCORE_ENVIRONMENT=Development ConnectionStrings__DefaultConnection="$CS" \

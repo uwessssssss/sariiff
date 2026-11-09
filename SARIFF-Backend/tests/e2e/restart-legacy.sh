@@ -10,17 +10,28 @@
 set -uo pipefail
 DB="$1"; PORT="$2"; LOG="$3"
 HERE="$(cd "$(dirname "$0")/../.." && pwd)"
-q() { psql "$DB" -XAtqc "$1"; }
+# A failed query prints a unique marker: two failures can never "match" in a check.
+q() { psql "$DB" -XAtqc "$1" || { echo "QUERY-FAILED-$RANDOM$RANDOM"; return 1; }; }
 pass=0; fail=0
 check() { if [ "$2" = "$3" ]; then pass=$((pass+1)); echo "PASS  $1"; else fail=$((fail+1)); echo "FAIL  $1"; echo "        expected [$3], got [$2]"; fi; }
 
-money() { q 'SELECT string_agg(x, '';'' ORDER BY x) FROM (
-  SELECT ''m''||"Id"||''=''||"Balance"||''/''||"OpeningBalance" x FROM "MpesaAgents" WHERE "Code" NOT LIKE ''LEG-%''
-  UNION ALL SELECT ''c''||"Id"||''=''||"Balance" FROM "CashAccounts"
-  UNION ALL SELECT ''b''||"Id"||''=''||"Balance" FROM "BankAccounts"
-  UNION ALL SELECT ''cb''||"Id"||''=''||"Balance" FROM "ClientCurrencyBalances"
-  UNION ALL SELECT ''u''||"Id"||''=''||"BalanceKES"||''/''||"BalanceUSD" FROM "Users"
-  UNION ALL SELECT ''t''||"Id"||''=''||"Amount" FROM "Transactions") s' | md5sum | cut -c1-12; }
+# A fingerprint of every balance and amount. The SQL goes through a heredoc: inside a
+# single-quoted bash string the SQL quotes vanished, the query errored, and two empty
+# fingerprints compared equal — the check passed without checking anything (fixed Nov 2026).
+money() {
+  local out
+  out=$(psql "$DB" -XAtq -v ON_ERROR_STOP=1 <<'SQL'
+SELECT md5(string_agg(x, ';' ORDER BY x)) || ' ' || count(*) FROM (
+  SELECT 'm'||"Id"||'='||"Balance"||'/'||"OpeningBalance" x FROM "MpesaAgents" WHERE "Code" NOT LIKE 'LEG-%'
+  UNION ALL SELECT 'c'||"Id"||'='||"Balance" FROM "CashAccounts"
+  UNION ALL SELECT 'b'||"Id"||'='||"Balance" FROM "BankAccounts"
+  UNION ALL SELECT 'cb'||"Id"||'='||"Balance" FROM "ClientCurrencyBalances"
+  UNION ALL SELECT 'u'||"Id"||'='||"BalanceKES"||'/'||"BalanceUSD" FROM "Users"
+  UNION ALL SELECT 't'||"Id"||'='||"Amount" FROM "Transactions") s;
+SQL
+) || { echo "FINGERPRINT-QUERY-FAILED-$RANDOM$RANDOM"; return; }  # two failures never compare equal
+  echo "$out"
+}
 
 restart() {
   pkill -f "SARIFF.API" ; for i in $(seq 1 30); do pgrep -f "SARIFF.API" >/dev/null || break; sleep 1; done
@@ -51,7 +62,9 @@ ins LEG-E "$UG" 2 1200
 
 before=$(money)
 txns=$(q 'SELECT count(*) FROM "Transactions"')
-echo "money fingerprint before: $before ($txns transactions)"
+echo "money fingerprint before: $before (md5 + number of balances/amounts; $txns transactions)"
+# The fingerprint must really cover data: a real md5 and hundreds of values, never empty.
+check "Money fingerprint covers real data" "$(echo "$before" | awk '{print (length($1)==32 && $2>100) ? "yes" : "no: " $0}')" "yes"
 
 API_CS="${API_CS:?set API_CS to the API connection string}"
 restart || { echo "FAIL  API restart"; exit 1; }
