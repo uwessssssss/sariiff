@@ -84,6 +84,36 @@ jobs:
             ${{ runner.temp }}/api.log
             ${{ runner.temp }}/web.log
 
+  upgrade-existing-database:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - name: Build
+        working-directory: SARIFF-Backend
+        run: |
+          dotnet restore SARIFF.sln && dotnet build SARIFF.sln --no-restore -c Release
+          dotnet tool install -g dotnet-ef --version "8.*"
+          command -v psql >/dev/null || sudo apt-get install -y postgresql-client
+          psql "postgresql://postgres:test@localhost:5432/postgres" -c "CREATE DATABASE sariff_upgrade"
+      - name: Upgrade a database that already holds data (what the Render deploy does)
+        working-directory: SARIFF-Backend
+        run: bash tests/e2e/upgrade.sh "postgresql://postgres:test@localhost:5432/sariff_upgrade" "${{ env.PG_CS }};Database=sariff_upgrade" 18081 "$RUNNER_TEMP/upgrade-api.log"
+      - name: Keep the log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upgrade-logs
+          path: ${{ runner.temp }}/upgrade-api.log*
+
   android-app:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
