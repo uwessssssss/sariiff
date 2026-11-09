@@ -20,7 +20,7 @@ check() { if [ "$2" = "$3" ]; then pass=$((pass+1)); echo "PASS  $1"; else fail=
 cd "$HERE"
 export PATH="$PATH:$HOME/.dotnet/tools"
 echo "== schema as before this release (up to $PREV)"
-dotnet ef database update "$PREV" -p src/SARIFF.Infrastructure -s src/SARIFF.API --connection "$CS" --no-build -c Release \
+dotnet ef database update "$PREV" -p src/SARIFF.Infrastructure -s src/SARIFF.API --connection "$CS" --no-build --configuration Release \
   >"$LOG.ef" 2>&1 || { tail -30 "$LOG.ef"; echo "FAIL  could not build the old schema"; exit 1; }
 check "Old schema has no wallet Currency column yet" \
   "$(q "SELECT count(*) FROM information_schema.columns WHERE table_name='MpesaAgents' AND column_name='Currency'")" "0"
