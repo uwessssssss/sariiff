@@ -49,4 +49,9 @@ if [ $rc -ne 0 ]; then
   grep -E "ReactNativeJS|AndroidRuntime|FATAL EXCEPTION|com.sariff.mobile" "$OUT/logcat.txt" | tail -80
   adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | head -3
 fi
+# Shut the emulator down ourselves. After passing runs the emulator sometimes never
+# exits on "emu kill", and the job then hangs until GitHub's 75-minute limit (Nov 2026).
+adb emu kill >/dev/null 2>&1
+for i in $(seq 1 30); do pgrep -f qemu-system >/dev/null || break; sleep 2; done
+pgrep -f qemu-system >/dev/null && { echo "emulator did not exit — force-stopping it"; pkill -9 -f qemu-system; }
 exit $rc
