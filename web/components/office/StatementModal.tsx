@@ -529,9 +529,9 @@ export function StatementModal(props: StatementModalProps) {
               <p className="mt-0.5 text-xs text-slate-500">{entries(lines.filter((l) => l.moneyOut > 0).length)}</p>
             </div>
             {/* The figure people open a statement for: the blue accent, not the header's navy. */}
-            <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-4 text-white shadow-sm shadow-blue-600/20">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">Closing balance</p>
-              <p className={`mt-1 text-lg font-semibold tabular-nums ${head.closing < 0 ? "text-amber-200" : ""}`}>{money(head.closing)}</p>
+            <div className="rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 p-4 text-white shadow-sm shadow-blue-600/20">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-50">Closing balance</p>
+              <p className={`mt-1 text-lg font-semibold tabular-nums ${head.closing < 0 ? "text-amber-100" : ""}`}>{money(head.closing)}</p>
               <p className="mt-0.5 text-xs text-blue-100/90">{preset === "all" ? "Right now" : `On ${longDate(end) || "today"}`}</p>
             </div>
           </div>
@@ -558,12 +558,12 @@ export function StatementModal(props: StatementModalProps) {
           {/* Toolbar */}
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search description, reference or counterparty"
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5" role="group" aria-label="Show">
@@ -603,7 +603,7 @@ export function StatementModal(props: StatementModalProps) {
               </div>
             ) : error ? (
               <div className="flex flex-col items-center gap-3 py-14 text-center">
-                <AlertTriangle className="h-6 w-6 text-amber-500" />
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
                 <p className="text-sm text-slate-600">{error}</p>
                 <button onClick={load} className={ui.btnSecondary}>Try again</button>
               </div>
@@ -693,10 +693,10 @@ export function StatementModal(props: StatementModalProps) {
                             </span>
                           </td>
                           <td className={`${ui.td} whitespace-nowrap text-right font-medium text-emerald-700`}>
-                            {l.moneyIn ? fmt(l.moneyIn) : <span className="text-slate-300">—</span>}
+                            {l.moneyIn ? fmt(l.moneyIn) : <span className="text-slate-500">—</span>}
                           </td>
                           <td className={`${ui.td} whitespace-nowrap text-right font-medium text-red-700`}>
-                            {l.moneyOut ? fmt(l.moneyOut) : <span className="text-slate-300">—</span>}
+                            {l.moneyOut ? fmt(l.moneyOut) : <span className="text-slate-500">—</span>}
                           </td>
                           <td className={`${ui.td} whitespace-nowrap ${hasActions ? "" : "pr-5"} text-right font-semibold ${l.balance < 0 ? "text-red-700" : "text-[#0F172A]"}`}>
                             {fmt(l.balance)}

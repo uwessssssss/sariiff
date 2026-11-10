@@ -80,10 +80,20 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   check("Seed wallets found (MTN + M-Pesa)", !!MTN && !!MPESA, JSON.stringify(wallets.map((w) => w.agentNumber)));
 
   // ---------- new accounts open with exactly their opening balance
-  const usdTill = await api("POST", "/api/cash", T, { currency: USD, openingBalance: 2000 });
-  check("USD cash till created", usdTill.success, usdTill.message);
-  const USDTILL = usdTill.data?.id;
-  check("USD till opens at exactly 2,000", eq(await bal.cash(USDTILL), 2000), await bal.cash(USDTILL));
+  // a bureau has one till per currency: use the USD till if an earlier suite made it
+  let USDTILL = list(await get("/api/cash")).find((c) => c.currency === USD)?.id;
+  if (!USDTILL) {
+    const usdTill = await api("POST", "/api/cash", T, { currency: USD, openingBalance: 2000 });
+    check("USD cash till created", usdTill.success, usdTill.message);
+    USDTILL = usdTill.data?.id;
+    check("USD till opens at exactly 2,000", eq(await bal.cash(USDTILL), 2000), await bal.cash(USDTILL));
+  } else {
+    const second = await api("POST", "/api/cash", T, { currency: USD, openingBalance: 2000 });
+    check("A second USD till is refused (one till per currency)", second.success === false && second.status < 500, `${second.status} ${second.message}`);
+  }
+  const usdHeld = Number(await bal.cash(USDTILL)) || 0;
+  const FUND = Math.min(500, Math.floor(usdHeld / 2));
+  check("USD till holds enough to stock the float", FUND >= 1, `USD ${usdHeld}`);
 
   const bank = await api("POST", "/api/bank", T, { bankName: "Stanbic Bank", accountNumber: "9030012345678", accountName: "Test Kampala Bureau", branchCode: "KLA01", currency: UGX, openingBalance: 5000000 });
   check("UGX bank account created", bank.success, bank.message);
@@ -102,9 +112,9 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   await op("Withdrawal UGX 30,000 (client A ← till)",
     () => api("POST", "/api/transaction", T, txn(Txn.Debit, Acc.Client, A, Acc.Cash, TILL, 30000, UGX, "Accuracy withdrawal")),
     [{ label: "client A", read: () => bal.client(A, UGX), delta: -30000 }, { label: "till", read: () => bal.cash(TILL), delta: -30000 }]);
-  await op("Till → bank UGX 200,000",
-    () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Cash, TILL, Acc.Bank, BANK, 200000, UGX, "Banking")),
-    [{ label: "till", read: () => bal.cash(TILL), delta: -200000 }, { label: "bank", read: () => bal.bank(BANK), delta: 200000 }]);
+  await op("Till → bank UGX 50,000",
+    () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Cash, TILL, Acc.Bank, BANK, 50000, UGX, "Banking")),
+    [{ label: "till", read: () => bal.cash(TILL), delta: -50000 }, { label: "bank", read: () => bal.bank(BANK), delta: 50000 }]);
   const mtnDep = await op("Client B deposits UGX 40,000 through MTN",
     () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Client, B, Acc.Mpesa, MTN, 40000, UGX, "MTN deposit")),
     [{ label: "client B", read: () => bal.client(B, UGX), delta: 40000 }, { label: "MTN wallet", read: () => bal.wallet(MTN), delta: 40000 }]);
@@ -120,7 +130,7 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
     () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Client, A, Acc.Mpesa, MPESA, 1000, UGX, "Wrong currency")),
     [() => bal.wallet(MPESA), () => bal.client(A, UGX)]);
   if (mtnDep?.data?.id) await refused("Deleting a client transaction outside the client's statement",
-    () => api("DELETE", `/api/transaction/${mtnDep.data.id}`, T), [() => bal.client(B, UGX), () => bal.wallet(MTN)]);
+    () => api("DELETE", `/api/transaction/${mtnDep.data.id}`, T, { reason: "Wrong place" }), [() => bal.client(B, UGX), () => bal.wallet(MTN)]);
   await refused("Zero amount", () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Client, A, Acc.Cash, TILL, 0, UGX, "Zero")), [() => bal.cash(TILL)]);
   await refused("Negative amount", () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Client, A, Acc.Cash, TILL, -5000, UGX, "Negative")), [() => bal.cash(TILL)]);
   await refused("Same account on both sides", () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Cash, TILL, Acc.Cash, TILL, 1000, UGX, "Self")), [() => bal.cash(TILL)]);
@@ -134,14 +144,14 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   // ---------- expense and its reversal
   const cat = await api("POST", "/api/expense/category", T, { name: "Office Rent", description: "Monthly rent" });
   check("Expense category created", cat.success, cat.message);
-  const exp = await op("Expense UGX 150,000 paid from the till",
-    () => api("POST", "/api/expense", T, { categoryId: cat.data?.id, description: "November rent", vendorPayee: "Kampala Properties", amount: 150000, currency: UGX, paymentMethod: 0, paymentAccountType: Acc.Cash, paymentAccountId: TILL, reference: "RENT-11", expenseDate: new Date().toISOString() }),
-    [{ label: "till", read: () => bal.cash(TILL), delta: -150000 }]);
+  const exp = await op("Expense UGX 20,000 paid from the till",
+    () => api("POST", "/api/expense", T, { categoryId: cat.data?.id, description: "November rent", vendorPayee: "Kampala Properties", amount: 20000, currency: UGX, paymentMethod: 0, paymentAccountType: Acc.Cash, paymentAccountId: TILL, reference: "RENT-11", expenseDate: new Date().toISOString() }),
+    [{ label: "till", read: () => bal.cash(TILL), delta: -20000 }]);
   const exp2 = await api("POST", "/api/expense", T, { categoryId: cat.data?.id, description: "Generator fuel", vendorPayee: "Shell Kampala", amount: 85000, currency: UGX, paymentMethod: 1, paymentAccountType: Acc.Bank, paymentAccountId: BANK, reference: "FUEL-3", expenseDate: new Date().toISOString() });
   check("Second expense (from bank) accepted", exp2.success, exp2.message);
   if (exp?.data?.id)
     await op("Delete the rent expense (reversal)", () => api("DELETE", `/api/expense/${exp.data.id}`, T),
-      [{ label: "till", read: () => bal.cash(TILL), delta: 150000 }]);
+      [{ label: "till", read: () => bal.cash(TILL), delta: 20000 }]);
   await refused("Expense larger than the account holds",
     () => api("POST", "/api/expense", T, { categoryId: cat.data?.id, description: "Too big", vendorPayee: null, amount: 999999999, currency: UGX, paymentMethod: 0, paymentAccountType: Acc.Cash, paymentAccountId: TILL, reference: null, expenseDate: new Date().toISOString() }),
     [() => bal.cash(TILL)]);
@@ -157,9 +167,9 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   await op("Fund float UGX 3,000,000 from the bank",
     () => api("POST", "/api/exchange/float/fund", T, { currency: UGX, amount: 3000000, sourceType: Acc.Bank, sourceAccountId: BANK, purchaseRate: null, notes: "Opening float" }),
     [{ label: "bank", read: () => bal.bank(BANK), delta: -3000000 }, { label: "float UGX", read: () => bal.float(UGX), delta: 3000000 }]);
-  await op("Fund float USD 500 from the USD till",
-    () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: 500, sourceType: Acc.Cash, sourceAccountId: USDTILL, purchaseRate: 3640, notes: "USD stock" }),
-    [{ label: "USD till", read: () => bal.cash(USDTILL), delta: -500 }, { label: "float USD", read: () => bal.float(USD), delta: 500 }]);
+  await op(`Fund float USD ${FUND} from the USD till`,
+    () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: FUND, sourceType: Acc.Cash, sourceAccountId: USDTILL, purchaseRate: 3640, notes: "USD stock" }),
+    [{ label: "USD till", read: () => bal.cash(USDTILL), delta: -FUND }, { label: "float USD", read: () => bal.float(USD), delta: FUND }]);
 
   const ex = (body) => api("POST", "/api/exchange/transaction", T, { clientId: null, customRate: null, clientIdNumber: null, notes: null, foreignCurrency: USD, ...body });
   const buy = await op("Bureau BUYS USD 100 cash at 3,650",

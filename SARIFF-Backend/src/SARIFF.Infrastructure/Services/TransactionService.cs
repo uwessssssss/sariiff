@@ -883,6 +883,14 @@ public class TransactionService : ITransactionService
     // Mapping a list used to run up to two queries PER ROW (2,000 for a 1,000-row page).
     private readonly Dictionary<(AccountType, Guid), string> _accountNames = new();
 
+    public async Task<List<TransactionResponseDto>> ToResponsesAsync(IReadOnlyCollection<Transaction> transactions)
+    {
+        await PreloadAccountNamesAsync(transactions);
+        var list = new List<TransactionResponseDto>(transactions.Count);
+        foreach (var t in transactions) list.Add(await MapToResponseAsync(t));
+        return list;
+    }
+
     private async Task PreloadAccountNamesAsync(IReadOnlyCollection<Transaction> txns)
     {
         var ids = txns.SelectMany(t => new[] { (t.SourceAccountType, t.SourceAccountId), (t.DestAccountType, t.DestAccountId) })

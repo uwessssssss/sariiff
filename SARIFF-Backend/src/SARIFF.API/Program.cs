@@ -156,6 +156,8 @@ builder.Services.AddCors(options =>
 // Infrastructure (DbContext, Services)
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+// Who did it, for the audit trail written on every save (see AuditInterceptor).
+builder.Services.AddScoped<SARIFF.Infrastructure.Data.IAuditContext, SARIFF.API.Middleware.HttpAuditContext>();
 
 // Real-time hub removed (Oct 2026): no web or mobile client ever connected and
 // nothing sent through it. Re-add with a client (@microsoft/signalr) if needed.
@@ -171,6 +173,20 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
+
+// Don't announce the server software in a "Server: Kestrel" header.
+builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
+
+// Compress JSON on the wire (a busy day's report: ~4 MB of JSON → a few hundred KB; it
+// matters on mobile data). Fastest level: little CPU on a small instance.
+builder.Services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true; // behind the proxy the request is HTTPS once forwarded headers apply
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+});
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
 
 var app = builder.Build();
 
@@ -221,6 +237,11 @@ app.Use(async (ctx, next) =>
     await next();
 });
 
+// Compression for everything except sign-in: those responses carry tokens, and compressing
+// a secret next to input an attacker controls is what the BREACH attack measures.
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api/auth") && !ctx.Request.Path.StartsWithSegments("/api/identity"),
+    branch => branch.UseResponseCompression());
+
 // FIX: Add Rate Limiting middleware for auth endpoints
 app.UseMiddleware<RateLimitingMiddleware>();
 
@@ -231,7 +252,7 @@ app.UseCors("AllowFrontend");
 app.Use(async (ctx, next) =>
 {
     if (ctx.Request.Path.StartsWithSegments("/health")) { await next(); return; }
-    var ip = ctx.Connection.RemoteIpAddress?.ToString();
+    var ip = ctx.Connection.RemoteIpAddress is { } ra ? SARIFF.Infrastructure.Services.IpAccess.Normalize(ra.ToString()) : null;
     string? refusal = null;
     try
     {

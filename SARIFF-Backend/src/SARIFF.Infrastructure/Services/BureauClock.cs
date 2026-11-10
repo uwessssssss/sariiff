@@ -28,8 +28,15 @@ public static class BureauClock
         _ => DateTime.SpecifyKind(t, DateTimeKind.Utc), // stored values are UTC
     };
 
+    // Shift by the offset without ever leaving DateTime's range (year 1 … 9999). Omitted
+    // [FromQuery] dates arrive as 0001-01-01; "minus 3 hours" of that used to throw
+    // "un-representable DateTime" and turn whole statements and reports into a 400.
+    private static readonly long MaxShiftable = DateTime.MaxValue.Ticks - TimeSpan.TicksPerDay * 2; // room for AddDays(1)
+    private static DateTime Shift(DateTime t, long deltaTicks, DateTimeKind kind) =>
+        new(Math.Clamp(t.Ticks + deltaTicks, 0, MaxShiftable), kind);
+
     /// <summary>A stored (UTC) time as the bureau's wall-clock time, for text: SMS, receipts, CSV.</summary>
-    public static DateTime ToLocal(DateTime utc) => DateTime.SpecifyKind(AsUtc(utc) + Offset, DateTimeKind.Unspecified);
+    public static DateTime ToLocal(DateTime utc) => Shift(AsUtc(utc), Offset.Ticks, DateTimeKind.Unspecified);
 
     public static DateTime LocalNow => ToLocal(DateTime.UtcNow);
 
@@ -38,7 +45,7 @@ public static class BureauClock
 
     /// <summary>The UTC instant at which a local calendar day starts (00:00 EAT = 21:00 UTC the day before).</summary>
     public static DateTime DayStartUtc(DateTime localDate) =>
-        DateTime.SpecifyKind(localDate.Date - Offset, DateTimeKind.Utc);
+        Shift(localDate.Date, -Offset.Ticks, DateTimeKind.Utc);
 
     public static DateTime TodayStartUtc => DayStartUtc(TodayLocal);
 
@@ -53,8 +60,11 @@ public static class BureauClock
     /// </summary>
     public static (DateTime? From, DateTime? ToExclusive) Range(DateTime? from, DateTime? to)
     {
+        // An omitted date (0001-01-01) or the far end of the calendar means "no limit".
+        if (from is { } x && (x.Year <= 1 || x.Year >= 9999)) from = null;
+        if (to is { } y && (y.Year <= 1 || y.Year >= 9999)) to = null;
         DateTime? f = from is { } a ? (IsDateOnly(a) ? DayStartUtc(a) : AsUtc(a)) : null;
-        DateTime? t = to is { } b ? (IsDateOnly(b) ? DayStartUtc(b).AddDays(1) : AsUtc(b).AddTicks(1)) : null;
+        DateTime? t = to is { } b ? (IsDateOnly(b) ? DayStartUtc(b).AddDays(1) : Shift(AsUtc(b), 1, DateTimeKind.Utc)) : null;
         return (f, t);
     }
 

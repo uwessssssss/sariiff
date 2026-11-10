@@ -315,6 +315,9 @@ const getHealthColor = (status: string) => {
 
 // ==================== TAB CONFIG ====================
 
+// Older rows hold IPv4 addresses as seen through an IPv6 socket ("::ffff:1.2.3.4"); show "1.2.3.4".
+const showIp = (ip?: string | null) => (ip || "").replace(/^::ffff:/i, "");
+
 const TABS: { id: TabId; label: string; icon: any; color: string }[] = [
   {
     id: "overview",
@@ -851,7 +854,7 @@ export function SuperAdminDashboard({
     const res = await api.recordPayment({
       companyId: formData.companyId,
       amount: parseFloat(formData.amount),
-      currency: formData.currency || "KES",
+      currency: PLATFORM_CURRENCY,
       paymentMethod: formData.paymentMethod || "M-Pesa",
       reference: formData.reference,
       notes: formData.notes,
@@ -952,14 +955,14 @@ export function SuperAdminDashboard({
         }}
         title={compact ? tab.label : undefined}
         aria-current={active ? "page" : undefined}
-        className={`flex h-10 w-full items-center gap-3 rounded-lg text-[14px] font-medium ${
+        className={`flex h-10 w-full items-center gap-3 rounded-lg text-sm font-medium ${
           compact ? "justify-center" : "px-3"
         } ${active ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}
       >
-        <tab.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-blue-700" : ""}`} />
+        <tab.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-blue-300" : ""}`} />
         {!compact && <span className="truncate">{tab.label}</span>}
         {!compact && tab.id === "security" && (dashboard?.securityAlertsActive ?? 0) > 0 && (
-          <span className="ml-auto rounded-full bg-red-500 px-1.5 text-[11px] font-semibold text-white">
+          <span className="ml-auto rounded-full bg-red-600 px-1.5 text-xs font-semibold text-white">
             {dashboard?.securityAlertsActive}
           </span>
         )}
@@ -973,8 +976,8 @@ export function SuperAdminDashboard({
         <SarifMark size={32} className="shrink-0 rounded-[7px] ring-1 ring-white/15" />
         {!compact && (
           <div className="min-w-0 flex-1">
-            <div className="text-[16px] font-semibold leading-tight text-white">Sarif</div>
-            <div className="text-[12px] text-slate-400">Platform admin</div>
+            <div className="text-base font-semibold leading-tight text-white">Sarif</div>
+            <div className="text-xs text-slate-400">Platform admin</div>
           </div>
         )}
         {onClose && (
@@ -988,13 +991,13 @@ export function SuperAdminDashboard({
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className={`flex items-center gap-3 ${compact ? "flex-col" : "px-2"}`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[13px] font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-white">
             {(userName || "A").trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
           </div>
           {!compact && (
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[14px] font-medium text-white">{userName}</div>
-              <div className="text-[12px] text-slate-400">Super admin</div>
+              <div className="truncate text-sm font-medium text-white">{userName}</div>
+              <div className="text-xs text-slate-400">Super admin</div>
             </div>
           )}
           <button
@@ -1038,9 +1041,9 @@ export function SuperAdminDashboard({
             <Menu className="h-5 w-5" />
           </button>
           <SarifMark size={26} />
-          <span className="text-[16px] font-semibold text-slate-900">Sarif admin</span>
+          <span className="text-base font-semibold text-slate-900">Sarif admin</span>
         </div>
-        <span className="text-[13px] text-slate-500">{activeLabel}</span>
+        <span className="text-sm text-slate-500">{activeLabel}</span>
       </header>
 
       {/* Mobile drawer */}
@@ -1063,7 +1066,7 @@ export function SuperAdminDashboard({
         <main className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {loading ? (
             <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+              <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
             </div>
           ) : (
             <AnimatePresence mode="wait">
@@ -1114,8 +1117,8 @@ export function SuperAdminDashboard({
                     <div className="space-y-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                          <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Overview</h1>
-                          <p className="mt-1 text-[14px] text-slate-500">
+                          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Overview</h1>
+                          <p className="mt-1 text-sm text-slate-500">
                             {dashboard.totalCompanies} bureaus
                             {byBase.length > 0 &&
                               ` · ${byBase.map((b) => `${b.count} ${b.currency === 2 ? "in Uganda (UGX)" : b.currency === 0 ? "in Kenya (KES)" : codeOf(b.currency)}`).join(", ")}`}
@@ -1124,7 +1127,7 @@ export function SuperAdminDashboard({
                         <button
                           onClick={refreshAll}
                           disabled={refreshing}
-                          className="inline-flex h-10 items-center gap-2 self-start rounded-lg border border-slate-300 bg-white px-3.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:self-auto"
+                          className="inline-flex h-10 items-center gap-2 self-start rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 sm:self-auto"
                         >
                           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                           Refresh
@@ -1165,15 +1168,15 @@ export function SuperAdminDashboard({
                         {/* Volume per currency — amounts in different currencies are never added */}
                         <section className="rounded-xl border border-slate-200 bg-white">
                           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                            <h2 className="text-[16px] font-semibold text-slate-900">Volume by currency</h2>
-                            <span className="text-[13px] text-slate-500">All bureaus</span>
+                            <h2 className="text-base font-semibold text-slate-900">Volume by currency</h2>
+                            <span className="text-sm text-slate-500">All bureaus</span>
                           </div>
                           {monthly.length === 0 && total.length === 0 ? (
-                            <p className="px-5 py-8 text-center text-[14px] text-slate-500">No transactions yet.</p>
+                            <p className="px-5 py-8 text-center text-sm text-slate-500">No transactions yet.</p>
                           ) : (
-                            <table className="w-full text-[14px]">
+                            <table className="w-full text-sm">
                               <thead>
-                                <tr className="border-b border-slate-100 text-left text-[13px] text-slate-500">
+                                <tr className="border-b border-slate-100 text-left text-sm text-slate-500">
                                   <th className="px-5 py-2.5 font-medium">Currency</th>
                                   <th className="px-5 py-2.5 text-right font-medium">This month</th>
                                   <th className="px-5 py-2.5 text-right font-medium">All time</th>
@@ -1199,9 +1202,9 @@ export function SuperAdminDashboard({
                         {/* Bureau status + system */}
                         <section className="rounded-xl border border-slate-200 bg-white p-5">
                           <div className="flex items-center justify-between">
-                            <h2 className="text-[16px] font-semibold text-slate-900">Bureau status</h2>
+                            <h2 className="text-base font-semibold text-slate-900">Bureau status</h2>
                             <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[12px] font-medium ${
+                              className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
                                 dashboard.systemStatus === "Healthy" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"
                               }`}
                               title={`${dashboard.errorsLast24h} errors in the last 24 hours`}
@@ -1213,7 +1216,7 @@ export function SuperAdminDashboard({
                           <div className="mt-4 space-y-3">
                             {statusRows.map((r) => (
                               <div key={r.label}>
-                                <div className="flex items-center justify-between text-[14px]">
+                                <div className="flex items-center justify-between text-sm">
                                   <span className="flex items-center gap-2 text-slate-700">
                                     <span className={`h-2 w-2 rounded-full ${r.dot}`} />
                                     {r.label}
@@ -1226,14 +1229,14 @@ export function SuperAdminDashboard({
                               </div>
                             ))}
                           </div>
-                          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-[13px]">
+                          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm">
                             <button onClick={() => setActiveTab("system")} className="rounded-lg bg-slate-50 px-3 py-2 text-left hover:bg-slate-100">
                               <div className="text-slate-500">Errors (24h)</div>
-                              <div className="text-[18px] font-semibold text-slate-900">{dashboard.errorsLast24h}</div>
+                              <div className="text-lg font-semibold text-slate-900">{dashboard.errorsLast24h}</div>
                             </button>
                             <button onClick={() => setActiveTab("security")} className="rounded-lg bg-slate-50 px-3 py-2 text-left hover:bg-slate-100">
                               <div className="text-slate-500">Open security alerts</div>
-                              <div className={`text-[18px] font-semibold ${dashboard.securityAlertsActive ? "text-red-600" : "text-slate-900"}`}>
+                              <div className={`text-lg font-semibold ${dashboard.securityAlertsActive ? "text-red-600" : "text-slate-900"}`}>
                                 {dashboard.securityAlertsActive}
                               </div>
                             </button>
@@ -1245,11 +1248,11 @@ export function SuperAdminDashboard({
                         {/* Most active bureaus (ranked by transactions — comparable across currencies) */}
                         <section className="rounded-xl border border-slate-200 bg-white">
                           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                            <h2 className="text-[16px] font-semibold text-slate-900">Most active bureaus</h2>
-                            <span className="text-[13px] text-slate-500">By transactions</span>
+                            <h2 className="text-base font-semibold text-slate-900">Most active bureaus</h2>
+                            <span className="text-sm text-slate-500">By transactions</span>
                           </div>
                           {active.length === 0 ? (
-                            <p className="px-5 py-8 text-center text-[14px] text-slate-500">No activity yet.</p>
+                            <p className="px-5 py-8 text-center text-sm text-slate-500">No activity yet.</p>
                           ) : (
                             <ul className="divide-y divide-slate-100">
                               {active.map((c, i) => (
@@ -1258,25 +1261,25 @@ export function SuperAdminDashboard({
                                     onClick={() => viewCompanyDetails(c.id)}
                                     className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-slate-50"
                                   >
-                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[13px] font-semibold text-slate-600">
+                                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-sm font-semibold text-slate-600">
                                       {i + 1}
                                     </span>
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="truncate text-[14px] font-medium text-slate-900">{c.name}</span>
-                                        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                                        <span className="truncate text-sm font-medium text-slate-900">{c.name}</span>
+                                        <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">
                                           {codeOf(c.baseCurrency)}
                                         </span>
                                       </div>
-                                      <div className="truncate text-[13px] text-slate-500">
+                                      <div className="truncate text-sm text-slate-500">
                                         {(c.volumeByCurrency || []).map((v) => compactMoney(v.amount, v.currencyCode || codeOf(v.currency))).join(" · ") || "—"}
                                       </div>
                                     </div>
                                     <span className="shrink-0 text-right">
-                                      <span className="block text-[14px] font-semibold tabular-nums text-slate-900">
+                                      <span className="block text-sm font-semibold tabular-nums text-slate-900">
                                         {formatNumber(c.transactionCount ?? c.value)}
                                       </span>
-                                      <span className="block text-[12px] text-slate-500">transactions</span>
+                                      <span className="block text-xs text-slate-500">transactions</span>
                                     </span>
                                   </button>
                                 </li>
@@ -1288,11 +1291,11 @@ export function SuperAdminDashboard({
                         {/* Subscriptions needing attention: expired first, then due soon */}
                         <section className="rounded-xl border border-slate-200 bg-white">
                           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                            <h2 className="text-[16px] font-semibold text-slate-900">Subscriptions to follow up</h2>
-                            <span className="text-[13px] text-slate-500">Next 30 days</span>
+                            <h2 className="text-base font-semibold text-slate-900">Subscriptions to follow up</h2>
+                            <span className="text-sm text-slate-500">Next 30 days</span>
                           </div>
                           {dashboard.expiringSubscriptions.length === 0 ? (
-                            <p className="px-5 py-8 text-center text-[14px] text-slate-500">Nothing due in the next 30 days.</p>
+                            <p className="px-5 py-8 text-center text-sm text-slate-500">Nothing due in the next 30 days.</p>
                           ) : (
                             <ul className="divide-y divide-slate-100">
                               {dashboard.expiringSubscriptions.map((c) => {
@@ -1302,8 +1305,8 @@ export function SuperAdminDashboard({
                                 return (
                                   <li key={c.id} className="flex items-center gap-3 px-5 py-3">
                                     <div className="min-w-0 flex-1">
-                                      <div className="truncate text-[14px] font-medium text-slate-900">{c.name}</div>
-                                      <div className={`text-[13px] ${overdue ? "text-red-600" : days <= 7 ? "text-amber-700" : "text-slate-500"}`}>
+                                      <div className="truncate text-sm font-medium text-slate-900">{c.name}</div>
+                                      <div className={`text-sm ${overdue ? "text-red-600" : days <= 7 ? "text-amber-700" : "text-slate-500"}`}>
                                         {overdue
                                           ? `Expired ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"} ago`
                                           : days === 0
@@ -1322,7 +1325,7 @@ export function SuperAdminDashboard({
                                           monthlyFee: c.monthlyFee,
                                         });
                                       }}
-                                      className="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                                      className="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                                     >
                                       Renew
                                     </button>
@@ -1337,8 +1340,8 @@ export function SuperAdminDashboard({
                       {/* Recent signups */}
                       <section className="rounded-xl border border-slate-200 bg-white">
                         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                          <h2 className="text-[16px] font-semibold text-slate-900">Newest bureaus</h2>
-                          <button onClick={() => setActiveTab("companies")} className="text-[13px] font-medium text-blue-700 hover:underline">
+                          <h2 className="text-base font-semibold text-slate-900">Newest bureaus</h2>
+                          <button onClick={() => setActiveTab("companies")} className="text-sm font-medium text-blue-700 hover:underline">
                             All bureaus
                           </button>
                         </div>
@@ -1348,16 +1351,16 @@ export function SuperAdminDashboard({
                               <button onClick={() => viewCompanyDetails(c.id)} className="flex w-full items-center gap-3 px-5 py-3 text-left hover:bg-slate-50">
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="truncate text-[14px] font-medium text-slate-900">{c.name}</span>
-                                    <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${getStatusColor(c.subscriptionStatus)}`}>
+                                    <span className="truncate text-sm font-medium text-slate-900">{c.name}</span>
+                                    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(c.subscriptionStatus)}`}>
                                       {c.subscriptionStatus}
                                     </span>
                                   </div>
-                                  <div className="text-[13px] text-slate-500">
+                                  <div className="text-sm text-slate-500">
                                     {c.code} · {c.ownerName} · {codeOf(c.baseCurrency)}
                                   </div>
                                 </div>
-                                <span className="shrink-0 text-[13px] text-slate-500">Joined {formatDate(c.createdAt)}</span>
+                                <span className="shrink-0 text-sm text-slate-500">Joined {formatDate(c.createdAt)}</span>
                               </button>
                             </li>
                           ))}
@@ -1379,12 +1382,12 @@ export function SuperAdminDashboard({
                     <div className="space-y-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                          <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Bureaus</h1>
-                          <p className="mt-1 text-[14px] text-slate-500">{total} registered on Sarif</p>
+                          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Bureaus</h1>
+                          <p className="mt-1 text-sm text-slate-500">{total} registered on Sarif</p>
                         </div>
                         <button
                           onClick={() => openModal("createCompany")}
-                          className="inline-flex h-10 items-center gap-2 self-start rounded-lg bg-blue-600 px-4 text-[14px] font-semibold text-white hover:bg-blue-700 sm:self-auto"
+                          className="inline-flex h-10 items-center gap-2 self-start rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 sm:self-auto"
                         >
                           <Plus className="h-4 w-4" /> Add bureau
                         </button>
@@ -1392,7 +1395,7 @@ export function SuperAdminDashboard({
 
                       <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-3 sm:flex-row sm:items-center">
                         <div className="relative flex-1">
-                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                           <input
                             type="text"
                             placeholder="Search by name, code or owner"
@@ -1401,7 +1404,7 @@ export function SuperAdminDashboard({
                               setSearchTerm(e.target.value);
                               setCompaniesPage(1);
                             }}
-                            className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-[14px] text-slate-900 placeholder-slate-400 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+                            className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-500 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
                           />
                         </div>
                         <select
@@ -1411,7 +1414,7 @@ export function SuperAdminDashboard({
                             setCompaniesPage(1);
                           }}
                           aria-label="Subscription status"
-                          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-[14px] text-slate-700 outline-none focus:border-blue-600"
+                          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-600"
                         >
                           <option value="all">All statuses</option>
                           <option value="active">Active</option>
@@ -1423,7 +1426,7 @@ export function SuperAdminDashboard({
                           value={baseFilter}
                           onChange={(e: any) => setBaseFilter(e.target.value)}
                           aria-label="Home currency"
-                          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-[14px] text-slate-700 outline-none focus:border-blue-600"
+                          className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-600"
                         >
                           <option value="all">All countries</option>
                           <option value="0">Kenya (KES)</option>
@@ -1433,9 +1436,9 @@ export function SuperAdminDashboard({
 
                       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                         <div className="overflow-x-auto">
-                          <table className="w-full min-w-[920px] text-[14px]">
+                          <table className="w-full min-w-[920px] text-sm">
                             <thead>
-                              <tr className="border-b border-slate-200 bg-slate-50 text-left text-[13px] text-slate-500">
+                              <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm text-slate-500">
                                 <th className="px-5 py-3 font-medium">Bureau</th>
                                 <th className="px-3 py-3 font-medium">Home</th>
                                 <th className="px-3 py-3 font-medium">Subscription</th>
@@ -1467,41 +1470,41 @@ export function SuperAdminDashboard({
                                   >
                                     <td className="px-5 py-3.5">
                                       <div className="font-medium text-slate-900">{c.name}</div>
-                                      <div className="text-[13px] text-slate-500">
+                                      <div className="text-sm text-slate-500">
                                         {c.code} · {c.ownerName}
                                       </div>
                                     </td>
                                     <td className="px-3 py-3.5">
-                                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px] font-medium text-slate-700">
+                                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">
                                         {codeOf(c.baseCurrency)}
                                       </span>
                                     </td>
                                     <td className="px-3 py-3.5">
                                       <div className="flex items-center gap-2">
-                                        <span className={`rounded-full border px-2 py-0.5 text-[12px] font-medium ${getStatusColor(c.subscriptionStatus)}`}>
+                                        <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${getStatusColor(c.subscriptionStatus)}`}>
                                           {c.subscriptionStatus}
                                         </span>
-                                        <span className="text-[13px] text-slate-600">{c.subscriptionPlan}</span>
+                                        <span className="text-sm text-slate-600">{c.subscriptionPlan}</span>
                                       </div>
                                       {days !== null && (
-                                        <div className={`mt-1 text-[12px] ${days < 0 ? "text-red-600" : days <= 7 ? "text-amber-700" : "text-slate-500"}`}>
+                                        <div className={`mt-1 text-xs ${days < 0 ? "text-red-600" : days <= 7 ? "text-amber-700" : "text-slate-500"}`}>
                                           {days < 0 ? `Expired ${Math.abs(days)}d ago` : days === 0 ? "Expires today" : `Renews in ${days}d`}
                                         </div>
                                       )}
                                     </td>
                                     <td className="px-3 py-3.5 text-right tabular-nums">
                                       <div className="text-slate-900">{formatNumber(c.totalClients)}</div>
-                                      <div className="text-[12px] text-slate-500">{c.activeClients} active</div>
+                                      <div className="text-xs text-slate-500">{c.activeClients} active</div>
                                     </td>
                                     <td className="px-3 py-3.5">
                                       <div className="tabular-nums text-slate-900">{formatNumber(c.monthlyTransactions)} transactions</div>
-                                      <div className="text-[12px] text-slate-500">
+                                      <div className="text-xs text-slate-500">
                                         {vols.length ? vols.map((v) => compactMoney(v.amount, v.currencyCode || codeOf(v.currency))).join(" · ") : "No volume"}
                                       </div>
                                     </td>
                                     <td className="px-3 py-3.5 text-right tabular-nums">
                                       <div className="text-slate-900">{formatCurrency(c.monthlyFee, PLATFORM_CURRENCY)}/mo</div>
-                                      <div className="text-[12px] text-slate-500">{formatCurrency(c.totalPaid, PLATFORM_CURRENCY)} paid</div>
+                                      <div className="text-xs text-slate-500">{formatCurrency(c.totalPaid, PLATFORM_CURRENCY)} paid</div>
                                     </td>
                                     <td className="px-5 py-2.5" onClick={(e: any) => e.stopPropagation()}>
                                       <div className="flex items-center justify-end gap-0.5">
@@ -1565,7 +1568,7 @@ export function SuperAdminDashboard({
                           </table>
                         </div>
                         {total > 10 && (
-                          <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-[13px] text-slate-500">
+                          <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-sm text-slate-500">
                             <span>
                               {(companiesPage - 1) * 10 + 1}–{Math.min(companiesPage * 10, total)} of {total}
                             </span>
@@ -1599,8 +1602,8 @@ export function SuperAdminDashboard({
                 {activeTab === "security" && (
                   <div className="space-y-6">
                     <div>
-                      <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Security</h1>
-                      <p className="mt-1 text-[14px] text-slate-500">Sign-in failures, alerts and blocked addresses</p>
+                      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Security</h1>
+                      <p className="mt-1 text-sm text-slate-500">Sign-in failures, alerts and blocked addresses</p>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                       <StatCard
@@ -1621,7 +1624,7 @@ export function SuperAdminDashboard({
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <div className="rounded-xl bg-white border border-slate-200 p-6">
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-[16px] font-semibold text-slate-900">
+                          <h3 className="text-base font-semibold text-slate-900">
                             Alerts
                           </h3>
                           <select
@@ -1665,7 +1668,7 @@ export function SuperAdminDashboard({
                                     </p>
                                     <p className="text-slate-500 text-xs mt-1">
                                       {alert.ipAddress &&
-                                        `IP: ${alert.ipAddress} • `}
+                                        `IP: ${showIp(alert.ipAddress)} • `}
                                       {timeAgo(alert.createdAt)}
                                     </p>
                                   </div>
@@ -1675,7 +1678,7 @@ export function SuperAdminDashboard({
                                         setSelectedAlertId(alert.id);
                                         openModal("resolveAlert");
                                       }}
-                                      className="h-8 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                                      className="h-8 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                                     >
                                       Resolve
                                     </button>
@@ -1693,12 +1696,12 @@ export function SuperAdminDashboard({
                       <div className="space-y-6">
                         <div className="rounded-xl bg-white border border-slate-200 p-6">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[16px] font-semibold text-slate-900">
+                            <h3 className="text-base font-semibold text-slate-900">
                               Block an address
                             </h3>
                             <button
                               onClick={() => openModal("blockIP")}
-                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-red-700 hover:bg-red-50"
+                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-50"
                             >
                               <Ban className="w-4 h-4" /> Block an IP
                             </button>
@@ -1710,12 +1713,12 @@ export function SuperAdminDashboard({
                         </div>
                         <div className="rounded-xl bg-white border border-slate-200 p-6">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-[16px] font-semibold text-slate-900">
+                            <h3 className="text-base font-semibold text-slate-900">
                               Allowed IPs
                             </h3>
                             <button
                               onClick={() => openModal("addWhitelist")}
-                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                              className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                             >
                               <Plus className="w-4 h-4" /> Add IP
                             </button>
@@ -1729,7 +1732,7 @@ export function SuperAdminDashboard({
                                 >
                                   <div>
                                     <p className="text-slate-900 font-mono text-sm">
-                                      {ip.ipAddress}
+                                      {showIp(ip.ipAddress)}
                                     </p>
                                     <p className="text-slate-500 text-xs">
                                       {ip.description || "No description"}
@@ -1755,7 +1758,7 @@ export function SuperAdminDashboard({
                     {security?.recentFailedLogins &&
                       security.recentFailedLogins.length > 0 && (
                         <div className="rounded-xl bg-white border border-slate-200 p-6">
-                          <h3 className="mb-4 text-[16px] font-semibold text-slate-900">
+                          <h3 className="mb-4 text-base font-semibold text-slate-900">
                             Recent failed sign-ins
                           </h3>
                           <div className="overflow-x-auto max-w-full">
@@ -1793,7 +1796,7 @@ export function SuperAdminDashboard({
                                           "Unknown"}
                                       </td>
                                       <td className="px-4 py-3 text-slate-500 text-sm font-mono">
-                                        {login.ipAddress}
+                                        {showIp(login.ipAddress)}
                                       </td>
                                       <td className="px-4 py-3 text-red-700 text-sm">
                                         {login.failureReason ||
@@ -1823,21 +1826,21 @@ export function SuperAdminDashboard({
                     <div className="space-y-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                          <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Financial</h1>
-                          <p className="mt-1 text-[14px] text-slate-500">
+                          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Financial</h1>
+                          <p className="mt-1 text-sm text-slate-500">
                             Subscription revenue is in {PLATFORM_CURRENCY}. Bureau volume is shown per currency.
                           </p>
                         </div>
                         <button
                           onClick={() => openModal("recordPayment")}
-                          className="inline-flex h-10 items-center gap-2 self-start rounded-lg bg-blue-600 px-4 text-[14px] font-semibold text-white hover:bg-blue-700 sm:self-auto"
+                          className="inline-flex h-10 items-center gap-2 self-start rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 sm:self-auto"
                         >
                           <Plus className="h-4 w-4" /> Record payment
                         </button>
                       </div>
 
                       {!f ? (
-                        <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-[14px] text-slate-500">
+                        <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center text-sm text-slate-500">
                           Couldn&apos;t load financial data. Try Refresh.
                         </div>
                       ) : (
@@ -1856,11 +1859,11 @@ export function SuperAdminDashboard({
 
                           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                             <section className="rounded-xl border border-slate-200 bg-white p-5">
-                              <h2 className="text-[16px] font-semibold text-slate-900">Revenue by plan</h2>
+                              <h2 className="text-base font-semibold text-slate-900">Revenue by plan</h2>
                               <div className="mt-4 space-y-4">
                                 {plans.map((p) => (
                                   <div key={p.plan}>
-                                    <div className="flex items-baseline justify-between gap-3 text-[14px]">
+                                    <div className="flex items-baseline justify-between gap-3 text-sm">
                                       <span className="font-medium text-slate-900">
                                         {p.plan}{" "}
                                         <span className="font-normal text-slate-500">
@@ -1879,14 +1882,14 @@ export function SuperAdminDashboard({
 
                             <section className="rounded-xl border border-slate-200 bg-white">
                               <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                                <h2 className="text-[16px] font-semibold text-slate-900">Bureau volume by currency</h2>
-                                <span className="text-[13px] text-slate-500">
+                                <h2 className="text-base font-semibold text-slate-900">Bureau volume by currency</h2>
+                                <span className="text-sm text-slate-500">
                                   {(f.transactionsByType ?? []).reduce((n, t) => n + t.count, 0).toLocaleString()} transactions
                                 </span>
                               </div>
-                              <table className="w-full text-[14px]">
+                              <table className="w-full text-sm">
                                 <thead>
-                                  <tr className="border-b border-slate-100 text-left text-[13px] text-slate-500">
+                                  <tr className="border-b border-slate-100 text-left text-sm text-slate-500">
                                     <th className="px-5 py-2.5 font-medium">Currency</th>
                                     <th className="px-5 py-2.5 text-right font-medium">This month</th>
                                     <th className="px-5 py-2.5 text-right font-medium">All time</th>
@@ -1917,7 +1920,7 @@ export function SuperAdminDashboard({
                                 </tbody>
                               </table>
                               {(f.transactionsByType ?? []).length > 0 && (
-                                <div className="flex gap-6 border-t border-slate-100 px-5 py-3 text-[13px] text-slate-500">
+                                <div className="flex gap-6 border-t border-slate-100 px-5 py-3 text-sm text-slate-500">
                                   {f.transactionsByType.map((t) => (
                                     <span key={t.type}>
                                       {t.type}: <span className="font-medium tabular-nums text-slate-900">{t.count.toLocaleString()}</span>
@@ -1933,8 +1936,8 @@ export function SuperAdminDashboard({
                       {followUps.length > 0 && (
                         <section className="rounded-xl border border-slate-200 bg-white">
                           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                            <h2 className="text-[16px] font-semibold text-slate-900">Subscriptions to follow up</h2>
-                            <span className="text-[13px] text-slate-500">Overdue first</span>
+                            <h2 className="text-base font-semibold text-slate-900">Subscriptions to follow up</h2>
+                            <span className="text-sm text-slate-500">Overdue first</span>
                           </div>
                           <ul className="divide-y divide-slate-100">
                             {followUps.map((c) => {
@@ -1943,8 +1946,8 @@ export function SuperAdminDashboard({
                               return (
                                 <li key={c.id} className="flex items-center gap-3 px-5 py-3">
                                   <div className="min-w-0 flex-1">
-                                    <div className="truncate text-[14px] font-medium text-slate-900">{c.name}</div>
-                                    <div className={`text-[13px] ${days < 0 ? "text-red-600" : days <= 7 ? "text-amber-700" : "text-slate-500"}`}>
+                                    <div className="truncate text-sm font-medium text-slate-900">{c.name}</div>
+                                    <div className={`text-sm ${days < 0 ? "text-red-600" : days <= 7 ? "text-amber-700" : "text-slate-500"}`}>
                                       {days < 0 ? `Expired ${Math.abs(days)} days ago` : days === 0 ? "Expires today" : `Expires in ${days} days`}
                                       {" · "}
                                       {formatCurrency(c.monthlyFee || 0, PLATFORM_CURRENCY)}/mo
@@ -1955,7 +1958,7 @@ export function SuperAdminDashboard({
                                       setFormData({ ...formData, companyId: c.id, amount: String(c.monthlyFee || "") });
                                       openModal("recordPayment");
                                     }}
-                                    className="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 hover:bg-slate-50"
+                                    className="h-9 shrink-0 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                                   >
                                     Record payment
                                   </button>
@@ -1968,12 +1971,12 @@ export function SuperAdminDashboard({
 
                       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                         <div className="border-b border-slate-200 px-5 py-4">
-                          <h2 className="text-[16px] font-semibold text-slate-900">Recent payments</h2>
+                          <h2 className="text-base font-semibold text-slate-900">Recent payments</h2>
                         </div>
                         <div className="overflow-x-auto">
-                          <table className="w-full min-w-[640px] text-[14px]">
+                          <table className="w-full min-w-[640px] text-sm">
                             <thead>
-                              <tr className="border-b border-slate-200 bg-slate-50 text-left text-[13px] text-slate-500">
+                              <tr className="border-b border-slate-200 bg-slate-50 text-left text-sm text-slate-500">
                                 <th className="px-5 py-2.5 font-medium">Date</th>
                                 <th className="px-3 py-2.5 font-medium">Bureau</th>
                                 <th className="px-3 py-2.5 font-medium">Method</th>
@@ -1995,13 +1998,13 @@ export function SuperAdminDashboard({
                                   <td className="whitespace-nowrap px-5 py-3 text-slate-700">{p.paidAt ? formatDate(p.paidAt) : "—"}</td>
                                   <td className="px-3 py-3 text-slate-900">{p.companyName}</td>
                                   <td className="px-3 py-3 text-slate-600">{p.paymentMethod}</td>
-                                  <td className="px-3 py-3 font-mono text-[13px] text-slate-500">{p.reference || "—"}</td>
+                                  <td className="px-3 py-3 font-mono text-sm text-slate-500">{p.reference || "—"}</td>
                                   <td className="whitespace-nowrap px-3 py-3 text-right font-medium tabular-nums text-slate-900">
                                     {formatCurrency(p.amount, p.currency || PLATFORM_CURRENCY)}
                                   </td>
                                   <td className="px-5 py-3">
                                     <span
-                                      className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${
+                                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                         p.status === "Completed" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"
                                       }`}
                                     >
@@ -2022,15 +2025,15 @@ export function SuperAdminDashboard({
                 {activeTab === "analytics" && (
                   <div className="space-y-6">
                     <div>
-                      <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Analytics</h1>
-                      <p className="mt-1 text-[14px] text-slate-500">How bureaus and their clients use Sarif</p>
+                      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Analytics</h1>
+                      <p className="mt-1 text-sm text-slate-500">How bureaus and their clients use Sarif</p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="rounded-xl bg-white border border-slate-200 p-6">
                         <p className="text-slate-500 text-sm mb-1">
                           Daily active users
                         </p>
-                        <p className="text-[26px] font-semibold text-slate-900 tracking-tight">
+                        <p className="text-2xl font-semibold text-slate-900 tracking-tight">
                           {formatNumber(analytics?.dailyActiveUsers || 0)}
                         </p>
                       </div>
@@ -2038,7 +2041,7 @@ export function SuperAdminDashboard({
                         <p className="text-slate-500 text-sm mb-1">
                           Weekly active users
                         </p>
-                        <p className="text-[26px] font-semibold text-slate-900 tracking-tight">
+                        <p className="text-2xl font-semibold text-slate-900 tracking-tight">
                           {formatNumber(analytics?.weeklyActiveUsers || 0)}
                         </p>
                       </div>
@@ -2046,7 +2049,7 @@ export function SuperAdminDashboard({
                         <p className="text-slate-500 text-sm mb-1">
                           Monthly active users
                         </p>
-                        <p className="text-[26px] font-semibold text-slate-900 tracking-tight">
+                        <p className="text-2xl font-semibold text-slate-900 tracking-tight">
                           {formatNumber(analytics?.monthlyActiveUsers || 0)}
                         </p>
                       </div>
@@ -2054,7 +2057,7 @@ export function SuperAdminDashboard({
                         <p className="text-slate-500 text-sm mb-1">
                           Avg. session
                         </p>
-                        <p className="text-[26px] font-semibold text-slate-900 tracking-tight">
+                        <p className="text-2xl font-semibold text-slate-900 tracking-tight">
                           {Math.floor(
                             (analytics?.avgSessionDurationSeconds || 0) / 60,
                           )}
@@ -2063,7 +2066,7 @@ export function SuperAdminDashboard({
                       </div>
                     </div>
                     <div className="rounded-xl bg-white border border-slate-200 p-6">
-                      <h3 className="mb-4 text-[16px] font-semibold text-slate-900">
+                      <h3 className="mb-4 text-base font-semibold text-slate-900">
                         Feature usage
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -2101,17 +2104,17 @@ export function SuperAdminDashboard({
                           return (
                             <section key={chart.title} className="rounded-xl border border-slate-200 bg-white p-5">
                               <div className="flex items-baseline justify-between gap-2">
-                                <h3 className="text-[14px] font-medium text-slate-500">{chart.title}</h3>
+                                <h3 className="text-sm font-medium text-slate-500">{chart.title}</h3>
                                 {prev > 0 && (
-                                  <span className={`text-[12px] font-medium ${change >= 0 ? "text-emerald-700" : "text-red-700"}`}>
+                                  <span className={`text-xs font-medium ${change >= 0 ? "text-emerald-700" : "text-red-700"}`}>
                                     {change >= 0 ? "+" : ""}
                                     {change.toFixed(1)}% vs last month
                                   </span>
                                 )}
                               </div>
-                              <div className="mt-1 text-[22px] font-semibold tabular-nums text-slate-900">{chart.fmt(last)}</div>
+                              <div className="mt-1 text-xl font-semibold tabular-nums text-slate-900">{chart.fmt(last)}</div>
                               {chart.data.length === 0 ? (
-                                <p className="mt-4 text-[13px] text-slate-500">No history yet.</p>
+                                <p className="mt-4 text-sm text-slate-500">No history yet.</p>
                               ) : (
                                 <div className="mt-4 flex h-28 items-end gap-2" role="img" aria-label={`${chart.title} over the last ${chart.data.length} months`}>
                                   {chart.data.map((d, i) => (
@@ -2121,7 +2124,7 @@ export function SuperAdminDashboard({
                                         style={{ height: `${Math.max(4, (d.value / max) * 96)}px` }}
                                         title={`${d.period}: ${chart.fmt(d.value)}`}
                                       />
-                                      <span className="text-[11px] text-slate-500">{d.period}</span>
+                                      <span className="text-xs text-slate-500">{d.period}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -2139,12 +2142,12 @@ export function SuperAdminDashboard({
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Audit log</h1>
-                        <p className="mt-1 text-[14px] text-slate-500">Who changed what, and every sign-in</p>
+                        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Audit log</h1>
+                        <p className="mt-1 text-sm text-slate-500">Who changed what, and every sign-in</p>
                       </div>
                       <button
                         onClick={handleExportAuditLogs}
-                        className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
+                        className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                       >
                         <Download className="w-4 h-4" /> Export CSV
                       </button>
@@ -2214,7 +2217,7 @@ export function SuperAdminDashboard({
                                           ? "bg-blue-50 text-blue-700"
                                           : log.action === "Delete"
                                             ? "bg-red-50 text-red-700"
-                                            : "bg-slate-500/20 text-slate-500"
+                                            : "bg-slate-500/20 text-slate-600"
                                     }`}
                                   >
                                     {log.action}
@@ -2259,7 +2262,7 @@ export function SuperAdminDashboard({
                       )}
                     </div>
                     <div className="rounded-xl bg-white border border-slate-200 p-6">
-                      <h3 className="mb-4 text-[16px] font-semibold text-slate-900">
+                      <h3 className="mb-4 text-base font-semibold text-slate-900">
                         Sign-in history
                       </h3>
                       <div className="space-y-2">
@@ -2282,7 +2285,7 @@ export function SuperAdminDashboard({
                                 </p>
                                 <p className="text-slate-500 text-xs">
                                   {login.userRole === "OfficeUser" ? "Office" : login.userRole === "SuperAdmin" ? "Super admin" : login.userRole}
-                                  {login.companyName ? ` · ${login.companyName}` : ""} · {login.ipAddress}
+                                  {login.companyName ? ` · ${login.companyName}` : ""} · {showIp(login.ipAddress)}
                                   {!login.isSuccessful && login.failureReason ? (
                                     <span className="text-red-600"> · {login.failureReason}</span>
                                   ) : null}
@@ -2303,8 +2306,8 @@ export function SuperAdminDashboard({
                 {activeTab === "system" && (
                   <div className="space-y-6">
                     <div>
-                      <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">System</h1>
-                      <p className="mt-1 text-[14px] text-slate-500">API, database and server health, plus recent logs</p>
+                      <h1 className="text-2xl font-semibold tracking-tight text-slate-900">System</h1>
+                      <p className="mt-1 text-sm text-slate-500">API, database and server health, plus recent logs</p>
                     </div>
                     <div className="rounded-xl bg-white border border-slate-200 p-6">
                       <div className="flex items-center gap-4 mb-6">
@@ -2483,7 +2486,7 @@ export function SuperAdminDashboard({
                     </div>
                     <div className="rounded-xl bg-white border border-slate-200 p-6">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-[16px] font-semibold text-slate-900">
+                        <h3 className="text-base font-semibold text-slate-900">
                           Recent logs
                         </h3>
                         <div className="flex items-center gap-3">
@@ -2520,7 +2523,7 @@ export function SuperAdminDashboard({
                             <div key={log.id} className={`rounded-lg border border-slate-200 p-3 ${log.resolvedAt ? "bg-slate-50" : "bg-white"}`}>
                               <div className="flex items-start gap-3">
                                 <span
-                                  className={`shrink-0 rounded-full px-2 py-0.5 text-[12px] font-medium ${log.resolvedAt ? "bg-emerald-50 text-emerald-700" : getLogLevelColor(log.level)}`}
+                                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${log.resolvedAt ? "bg-emerald-50 text-emerald-700" : getLogLevelColor(log.level)}`}
                                 >
                                   {log.resolvedAt ? "Resolved" : log.level}
                                 </span>
@@ -2578,7 +2581,7 @@ export function SuperAdminDashboard({
                   <p className="font-medium text-slate-900">
                     Log out of the platform console?
                   </p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-600">
                     You'll need to sign in again to manage bureaus.
                   </p>
                 </div>
@@ -2718,16 +2721,16 @@ export function SuperAdminDashboard({
                           <td className="py-2.5 pl-4 pr-3 whitespace-nowrap font-medium text-slate-900">
                             {h.code}
                             {h.isBase && (
-                              <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">home</span>
+                              <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">home</span>
                             )}
                           </td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-slate-700">{formatCurrency(h.cash, h.code)}</td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-slate-700">{formatCurrency(h.bank, h.code)}</td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-slate-700">
-                            {h.isBase ? formatCurrency(h.mobile, h.code) : <span className="text-slate-300">—</span>}
+                            {h.isBase ? formatCurrency(h.mobile, h.code) : <span className="text-slate-500">—</span>}
                           </td>
                           <td className="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-slate-900">{formatCurrency(h.cash + h.bank + h.mobile, h.code)}</td>
-                          <td className={`py-2.5 pl-3 pr-4 whitespace-nowrap text-right tabular-nums ${h.owed ? "text-amber-700" : "text-slate-400"}`}>{formatCurrency(h.owed, h.code)}</td>
+                          <td className={`py-2.5 pl-3 pr-4 whitespace-nowrap text-right tabular-nums ${h.owed ? "text-amber-700" : "text-slate-500"}`}>{formatCurrency(h.owed, h.code)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -2818,7 +2821,7 @@ export function SuperAdminDashboard({
                     onChange={(e: any) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   />
                 </div>
                 <div>
@@ -2831,7 +2834,7 @@ export function SuperAdminDashboard({
                     onChange={(e: any) =>
                       setFormData({ ...formData, ownerName: e.target.value })
                     }
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   />
                 </div>
               </div>
@@ -2845,7 +2848,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -2859,7 +2862,7 @@ export function SuperAdminDashboard({
                     onChange={(e: any) =>
                       setFormData({ ...formData, taxId: e.target.value })
                     }
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   />
                 </div>
                 <div>
@@ -2872,7 +2875,7 @@ export function SuperAdminDashboard({
                     onChange={(e: any) =>
                       setFormData({ ...formData, website: e.target.value })
                     }
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   />
                 </div>
               </div>
@@ -2885,7 +2888,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
-                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   rows={2}
                 />
               </div>
@@ -2931,7 +2934,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, plan: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 >
                   <option value="Free">Free</option>
                   <option value="Starter">Starter</option>
@@ -2948,7 +2951,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, status: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 >
                   <option value="Active">Active</option>
                   <option value="Trial">Trial</option>
@@ -2967,7 +2970,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, monthlyFee: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="0"
                 />
               </div>
@@ -2981,7 +2984,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, expiresAt: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 />
               </div>
               <div className="flex gap-3 pt-2">
@@ -3035,7 +3038,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="Enter new password"
                 />
               </div>
@@ -3052,7 +3055,7 @@ export function SuperAdminDashboard({
                       confirmPassword: e.target.value,
                     })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="Confirm password"
                 />
               </div>
@@ -3102,7 +3105,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, reason: e.target.value })
                   }
-                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   rows={3}
                   placeholder="Enter reason..."
                 />
@@ -3150,7 +3153,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, name: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="e.g. Kampala Road Bureau"
                 />
               </div>
@@ -3164,7 +3167,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, ownerName: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="Owner name"
                 />
               </div>
@@ -3178,7 +3181,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, whatsAppNumber: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="+254… or +256…"
                 />
               </div>
@@ -3192,7 +3195,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, email: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="email@company.com"
                 />
               </div>
@@ -3206,7 +3209,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="Min 8 characters"
                 />
               </div>
@@ -3219,7 +3222,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, baseCurrency: parseInt(e.target.value) })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 >
                   <option value={0}>KES — Kenya</option>
                   <option value={2}>UGX — Uganda</option>
@@ -3268,7 +3271,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, ipAddress: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="192.168.1.1"
                 />
               </div>
@@ -3281,7 +3284,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, reason: e.target.value })
                   }
-                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   rows={2}
                 />
               </div>
@@ -3295,7 +3298,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, blockUntil: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 />
               </div>
               <div className="flex gap-3 pt-2">
@@ -3341,7 +3344,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, ipAddress: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="192.168.1.1"
                 />
               </div>
@@ -3355,7 +3358,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="Office IP"
                 />
               </div>
@@ -3401,7 +3404,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, companyId: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 >
                   <option value="">Select company...</option>
                   {dashboard?.companies?.map((c) => (
@@ -3422,7 +3425,7 @@ export function SuperAdminDashboard({
                     onChange={(e: any) =>
                       setFormData({ ...formData, amount: e.target.value })
                     }
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                     placeholder="0"
                   />
                 </div>
@@ -3430,18 +3433,11 @@ export function SuperAdminDashboard({
                   <label className="mb-1.5 block text-sm font-medium text-slate-700">
                     Currency
                   </label>
-                  <select
-                    value={formData.currency || "KES"}
-                    onChange={(e: any) =>
-                      setFormData({ ...formData, currency: e.target.value })
-                    }
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
-                  >
-                    <option value="KES">KES</option>
-                    <option value="USD">USD</option>
-                    <option value="UGX">UGX</option>
-                    <option value="EUR">EUR</option>
-                  </select>
+                  {/* Every bureau — Ugandan ones too — is billed in KES. */}
+                  <div className="flex h-10 w-full items-center rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700">
+                    {PLATFORM_CURRENCY}
+                    <span className="ml-2 text-xs font-normal text-slate-500">all bureaus are billed in {PLATFORM_CURRENCY}</span>
+                  </div>
                 </div>
               </div>
               <div>
@@ -3453,7 +3449,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, paymentMethod: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                 >
                   <option value="M-Pesa">M-Pesa</option>
                   <option value="Bank Transfer">Bank Transfer</option>
@@ -3471,7 +3467,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, reference: e.target.value })
                   }
-                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   placeholder="Transaction ref"
                 />
               </div>
@@ -3517,7 +3513,7 @@ export function SuperAdminDashboard({
                   onChange={(e: any) =>
                     setFormData({ ...formData, notes: e.target.value })
                   }
-                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
+                  className="py-2 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/15"
                   rows={3}
                   placeholder="How was this resolved..."
                 />
@@ -3569,13 +3565,13 @@ function StatCard({
   return (
     <div className="min-w-0 rounded-xl border border-slate-200 bg-white p-5">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2 text-[13px] font-medium text-slate-500">
-          <Icon className="h-4 w-4 shrink-0 text-slate-400" />
+        <div className="flex min-w-0 items-center gap-2 text-sm font-medium text-slate-500">
+          <Icon className="h-4 w-4 shrink-0 text-slate-500" />
           <span className="truncate">{title}</span>
         </div>
         {trend !== undefined && trend !== 0 && (
           <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[12px] font-medium ${
+            className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium ${
               trend >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
             }`}
           >
@@ -3584,8 +3580,8 @@ function StatCard({
           </span>
         )}
       </div>
-      <div className="mt-3 break-words text-[24px] font-semibold leading-tight tabular-nums text-slate-900">{value}</div>
-      {subValue && <div className="mt-1 text-[13px] text-slate-500">{subValue}</div>}
+      <div className="mt-3 break-words text-2xl font-semibold leading-tight tabular-nums text-slate-900">{value}</div>
+      {subValue && <div className="mt-1 text-sm text-slate-500">{subValue}</div>}
     </div>
   );
 }
@@ -3621,7 +3617,7 @@ function Modal({
         className={`flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ${sizeClasses[size]}`}
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-[17px] font-semibold text-slate-900">{title}</h2>
+          <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
           <button onClick={onClose} aria-label="Close" className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900">
             <X className="h-5 w-5" />
           </button>
@@ -3650,7 +3646,7 @@ class TabBoundary extends Component<{ children: () => ReactNode; onRetry?: () =>
     if (!this.state.error) return this.props.children();
     return (
       <div role="alert" className="flex flex-col items-center rounded-xl border border-slate-200 bg-white px-6 py-14 text-center">
-        <AlertTriangle className="h-6 w-6 text-amber-500" />
+        <AlertTriangle className="h-6 w-6 text-amber-600" />
         <p className="mt-3 text-sm font-semibold text-slate-900">This section couldn&apos;t load</p>
         <p className="mt-1 max-w-sm text-sm text-slate-500">
           The server sent data this page didn&apos;t expect. The rest of the console still works.

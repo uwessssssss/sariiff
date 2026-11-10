@@ -166,13 +166,13 @@ const getAlertIcon = (type: string) => {
 const getAlertGradient = (type: string): string => {
   switch (type) {
     case "success":
-      return "bg-emerald-500 ";
+      return "bg-emerald-700 ";
     case "warning":
-      return "bg-amber-500 ";
+      return "bg-amber-700 ";
     case "error":
-      return "bg-red-500 ";
+      return "bg-red-600 ";
     default:
-      return "bg-blue-500 ";
+      return "bg-blue-600 ";
   }
 };
 
@@ -1008,8 +1008,13 @@ export function ClientUserDashboard({
     : [];
 
   // Analytics are shown one currency at a time (amounts can't be mixed)
+  // Opens on the client's main currency: UGX when they hold it (only Ugandan bureaus use
+  // UGX), else KES, USD, EUR. It used to open on whichever came first — USD 0.00 for a
+  // Ugandan client whose money is all in UGX.
+  const mainCode = ["UGX", "KES", "USD", "EUR"].find((code) => statementCurrencies.some((c) => c.code === code));
   const analyticsCode =
     statementCurrencies.find((c) => c.value === analyticsCurrency)?.code ??
+    mainCode ??
     statementCurrencies[0]?.code ??
     "KES";
   const analyticsCur = CURRENCY_VALUES[analyticsCode] ?? Currency.KES;
@@ -1064,11 +1069,11 @@ export function ClientUserDashboard({
       <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
         <div className="max-w-sm text-center">
           <AlertCircle className="mx-auto h-8 w-8 text-red-600" />
-          <p className="mt-3 text-[15px] font-medium text-slate-900">Couldn't load your account.</p>
-          <p className="mt-1 text-[14px] text-slate-600">{error}</p>
+          <p className="mt-3 text-base font-medium text-slate-900">Couldn't load your account.</p>
+          <p className="mt-1 text-sm text-slate-600">{error}</p>
           <button
             onClick={fetchDashboard}
-            className="mt-5 inline-flex h-10 items-center rounded-lg bg-blue-600 px-4 text-[14px] font-semibold text-white hover:bg-blue-700"
+            className="mt-5 inline-flex h-10 items-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Try again
           </button>
@@ -1091,8 +1096,8 @@ export function ClientUserDashboard({
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
         <SarifMark size={32} className="shrink-0 rounded-[7px] ring-1 ring-white/15" />
         <div className="min-w-0 flex-1">
-          <div className="text-[16px] font-semibold leading-tight text-white">Sarif</div>
-          <div className="text-[12px] text-slate-400">Client account</div>
+          <div className="text-base font-semibold leading-tight text-white">Sarif</div>
+          <div className="text-xs text-slate-400">Client account</div>
         </div>
         {onNavigate && (
           <button onClick={onNavigate} aria-label="Close menu" className="rounded-md p-1.5 text-slate-400 hover:bg-white/10 hover:text-white">
@@ -1112,14 +1117,14 @@ export function ClientUserDashboard({
                 onNavigate?.();
               }}
               aria-current={active ? "page" : undefined}
-              className={`flex h-10 w-full items-center gap-3 rounded-lg px-3 text-[14px] font-medium ${
+              className={`flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium ${
                 active ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"
               }`}
             >
               <item.icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-blue-300" : ""}`} />
               <span className="flex-1 text-left">{item.label}</span>
               {(item.badge ?? 0) > 0 && (
-                <span className="min-w-[20px] rounded-full bg-red-500 px-1.5 text-center text-[12px] font-semibold leading-5 text-white">
+                <span className="min-w-[20px] rounded-full bg-red-600 px-1.5 text-center text-xs font-semibold leading-5 text-white">
                   {item.badge}
                 </span>
               )}
@@ -1129,7 +1134,7 @@ export function ClientUserDashboard({
         {SUPPORT_WHATSAPP && (
           <button
             onClick={handleContactSupport}
-            className="mt-3 flex h-10 w-full items-center gap-3 rounded-lg px-3 text-[14px] font-medium text-slate-300 hover:bg-white/5 hover:text-white"
+            className="mt-3 flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium text-slate-300 hover:bg-white/5 hover:text-white"
           >
             <MessageCircle className="h-[18px] w-[18px] shrink-0" />
             Contact your bureau
@@ -1138,12 +1143,12 @@ export function ClientUserDashboard({
       </nav>
       <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 px-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-[13px] font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-semibold text-white">
             {clientInitials || "?"}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[14px] font-medium text-white">{displayName}</div>
-            <div className="truncate text-[12px] text-slate-400">{profile?.code}</div>
+            <div className="truncate text-sm font-medium text-white">{displayName}</div>
+            <div className="truncate text-xs text-slate-400">{profile?.code}</div>
           </div>
           <button
             onClick={onLogout}
@@ -1159,7 +1164,7 @@ export function ClientUserDashboard({
   );
 
   const sectionHead = "flex items-baseline justify-between border-b border-slate-200 px-5 py-4";
-  const th = "px-4 py-2.5 text-left text-[13px] font-medium whitespace-nowrap text-slate-500";
+  const th = "px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap text-slate-500";
 
   // ============ RENDER ============
   return (
@@ -1176,7 +1181,7 @@ export function ClientUserDashboard({
             <Menu className="h-5 w-5" />
           </button>
           <SarifMark size={26} />
-          <span className="text-[16px] font-semibold text-slate-900">Sarif</span>
+          <span className="text-base font-semibold text-slate-900">Sarif</span>
         </div>
         <button
           onClick={() => setActiveView("alerts")}
@@ -1214,12 +1219,12 @@ export function ClientUserDashboard({
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Hello, {firstName}</h1>
-                    <p className="mt-1 text-[14px] text-slate-500">
+                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Hello, {firstName}</h1>
+                    <p className="mt-1 text-sm text-slate-500">
                       Account {profile?.code}
                       {profile?.lastLoginAt && (
                         <>
-                          <span className="mx-2 text-slate-300">/</span>
+                          <span className="mx-2 text-slate-500">/</span>
                           Last signed in {formatDate(profile.lastLoginAt)}
                         </>
                       )}
@@ -1236,14 +1241,14 @@ export function ClientUserDashboard({
                     </button>
                     <button
                       onClick={handleExportCsv}
-                      className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
+                      className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                       <Download className="h-4 w-4" />
                       Export CSV
                     </button>
                     <button
                       onClick={handleDownloadStatement}
-                      className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-[14px] font-semibold text-white hover:bg-blue-700"
+                      className="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700"
                     >
                       <FileText className="h-4 w-4" />
                       Print statement
@@ -1254,11 +1259,11 @@ export function ClientUserDashboard({
                 {/* Balances */}
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className={sectionHead}>
-                    <h2 className="text-[16px] font-semibold text-slate-900">Your balances</h2>
-                    <span className="hidden text-[13px] text-slate-500 sm:inline">Totals since your account opened</span>
+                    <h2 className="text-base font-semibold text-slate-900">Your balances</h2>
+                    <span className="hidden text-sm text-slate-500 sm:inline">Totals since your account opened</span>
                   </div>
                   {balanceRows.length === 0 ? (
-                    <p className="px-5 py-6 text-[14px] text-slate-600">
+                    <p className="px-5 py-6 text-sm text-slate-600">
                       No balances yet. They'll appear here once your bureau records a transaction for you.
                     </p>
                   ) : (
@@ -1267,12 +1272,12 @@ export function ClientUserDashboard({
                         {balanceRows.map((b) => (
                           <li key={b.code} className="px-5 py-4">
                             <div className="flex items-baseline justify-between">
-                              <span className="text-[14px] font-medium text-slate-700">{b.code}</span>
-                              <span className={`text-[18px] font-semibold tabular-nums ${b.balance < 0 ? "text-red-700" : "text-slate-900"}`}>
+                              <span className="text-sm font-medium text-slate-700">{b.code}</span>
+                              <span className={`text-lg font-semibold tabular-nums ${b.balance < 0 ? "text-red-700" : "text-slate-900"}`}>
                                 {formatCurrency(b.balance, b.code)}
                               </span>
                             </div>
-                            <div className="mt-1 flex justify-between text-[13px] tabular-nums text-slate-500">
+                            <div className="mt-1 flex justify-between text-sm tabular-nums text-slate-500">
                               <span>In {formatCurrency(b.totalIn, b.code)}</span>
                               <span>Out {formatCurrency(b.totalOut, b.code)}</span>
                             </div>
@@ -1291,12 +1296,12 @@ export function ClientUserDashboard({
                         <tbody>
                           {balanceRows.map((b) => (
                             <tr key={b.code} className="border-b border-slate-100 last:border-0">
-                              <td className="px-4 py-3.5 pl-5 text-[14px] font-medium text-slate-900">{b.code}</td>
-                              <td className={`px-4 py-3.5 text-right text-[17px] font-semibold ${b.balance < 0 ? "text-red-700" : "text-slate-900"}`}>
+                              <td className="px-4 py-3.5 pl-5 text-sm font-medium text-slate-900">{b.code}</td>
+                              <td className={`px-4 py-3.5 text-right text-lg font-semibold ${b.balance < 0 ? "text-red-700" : "text-slate-900"}`}>
                                 {formatCurrency(b.balance, b.code)}
                               </td>
-                              <td className="px-4 py-3.5 text-right text-[14px] text-emerald-700">{formatCurrency(b.totalIn, b.code)}</td>
-                              <td className="px-4 py-3.5 pr-5 text-right text-[14px] text-red-700">{formatCurrency(b.totalOut, b.code)}</td>
+                              <td className="px-4 py-3.5 text-right text-sm text-emerald-700">{formatCurrency(b.totalIn, b.code)}</td>
+                              <td className="px-4 py-3.5 pr-5 text-right text-sm text-red-700">{formatCurrency(b.totalOut, b.code)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1304,7 +1309,7 @@ export function ClientUserDashboard({
                     </>
                   )}
                   {monthRows.length > 0 ? (
-                    <div className="flex flex-wrap gap-x-8 gap-y-1 border-t border-slate-200 bg-slate-50 px-5 py-3 text-[13px] tabular-nums text-slate-600">
+                    <div className="flex flex-wrap gap-x-8 gap-y-1 border-t border-slate-200 bg-slate-50 px-5 py-3 text-sm tabular-nums text-slate-600">
                       <span className="font-medium text-slate-700">This month</span>
                       {monthRows.map((r) => (
                         <span key={r.code}>
@@ -1320,13 +1325,13 @@ export function ClientUserDashboard({
                   {/* Recent transactions */}
                   <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <div className={sectionHead}>
-                      <h2 className="text-[16px] font-semibold text-slate-900">Recent transactions</h2>
-                      <button onClick={() => setActiveView("statements")} className="rounded-lg text-[13px] font-medium text-blue-700 hover:underline">
+                      <h2 className="text-base font-semibold text-slate-900">Recent transactions</h2>
+                      <button onClick={() => setActiveView("statements")} className="rounded-lg text-sm font-medium text-blue-700 hover:underline">
                         See all
                       </button>
                     </div>
                     {recentTransactions.length === 0 ? (
-                      <p className="px-5 py-10 text-center text-[14px] text-slate-600">No transactions yet.</p>
+                      <p className="px-5 py-10 text-center text-sm text-slate-600">No transactions yet.</p>
                     ) : (
                       <ul className="divide-y divide-slate-100">
                         {recentTransactions.slice(0, 6).map((txn) => {
@@ -1338,18 +1343,18 @@ export function ClientUserDashboard({
                                 className="rounded-lg flex w-full items-center gap-4 px-5 py-3.5 text-left hover:bg-slate-50"
                               >
                                 <div className="min-w-0 flex-1">
-                                  <div className="truncate text-[14px] font-medium text-slate-900">{txn.description}</div>
-                                  <div className="mt-0.5 truncate text-[13px] text-slate-500">
+                                  <div className="truncate text-sm font-medium text-slate-900">{txn.description}</div>
+                                  <div className="mt-0.5 truncate text-sm text-slate-500">
                                     {formatDate(txn.date)}, {formatTime(txn.date)}
                                     {txn.reference && <span className="ml-3">{txn.reference}</span>}
                                   </div>
                                 </div>
                                 <div className="shrink-0 text-right tabular-nums">
-                                  <div className={`text-[14px] font-semibold ${isOut ? "text-red-700" : "text-emerald-700"}`}>
+                                  <div className={`text-sm font-semibold ${isOut ? "text-red-700" : "text-emerald-700"}`}>
                                     {isOut ? "−" : "+"}
                                     {formatCurrency(txn.amount, txn.currency)}
                                   </div>
-                                  <div className="mt-0.5 text-[12px] text-slate-500">
+                                  <div className="mt-0.5 text-xs text-slate-500">
                                     Balance {formatCurrency(txn.balanceAfter, txn.currency)}
                                   </div>
                                 </div>
@@ -1364,13 +1369,13 @@ export function ClientUserDashboard({
                   {/* Alerts */}
                   <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                     <div className={sectionHead}>
-                      <h2 className="text-[16px] font-semibold text-slate-900">Alerts</h2>
-                      <button onClick={() => setActiveView("alerts")} className="rounded-lg text-[13px] font-medium text-blue-700 hover:underline">
+                      <h2 className="text-base font-semibold text-slate-900">Alerts</h2>
+                      <button onClick={() => setActiveView("alerts")} className="rounded-lg text-sm font-medium text-blue-700 hover:underline">
                         See all
                       </button>
                     </div>
                     {alerts.length === 0 ? (
-                      <p className="px-5 py-10 text-center text-[14px] text-slate-600">No alerts.</p>
+                      <p className="px-5 py-10 text-center text-sm text-slate-600">No alerts.</p>
                     ) : (
                       <ul className="divide-y divide-slate-100">
                         {alerts.slice(0, 4).map((alert) => (
@@ -1381,9 +1386,9 @@ export function ClientUserDashboard({
                                 aria-label={alert.isRead ? undefined : "Unread"}
                               />
                               <div className="min-w-0">
-                                <div className={`text-[14px] ${alert.isRead ? "text-slate-700" : "font-semibold text-slate-900"}`}>{alert.title}</div>
-                                <div className="mt-0.5 line-clamp-2 text-[13px] text-slate-500">{alert.message}</div>
-                                <div className="mt-1 text-[12px] text-slate-400">{formatDate(alert.createdAt)}</div>
+                                <div className={`text-sm ${alert.isRead ? "text-slate-700" : "font-semibold text-slate-900"}`}>{alert.title}</div>
+                                <div className="mt-0.5 line-clamp-2 text-sm text-slate-500">{alert.message}</div>
+                                <div className="mt-1 text-xs text-slate-500">{formatDate(alert.createdAt)}</div>
                               </div>
                             </button>
                           </li>
@@ -1407,8 +1412,8 @@ export function ClientUserDashboard({
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <h1 className="text-[26px] font-semibold tracking-tight text-slate-900">Statements</h1>
-                    <p className="mt-1 text-[14px] text-slate-500">
+                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Statements</h1>
+                    <p className="mt-1 text-sm text-slate-500">
                       {totalCount === 1 ? "1 transaction" : `${totalCount.toLocaleString()} transactions`}
                       {filterPeriod === "month" ? " in the last month" : filterPeriod === "week" ? " in the last 7 days" : ""}
                     </p>
@@ -1416,21 +1421,21 @@ export function ClientUserDashboard({
                   <div className="flex gap-2">
                     <button
                       onClick={handleDownloadStatement}
-                      className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-3.5 text-[14px] font-medium text-white hover:bg-blue-700"
+                      className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-3.5 text-sm font-medium text-white hover:bg-blue-700"
                     >
                       <Download className="h-4 w-4" />
                       Download PDF
                     </button>
                     <button
                       onClick={handlePrintStatement}
-                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
+                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                       <Printer className="h-4 w-4" />
                       <span className="hidden sm:inline">Print</span>
                     </button>
                     <button
                       onClick={handleExportCsv}
-                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-[14px] font-medium text-slate-700 hover:bg-slate-50"
+                      className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
                     >
                       <FileDown className="h-4 w-4" />
                       <span className="hidden sm:inline">CSV</span>
@@ -1441,13 +1446,13 @@ export function ClientUserDashboard({
                 {/* Filters: one quiet row */}
                 {(() => {
                   const seg = (on: boolean) =>
-                    `h-8 rounded-md px-3 text-[13px] font-medium transition-colors ${
+                    `h-8 rounded-md px-3 text-sm font-medium transition-colors ${
                       on ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
                     }`;
                   return (
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                       <div className="relative lg:w-72">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
                         <input
                           type="search"
                           aria-label="Search transactions"
@@ -1457,7 +1462,7 @@ export function ClientUserDashboard({
                             setSearchQuery(e.target.value);
                             setCurrentPage(1);
                           }}
-                          className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-[14px] text-slate-900 placeholder:text-slate-400 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+                          className="h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-500 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
                         />
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -1503,14 +1508,14 @@ export function ClientUserDashboard({
                 {/* Transactions */}
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   {loadingTransactions ? (
-                    <div className="flex items-center justify-center gap-2 py-16 text-[14px] text-slate-500">
+                    <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading transactions
                     </div>
                   ) : transactions.length === 0 ? (
                     <div className="py-16 text-center">
-                      <p className="text-[14px] font-medium text-slate-900">No transactions</p>
-                      <p className="mt-1 text-[13px] text-slate-500">
+                      <p className="text-sm font-medium text-slate-900">No transactions</p>
+                      <p className="mt-1 text-sm text-slate-500">
                         {searchQuery || filterPeriod !== "all" || currencyFilter !== undefined || typeFilter !== undefined
                           ? "Nothing matches these filters."
                           : "Transactions on your account will appear here."}
@@ -1524,7 +1529,7 @@ export function ClientUserDashboard({
                             setTypeFilter(undefined);
                             setCurrentPage(1);
                           }}
-                          className="mt-3 text-[13px] font-medium text-blue-700 hover:underline"
+                          className="mt-3 text-sm font-medium text-blue-700 hover:underline"
                         >
                           Clear filters
                         </button>
@@ -1543,17 +1548,17 @@ export function ClientUserDashboard({
                                 className="flex w-full items-center gap-4 px-4 py-3.5 text-left hover:bg-slate-50"
                               >
                                 <div className="min-w-0 flex-1">
-                                  <div className="truncate text-[14px] font-medium text-slate-900">{txn.description}</div>
-                                  <div className="mt-0.5 truncate text-[13px] text-slate-500">
+                                  <div className="truncate text-sm font-medium text-slate-900">{txn.description}</div>
+                                  <div className="mt-0.5 truncate text-sm text-slate-500">
                                     {formatDate(txn.date)}, {formatTime(txn.date)} · {txn.code}
                                   </div>
                                 </div>
                                 <div className="shrink-0 text-right">
-                                  <div className={`text-[14px] font-medium tabular-nums ${isIn ? "text-emerald-700" : "text-slate-900"}`}>
+                                  <div className={`text-sm font-medium tabular-nums ${isIn ? "text-emerald-700" : "text-slate-900"}`}>
                                     {isIn ? "+" : "−"}
                                     {formatCurrency(txn.amount, txn.currency)}
                                   </div>
-                                  <div className="mt-0.5 text-[12px] tabular-nums text-slate-500">
+                                  <div className="mt-0.5 text-xs tabular-nums text-slate-500">
                                     Bal {formatCurrency(txn.balanceAfter, txn.currency)}
                                   </div>
                                 </div>
@@ -1565,9 +1570,9 @@ export function ClientUserDashboard({
 
                       {/* Desktop: a bank-statement table */}
                       <div className="hidden overflow-x-auto lg:block">
-                        <table className="w-full text-[14px]">
+                        <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-slate-200 text-left text-[12px] font-medium text-slate-500">
+                            <tr className="border-b border-slate-200 text-left text-xs font-medium text-slate-500">
                               <th scope="col" className="px-5 py-3 font-medium">Date</th>
                               <th scope="col" className="px-5 py-3 font-medium">Description</th>
                               <th scope="col" className="px-5 py-3 text-right font-medium">Money in</th>
@@ -1589,11 +1594,11 @@ export function ClientUserDashboard({
                                 >
                                   <td className="whitespace-nowrap px-5 py-3 align-top">
                                     <div className="text-slate-900">{formatDate(txn.date)}</div>
-                                    <div className="text-[12px] text-slate-500">{formatTime(txn.date)}</div>
+                                    <div className="text-xs text-slate-500">{formatTime(txn.date)}</div>
                                   </td>
                                   <td className="px-5 py-3 align-top">
                                     <div className="text-slate-900">{txn.description}</div>
-                                    <div className="text-[12px] text-slate-500">{txn.code}</div>
+                                    <div className="text-xs text-slate-500">{txn.code}</div>
                                   </td>
                                   <td className="whitespace-nowrap px-5 py-3 text-right align-top tabular-nums text-emerald-700">
                                     {isIn ? amount : ""}
@@ -1614,7 +1619,7 @@ export function ClientUserDashboard({
                       {/* Pagination */}
                       {totalPages > 1 && (
                         <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
-                          <p className="text-[13px] text-slate-500 tabular-nums">
+                          <p className="text-sm text-slate-500 tabular-nums">
                             {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount.toLocaleString()}
                           </p>
                           <div className="flex gap-2">
@@ -1622,7 +1627,7 @@ export function ClientUserDashboard({
                               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                               disabled={currentPage === 1}
                               aria-label="Previous page"
-                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               <ChevronLeft className="h-4 w-4" />
                               Previous
@@ -1631,7 +1636,7 @@ export function ClientUserDashboard({
                               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                               disabled={currentPage === totalPages}
                               aria-label="Next page"
-                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[13px] font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Next
                               <ChevronRight className="h-4 w-4" />
@@ -1657,7 +1662,7 @@ export function ClientUserDashboard({
               >
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                   <div>
-                    <h1 className="text-[26px] font-semibold      text-slate-900 tracking-tight">
+                    <h1 className="text-2xl font-semibold      text-slate-900 tracking-tight">
                       Notifications & Alerts
                     </h1>
                     <p className="text-slate-600 mt-2">
@@ -1669,7 +1674,7 @@ export function ClientUserDashboard({
                       onClick={() => setUnreadOnly(!unreadOnly)}
                       className={`rounded-lg px-5 py-3 text-sm font-bold transition-all ${
                         unreadOnly
-                          ? " bg-amber-600  text-white "
+                          ? " bg-amber-700  text-white "
                           : "bg-white text-slate-700 border border-slate-300"
                       }`}
                     >
@@ -1738,7 +1743,7 @@ export function ClientUserDashboard({
                                 {formatDate(alert.createdAt)}
                               </p>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-blue-600  transition-all flex-shrink-0" />
+                            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-blue-600  transition-all flex-shrink-0" />
                           </div>
                         </button>
                       );
@@ -1788,7 +1793,7 @@ export function ClientUserDashboard({
                 className="space-y-8"
               >
                 <div>
-                  <h1 className="text-[26px] font-semibold      text-slate-900 tracking-tight">
+                  <h1 className="text-2xl font-semibold      text-slate-900 tracking-tight">
                     Account Analytics
                   </h1>
                   <p className="text-slate-600 mt-2">
@@ -1801,7 +1806,7 @@ export function ClientUserDashboard({
                           key={c.code}
                           onClick={() => setAnalyticsCurrency(c.value)}
                           aria-pressed={analyticsCode === c.code}
-                          className={`rounded-md px-3 py-1 text-[13px] font-semibold ${
+                          className={`rounded-md px-3 py-1 text-sm font-semibold ${
                             analyticsCode === c.code ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
                           }`}
                         >
@@ -1836,7 +1841,7 @@ export function ClientUserDashboard({
                           <div className="w-12 h-12  bg-blue-500  flex items-center justify-center ">
                             <TrendingUp className="w-6 h-6 text-white" />
                           </div>
-                          <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
+                          <span className="text-sm font-bold text-emerald-700 flex items-center gap-1">
                             {analytics.totals.growthPercentage > 0 ? "+" : ""}
                             {analytics.totals.growthPercentage.toFixed(1)}%
                           </span>
@@ -1868,7 +1873,7 @@ export function ClientUserDashboard({
 
                       <div className="rounded-xl bg-white  border border-emerald-200 hover:border-emerald-400 p-6 transition-all ">
                         <div className="flex items-center justify-between mb-4">
-                          <div className="w-12 h-12  bg-emerald-500  flex items-center justify-center ">
+                          <div className="w-12 h-12  bg-emerald-600  flex items-center justify-center ">
                             <CircleDollarSign className="w-6 h-6 text-white" />
                           </div>
                         </div>
@@ -2106,7 +2111,7 @@ export function ClientUserDashboard({
 
                     {/* Insights */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className=" bg-blue-500   p-6 border border-blue-400  relative overflow-hidden">
+                      <div className=" bg-blue-600   p-6 border border-blue-400  relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl hidden" />
                         <div className="relative z-10">
                           <div className="w-12 h-12 bg-white flex items-center justify-center mb-4">
@@ -2125,7 +2130,7 @@ export function ClientUserDashboard({
                         </div>
                       </div>
 
-                      <div className=" bg-emerald-500   p-6 border border-emerald-400  relative overflow-hidden">
+                      <div className=" bg-emerald-700   p-6 border border-emerald-400  relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl hidden" />
                         <div className="relative z-10">
                           <div className="w-12 h-12 bg-white flex items-center justify-center mb-4">
@@ -2164,7 +2169,7 @@ export function ClientUserDashboard({
                 className="space-y-8"
               >
                 <div>
-                  <h1 className="text-[26px] font-semibold      text-slate-900 tracking-tight">
+                  <h1 className="text-2xl font-semibold      text-slate-900 tracking-tight">
                     Profile Settings
                   </h1>
                   <p className="text-slate-600 mt-2">
@@ -2173,18 +2178,18 @@ export function ClientUserDashboard({
                 </div>
 
                 {/* Profile Header Card */}
-                <div className=" bg-blue-500   p-8 border border-blue-400  relative overflow-hidden">
+                <div className=" bg-blue-600   p-8 border border-blue-400  relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl hidden" />
                   <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl hidden" />
                   <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
-                    <div className="w-24 h-24 bg-white flex items-center justify-center text-blue-600 text-[26px] font-semibold tracking-tight">
+                    <div className="w-24 h-24 bg-white flex items-center justify-center text-blue-600 text-2xl font-semibold tracking-tight">
                       {(profile?.fullName || userName).charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 text-center md:text-left">
                       <h2 className="text-3xl font-semibold text-white mb-2">
                         {profile?.fullName || userName}
                       </h2>
-                      <p className="text-blue-100 font-semibold mb-4">
+                      <p className="text-blue-50 font-semibold mb-4">
                         {getClientTypeLabel(
                           profile?.clientType ?? ClientType.Temporary,
                         )}{" "}
@@ -2195,12 +2200,12 @@ export function ClientUserDashboard({
                           <CheckCircle className="w-4 h-4" />
                           {profile?.isActive ? "Active Account" : "Inactive"}
                         </span>
-                        <span className="px-4 py-2 bg-white text-emerald-600 text-xs font-bold flex items-center gap-2">
+                        <span className="px-4 py-2 bg-white text-emerald-700 text-xs font-bold flex items-center gap-2">
                           <Shield className="w-4 h-4" />
                           Protected
                         </span>
                         {profile?.clientType === ClientType.Permanent && (
-                          <span className="px-4 py-2 bg-white text-amber-600 text-xs font-bold flex items-center gap-2">
+                          <span className="px-4 py-2 bg-white text-amber-700 text-xs font-bold flex items-center gap-2">
                             <Star className="w-4 h-4 fill-amber-600" />
                             Premium
                           </span>
@@ -2325,7 +2330,7 @@ export function ClientUserDashboard({
                           KES Balance
                         </span>
                       </div>
-                      <p className="text-[26px] font-semibold     text-slate-900 tracking-tight">
+                      <p className="text-2xl font-semibold     text-slate-900 tracking-tight">
                         {formatCurrency(profile?.balanceKES ?? 0, Currency.KES)}
                       </p>
                       <p className="text-xs text-slate-500 mt-2">
@@ -2344,10 +2349,10 @@ export function ClientUserDashboard({
                           USD Balance
                         </span>
                       </div>
-                      <p className="text-[26px] font-semibold     text-slate-900 tracking-tight">
+                      <p className="text-2xl font-semibold     text-slate-900 tracking-tight">
                         {formatCurrency(profile?.balanceUSD ?? 0, Currency.USD)}
                       </p>
-                      <p className="text-xs text-slate-500 mt-2">
+                      <p className="text-xs text-slate-600 mt-2">
                         Opening:{" "}
                         {formatCurrency(
                           profile?.openingBalanceUSD ?? 0,
@@ -2505,8 +2510,8 @@ export function ClientUserDashboard({
                 {/* Header */}
                 <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
                   <div className="min-w-0">
-                    <h2 id="txn-title" className="truncate text-[15px] font-semibold text-slate-900">{t.description}</h2>
-                    <p className="mt-0.5 text-[13px] text-slate-500">{t.code}</p>
+                    <h2 id="txn-title" className="truncate text-base font-semibold text-slate-900">{t.description}</h2>
+                    <p className="mt-0.5 text-sm text-slate-500">{t.code}</p>
                   </div>
                   <button
                     autoFocus
@@ -2520,8 +2525,8 @@ export function ClientUserDashboard({
 
                 {/* Amount */}
                 <div className="px-5 pb-2 pt-5">
-                  <p className="text-[13px] text-slate-500">{isIn ? "Money in" : "Money out"}</p>
-                  <p className={`mt-1 text-[28px] font-semibold tracking-tight tabular-nums ${isIn ? "text-emerald-700" : "text-slate-900"}`}>
+                  <p className="text-sm text-slate-500">{isIn ? "Money in" : "Money out"}</p>
+                  <p className={`mt-1 text-3xl font-semibold tracking-tight tabular-nums ${isIn ? "text-emerald-700" : "text-slate-900"}`}>
                     {isIn ? "+" : "−"}
                     {formatCurrency(t.amount, t.currency)}
                   </p>
@@ -2530,23 +2535,23 @@ export function ClientUserDashboard({
                 {/* Details */}
                 <dl className="divide-y divide-slate-100 px-5">
                   {rows.map(([label, value]) => (
-                    <div key={label} className="flex items-baseline justify-between gap-6 py-2.5 text-[14px]">
+                    <div key={label} className="flex items-baseline justify-between gap-6 py-2.5 text-sm">
                       <dt className="shrink-0 text-slate-500">{label}</dt>
                       <dd className="text-right tabular-nums text-slate-900">{value}</dd>
                     </div>
                   ))}
                   {t.reference && t.reference !== t.code && (
-                    <div className="flex items-baseline justify-between gap-6 py-2.5 text-[14px]">
+                    <div className="flex items-baseline justify-between gap-6 py-2.5 text-sm">
                       <dt className="shrink-0 text-slate-500">Reference</dt>
                       <dd className="flex min-w-0 items-center gap-2 text-slate-900">
-                        <span className="truncate font-mono text-[13px]">{t.reference}</span>
+                        <span className="truncate font-mono text-sm">{t.reference}</span>
                         <button
                           aria-label="Copy reference"
                           onClick={() => {
                             navigator.clipboard.writeText(t.reference);
                             toast.success("Reference copied");
                           }}
-                          className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                          className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
@@ -2554,7 +2559,7 @@ export function ClientUserDashboard({
                     </div>
                   )}
                   {t.notes && (
-                    <div className="py-2.5 text-[14px]">
+                    <div className="py-2.5 text-sm">
                       <dt className="text-slate-500">Notes</dt>
                       <dd className="mt-1 whitespace-pre-line text-slate-900">{t.notes}</dd>
                     </div>
@@ -2565,7 +2570,7 @@ export function ClientUserDashboard({
                 <div className="flex gap-2 border-t border-slate-200 px-5 py-4">
                   <button
                     onClick={() => handleDownloadReceipt(t.id, t.code)}
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 text-[14px] font-medium text-white hover:bg-blue-700"
+                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-blue-600 text-sm font-medium text-white hover:bg-blue-700"
                   >
                     <Download className="h-4 w-4" />
                     Download receipt
@@ -2575,7 +2580,7 @@ export function ClientUserDashboard({
                       navigator.clipboard.writeText(details);
                       toast.success("Details copied");
                     }}
-                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white text-[14px] font-medium text-slate-700 hover:bg-slate-50"
+                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
                   >
                     <Copy className="h-4 w-4" />
                     Copy details
@@ -2624,7 +2629,7 @@ export function ClientUserDashboard({
                             <h3 className="text-xl font-semibold text-white">
                               {selectedAlert.title}
                             </h3>
-                            <p className="text-white/80 text-sm font-semibold flex items-center gap-1.5 mt-1">
+                            <p className="text-white text-sm font-semibold flex items-center gap-1.5 mt-1">
                               <Clock className="w-3.5 h-3.5" />
                               {formatDate(selectedAlert.createdAt)}
                             </p>
@@ -2736,7 +2741,7 @@ export function ClientUserDashboard({
               className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white shadow-2xl z-50"
             >
               {/* Header */}
-              <div className=" bg-blue-500   p-6 border-b border-blue-400">
+              <div className=" bg-blue-600   p-6 border-b border-blue-400">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Lock className="w-6 h-6 text-white" />

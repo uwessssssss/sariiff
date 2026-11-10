@@ -57,9 +57,10 @@ import {
   Currency,
   ClientDto,
 } from "@/lib/api";
-import { useBaseCurrency, useAllowedCurrencies } from "@/lib/useBaseCurrency";
+import { useBaseCurrency, useAllowedCurrencies, useCountrySamples } from "@/lib/useBaseCurrency";
 import { ui } from "./theme";
 import { localDate } from "@/lib/dates";
+import { EMPTY_BRANDING, loadCompanyBranding, saveCompanyBranding, shrinkImage } from "@/lib/companyBranding";
 
 interface InvoiceItem {
   id: string;
@@ -204,6 +205,7 @@ export default function InvoiceManagement() {
   const { has: currencyOk } = useAllowedCurrencies();
   // New accounts / invoices start in the home currency (KES in Kenya, UGX in Uganda)
   const { baseCode } = useBaseCurrency();
+  const samples = useCountrySamples();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -281,15 +283,13 @@ export default function InvoiceManagement() {
     }
   }, []);
 
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
-    name: "SARIF FINTECH",
-    logo: "",
-    address: "Westlands, Nairobi, Kenya",
-    phone: "+254 700 000 000",
-    email: "invoices@sarif.co.ke",
-    website: "www.sarif.co.ke",
-    taxId: "KRA-P051234567X",
-  });
+  // The bureau's real details (loaded from the server; editable ones saved back).
+  // These used to start as a made-up "SARIF FINTECH / KRA-P051234567X" for every bureau.
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>(EMPTY_BRANDING);
+  const [savingCompany, setSavingCompany] = useState(false);
+  useEffect(() => {
+    loadCompanyBranding().then(setCompanyInfo).catch(() => {});
+  }, []);
 
   const [formData, setFormData] = useState({
     clientName: "",
@@ -443,30 +443,27 @@ export default function InvoiceManagement() {
   };
 
   // Handle logo upload
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setCompanyInfo({ ...companyInfo, logo: reader.result as string });
-        toast.success("✨ Logo uploaded successfully!");
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const logo = await shrinkImage(file); // saved with the other details on Save
+      setCompanyInfo((c) => ({ ...c, logo }));
+    } catch (err: any) {
+      toast.error(err?.message || "That logo couldn't be used.");
     }
   };
 
   // Export to PDF
-  const exportToPDF = (invoice: Invoice) => {
+  // templateId: the template just clicked. Reading `selectedTemplate` here gave the
+  // PREVIOUS choice — React applies setSelectedTemplate on the next render.
+  const exportToPDF = (invoice: Invoice, templateId: string = selectedTemplate) => {
     try {
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      const template = INVOICE_TEMPLATES.find((t) => t.id === selectedTemplate);
+      const template = INVOICE_TEMPLATES.find((t) => t.id === templateId);
       const primaryColor = template?.color || "#2563eb";
 
       // Convert hex to RGB
@@ -512,17 +509,14 @@ export default function InvoiceManagement() {
 
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text(companyInfo.address, companyInfo.logo ? 55 : 14, 27);
-      doc.text(
-        `${companyInfo.phone} | ${companyInfo.email}`,
-        companyInfo.logo ? 55 : 14,
-        33,
-      );
-      doc.text(
-        `${companyInfo.website} | Tax ID: ${companyInfo.taxId}`,
-        companyInfo.logo ? 55 : 14,
-        39,
-      );
+      // Only details the bureau actually has — never an empty "Tax ID:" or a stray "|".
+      const join = (...parts: string[]) => parts.filter((p) => p && p.trim()).join(" | ");
+      const headerLines = [
+        companyInfo.address,
+        join(companyInfo.phone, companyInfo.email),
+        join(companyInfo.website, companyInfo.taxId ? `Tax ID: ${companyInfo.taxId}` : ""),
+      ].filter((l) => l && l.trim());
+      headerLines.forEach((line, i) => doc.text(line, companyInfo.logo ? 55 : 14, 27 + i * 6));
 
       // INVOICE Title - Right Side
       doc.setFontSize(32);
@@ -878,7 +872,7 @@ export default function InvoiceManagement() {
                 </span>
               </div>
               {c.lines.length === 0 ? (
-                <p className="mt-2 text-sm text-slate-400">{c.empty}</p>
+                <p className="mt-2 text-sm text-slate-500">{c.empty}</p>
               ) : (
                 <div className="mt-2 space-y-0.5">
                   {c.lines.map((l, i) => (
@@ -913,13 +907,13 @@ export default function InvoiceManagement() {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1 relative group">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-500 w-5 h-5 group-focus-within:text-blue-500 transition-colors" />
               <input
                 type="text"
                 placeholder="Search by invoice #, client name, or email..."
                 value={searchTerm}
                 onChange={(e: any) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 placeholder-slate-400 font-medium rounded-lg"
+                className="w-full pl-12 pr-4 py-4 border border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 placeholder:text-slate-500 font-medium rounded-lg"
               />
             </div>
 
@@ -1064,7 +1058,7 @@ export default function InvoiceManagement() {
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-slate-700">
-                          <Calendar className="w-4 h-4 text-slate-400" />
+                          <Calendar className="w-4 h-4 text-slate-500" />
                           {new Date(invoice.date).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
@@ -1074,7 +1068,7 @@ export default function InvoiceManagement() {
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="flex items-center gap-2 text-slate-700">
-                          <Clock className="w-4 h-4 text-slate-400" />
+                          <Clock className="w-4 h-4 text-slate-500" />
                           {new Date(invoice.dueDate).toLocaleDateString(
                             "en-US",
                             { month: "short", day: "numeric", year: "numeric" },
@@ -1095,14 +1089,14 @@ export default function InvoiceManagement() {
                           whileHover={{ scale: 1.05 }}
                           className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider shadow-sm ${
                             invoice.status === "paid"
-                              ? "bg-emerald-600 text-white"
+                              ? "bg-emerald-700 text-white"
                               : invoice.status === "sent"
                                 ? "bg-blue-600 text-white"
                                 : invoice.status === "overdue"
                                   ? "bg-red-600 text-white"
                                   : invoice.status === "cancelled"
-                                    ? "bg-slate-100 text-white"
-                                    : "bg-amber-600 text-white"
+                                    ? "bg-slate-200 text-slate-700"
+                                    : "bg-amber-700 text-white"
                           }`}
                         >
                           {invoice.status === "paid" && (
@@ -1201,7 +1195,7 @@ export default function InvoiceManagement() {
                               setSelectedInvoice(invoice);
                               setShowTemplateSelector(true);
                             }}
-                            className="p-3 text-emerald-600 hover:bg-emerald-50 transition-all border border-transparent hover:border-emerald-200 rounded-lg"
+                            className="p-3 text-emerald-700 hover:bg-emerald-50 transition-all border border-transparent hover:border-emerald-200 rounded-lg"
                             title="Download PDF"
                           >
                             <Download className="w-5 h-5" />
@@ -1317,7 +1311,7 @@ export default function InvoiceManagement() {
                       <h2 className="text-3xl font-semibold text-white">
                         Create New Invoice
                       </h2>
-                      <p className="text-blue-100 text-sm mt-1">
+                      <p className="text-blue-50 text-sm mt-1">
                         Build a professional invoice with our premium templates
                       </p>
                     </div>
@@ -1393,7 +1387,7 @@ export default function InvoiceManagement() {
                           })
                         }
                         className="w-full px-5 py-4 border border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 font-medium text-lg rounded-lg"
-                        placeholder="+254 700 000 000"
+                        placeholder={samples.phone}
                       />
                     </div>
                     <div className="space-y-2">
@@ -1410,7 +1404,7 @@ export default function InvoiceManagement() {
                           })
                         }
                         className="w-full px-5 py-4 border border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 font-medium text-lg rounded-lg"
-                        placeholder="Nairobi, Kenya"
+                        placeholder={samples.place}
                       />
                     </div>
                   </div>
@@ -1491,7 +1485,7 @@ export default function InvoiceManagement() {
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={addInvoiceItem}
-                      className="px-6 py-3 bg-emerald-600 text-white transition-all font-semibold flex items-center gap-2 shadow-sm hover:bg-emerald-600"
+                      className="px-6 py-3 bg-emerald-700 text-white transition-all font-semibold flex items-center gap-2 shadow-sm hover:bg-emerald-700"
                     >
                       <Plus className="w-5 h-5" />
                       Add Line Item
@@ -1689,7 +1683,7 @@ export default function InvoiceManagement() {
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-slate-100 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-white" />
+                      <FileText className="w-6 h-6 text-slate-600" />
                     </div>
                     <h3 className="text-2xl font-semibold text-slate-800">
                       Notes & Terms
@@ -1768,7 +1762,7 @@ export default function InvoiceManagement() {
                       <h2 className="text-3xl font-semibold text-white mb-2">
                         Choose Your Template
                       </h2>
-                      <p className="text-blue-300 text-lg">
+                      <p className="text-blue-50 text-lg">
                         Select a premium design for{" "}
                         {selectedInvoice.invoiceNumber}
                       </p>
@@ -1796,7 +1790,7 @@ export default function InvoiceManagement() {
                       whileHover={{ scale: 1.05, y: -10 }}
                       onClick={() => {
                         setSelectedTemplate(template.id);
-                        exportToPDF(selectedInvoice);
+                        exportToPDF(selectedInvoice, template.id);
                         setShowTemplateSelector(false);
                       }}
                       className="cursor-pointer border-4 border-slate-200 hover:border-blue-500 transition-all overflow-hidden group shadow-sm hover:shadow-md"
@@ -1828,7 +1822,7 @@ export default function InvoiceManagement() {
                           <h3 className="font-semibold text-lg text-slate-900">
                             {template.name}
                           </h3>
-                          <Download className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                          <Download className="w-5 h-5 text-slate-500 group-hover:text-blue-600 transition-colors" />
                         </div>
                         <p className="text-sm text-slate-600 mb-3">
                           {template.description}
@@ -1879,7 +1873,7 @@ export default function InvoiceManagement() {
                       <h2 className="text-3xl font-semibold text-white">
                         Company Information
                       </h2>
-                      <p className="text-blue-100 mt-1">
+                      <p className="text-blue-50 mt-1">
                         Configure your business details for invoices
                       </p>
                     </div>
@@ -1949,9 +1943,10 @@ export default function InvoiceManagement() {
                       field: "name",
                       type: "text",
                       icon: Building,
+                      readOnly: true, // set by the super admin
                     },
                     {
-                      label: "Tax ID / KRA PIN",
+                      label: "Tax ID (KRA PIN / URA TIN)",
                       field: "taxId",
                       type: "text",
                       icon: Hash,
@@ -1967,6 +1962,7 @@ export default function InvoiceManagement() {
                       field: "phone",
                       type: "tel",
                       icon: Phone,
+                      readOnly: true, // the bureau's registered number
                     },
                     {
                       label: "Website",
@@ -1980,14 +1976,18 @@ export default function InvoiceManagement() {
                       type: "text",
                       icon: Building,
                     },
-                  ].map((field) => (
+                  ].map((field: { label: string; field: string; type: string; icon: any; readOnly?: boolean }) => (
                     <div key={field.field} className="space-y-2">
-                      <label className="block text-sm font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                      <label htmlFor={`co-${field.field}`} className="block text-sm font-semibold text-slate-700 uppercase tracking-wide flex items-center gap-2">
                         <field.icon className="w-4 h-4" />
                         {field.label}
+                        {field.readOnly && <span className="normal-case font-normal tracking-normal text-xs text-slate-500">from your account</span>}
                       </label>
                       <input
+                        id={`co-${field.field}`}
                         type={field.type}
+                        readOnly={field.readOnly}
+                        aria-readonly={field.readOnly}
                         value={companyInfo[field.field as keyof CompanyInfo]}
                         onChange={(e: any) =>
                           setCompanyInfo({
@@ -1995,7 +1995,7 @@ export default function InvoiceManagement() {
                             [field.field]: e.target.value,
                           })
                         }
-                        className="w-full px-5 py-4 border border-slate-200 focus:border-blue-500 focus:outline-none transition-all text-slate-900 font-medium text-lg rounded-lg"
+                        className={`w-full px-5 py-4 border border-slate-200 focus:border-blue-500 focus:outline-none transition-all font-medium text-lg rounded-lg ${field.readOnly ? "bg-slate-50 text-slate-500 cursor-not-allowed" : "text-slate-900"}`}
                       />
                     </div>
                   ))}
@@ -2013,12 +2013,14 @@ export default function InvoiceManagement() {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => {
+                    disabled={savingCompany}
+                    onClick={async () => {
+                      setSavingCompany(true);
+                      const err = await saveCompanyBranding(companyInfo);
+                      setSavingCompany(false);
+                      if (err) { toast.error(err); return; }
                       setShowCompanySettings(false);
-                      toast.success("✨ Company information saved!", {
-                        description:
-                          "Your settings have been updated successfully",
-                      });
+                      toast.success("Company details saved", { description: "They will appear on every invoice." });
                     }}
                     className="flex-1 px-8 py-5 bg-blue-600 text-white transition-all font-semibold text-lg flex items-center justify-center gap-3 shadow-sm hover:bg-blue-700"
                   >

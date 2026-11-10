@@ -46,6 +46,7 @@ import {
   ClientDto,
   ExpenseCategoryDto,
 } from "@/lib/api";
+import { loadCompanyBranding, saveCompanyBranding, shrinkImage } from "@/lib/companyBranding";
 
 interface OfficeSettingsProps {
   userName: string;
@@ -63,6 +64,11 @@ export function OfficeSettings({
   // Company Settings
   const [companyName, setCompanyName] = useState("");
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  // The logo is the bureau's (saved on the server, used on invoices). This upload used
+  // to say "uploaded successfully" and keep it only until the page was reloaded.
+  useEffect(() => {
+    loadCompanyBranding().then((b) => setCompanyLogo(b.logo || null)).catch(() => {});
+  }, []);
   const [officeName, setOfficeName] = useState("");
   const [officeEmail, setOfficeEmail] = useState("");
   const [officePhone, setOfficePhone] = useState("");
@@ -299,21 +305,17 @@ export function OfficeSettings({
     }
   };
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("File size must be less than 5MB");
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string;
-        setCompanyLogo(imageUrl);
-        toast.success("Company logo uploaded successfully!");
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const logo = await shrinkImage(file);
+      const err = await saveCompanyBranding({ logo });
+      if (err) { toast.error(err); return; }
+      setCompanyLogo(logo);
+      toast.success("Company logo saved — it will appear on your invoices.");
+    } catch (e: any) {
+      toast.error(e?.message || "That logo couldn't be used.");
     }
   };
 
@@ -322,9 +324,11 @@ export function OfficeSettings({
     toast.success("Profile picture removed!");
   };
 
-  const handleRemoveLogo = () => {
+  const handleRemoveLogo = async () => {
+    const err = await saveCompanyBranding({ logo: "" });
+    if (err) { toast.error(err); return; }
     setCompanyLogo(null);
-    toast.success("Company logo removed!");
+    toast.success("Company logo removed");
   };
 
   const handleSetPassword = (client: ClientDto) => {
@@ -647,7 +651,7 @@ export function OfficeSettings({
 
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
             <input
               type="text"
               value={categorySearchTerm}
@@ -795,7 +799,7 @@ export function OfficeSettings({
 
         <div className="mb-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
             <input
               type="text"
               value={searchTerm}
@@ -858,7 +862,7 @@ export function OfficeSettings({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                         {client.whatsAppNumber || "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-emerald-600">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-emerald-700">
                         {(client.balanceKES ?? 0).toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         })}
@@ -871,7 +875,7 @@ export function OfficeSettings({
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <button
                           onClick={() => handleSetPassword(client)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-semibold hover:shadow-md transition-all"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-700 text-white text-sm font-semibold hover:shadow-md transition-all"
                         >
                           <Lock className="w-4 h-4" />
                           Set Password
@@ -1209,7 +1213,7 @@ export function OfficeSettings({
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold">Delete Category</h3>
-                      <p className="text-sm text-red-100">
+                      <p className="text-sm text-white">
                         This action cannot be undone
                       </p>
                     </div>
@@ -1313,7 +1317,7 @@ export function OfficeSettings({
               onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden"
             >
-              <div className="bg-emerald-600 p-6 text-white">
+              <div className="bg-emerald-700 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white/20 flex items-center justify-center">
@@ -1371,7 +1375,7 @@ export function OfficeSettings({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600"
                     >
                       {showPassword ? (
                         <EyeOff className="w-5 h-5" />
@@ -1411,7 +1415,7 @@ export function OfficeSettings({
                   <button
                     onClick={handlePasswordSubmit}
                     disabled={passwordLoading}
-                    className="flex-1 px-6 py-3 bg-emerald-600 text-white font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 px-6 py-3 bg-emerald-700 text-white font-semibold hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {passwordLoading ? (
                       <RefreshCw className="w-5 h-5 animate-spin" />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAllowedCurrencies } from "@/lib/useBaseCurrency";
+import { useAllowedCurrencies, useCountrySamples } from "@/lib/useBaseCurrency";
 import { StatementModal, refreshOpenStatement } from "./StatementModal";
 import { TransactionDetailsDialog, RelatedAccountDialog, ReverseTransactionDialog } from "./TransactionDialogs";
 import { EditTransactionDialog } from "./EditTransactionDialog";
@@ -157,6 +157,7 @@ function clientCurrencyLines(client: any): ClientCurrencyLine[] {
 export function ClientManagement() {
   // Kenyan bureaus don't use UGX; Ugandan ones use KES too (lib/useBaseCurrency).
   const { has: currencyOk, base: homeCurrency } = useAllowedCurrencies();
+  const samples = useCountrySamples(); // placeholders in the bureau's own country
   // ==============================================
   // State Management
   // ==============================================
@@ -938,7 +939,7 @@ export function ClientManagement() {
                   ]
               ).map((b) => (
                 <div key={b.currency} className="flex items-center justify-between">
-                  <span className="text-xs opacity-75">{currencyCode(b.currency)} balance</span>
+                  <span className="text-xs">{currencyCode(b.currency)} balance</span>
                   <span className="text-sm font-semibold tabular-nums">{formatMoney(b.total, b.currency)}</span>
                 </div>
               ))}
@@ -977,7 +978,7 @@ export function ClientManagement() {
                 <span className="text-xs text-slate-500 font-semibold">
                   Positive Balances
                 </span>
-                <span className="text-sm font-semibold text-emerald-600">
+                <span className="text-sm font-semibold text-emerald-700">
                   {stats.clientsWithDebit} clients
                 </span>
               </div>
@@ -1050,7 +1051,7 @@ export function ClientManagement() {
           onClick={() => setActiveTab("debit")}
           className={`rounded-lg flex items-center gap-2 px-6 py-3 font-semibold transition-all duration-300 ${
             activeTab === "debit"
-              ? " bg-emerald-600  text-white  "
+              ? " bg-emerald-700  text-white  "
               : "bg-white text-slate-600 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg"
           }`}
         >
@@ -1091,14 +1092,14 @@ export function ClientManagement() {
       <div className="rounded-xl bg-white border border-slate-200 p-6 ">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
             <input
               type="text"
               placeholder="Search by name, phone, code..."
               value={searchTerm}
               onChange={(e: any) => setSearchTerm(e.target.value.toLowerCase())}
               className="rounded-lg w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none text-slate-600
-               focus:border-blue-500 focus:bg-white   transition-all duration-300 placeholder:text-slate-400"
+               focus:border-blue-500 focus:bg-white   transition-all duration-300 placeholder:text-slate-500"
             />
           </div>
           <div className="flex gap-2">
@@ -1216,14 +1217,14 @@ export function ClientManagement() {
                         ) => (
                           <td className="px-3 py-3.5 whitespace-nowrap text-right tabular-nums">
                             {lines.length === 0 ? (
-                              <span className="text-sm text-slate-400">-</span>
+                              <span className="text-sm text-slate-500">-</span>
                             ) : (
                               <div className="space-y-0.5">
                                 {lines.map((l) => {
                                   const v = pick(l);
                                   return (
                                     <div key={l.currency} className={`text-sm font-semibold ${color(v)}`}>
-                                      <span className="mr-1 text-xs font-medium text-slate-400">{l.code}</span>
+                                      <span className="mr-1 text-xs font-medium text-slate-500">{l.code}</span>
                                       {sign && v < 0 ? "−" : ""}
                                       {fmtAmount(Math.abs(v), l.currency)}
                                     </div>
@@ -1327,7 +1328,7 @@ export function ClientManagement() {
                               className={`rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                                 currentPage === pageNumber
                                   ? "bg-blue-600 text-white"
-                                  : "bg-white border border-slate-300 hover:bg-slate-50 text-slate-400 rounded-lg"
+                                  : "bg-white border border-slate-300 hover:bg-slate-50 text-slate-500 rounded-lg"
                               }`}
                             >
                               {pageNumber}
@@ -1340,7 +1341,7 @@ export function ClientManagement() {
                           return (
                             <span
                               key={pageNumber}
-                              className="px-2 text-slate-400"
+                              className="px-2 text-slate-500"
                             >
                               ...
                             </span>
@@ -1534,8 +1535,8 @@ export function ClientManagement() {
                               fullName: e.target.value,
                             })
                           }
-                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
-                          placeholder="John Kamau"
+                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
+                          placeholder={samples.name}
                         />
                       </div>
                       <div>
@@ -1553,8 +1554,8 @@ export function ClientManagement() {
                               whatsAppNumber: e.target.value,
                             })
                           }
-                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
-                          placeholder="+254712345678"
+                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
+                          placeholder={samples.phoneCompact}
                         />
                       </div>
                       <div>
@@ -1568,7 +1569,7 @@ export function ClientManagement() {
                           onChange={(e: any) =>
                             setFormData({ ...formData, email: e.target.value })
                           }
-                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
+                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
                           placeholder="john@example.com"
                         />
                       </div>
@@ -1586,7 +1587,7 @@ export function ClientManagement() {
                               idPassport: e.target.value,
                             })
                           }
-                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
+                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
                           placeholder="12345678"
                         />
                       </div>
@@ -1659,7 +1660,7 @@ export function ClientManagement() {
                               <span className="font-semibold text-xs text-slate-900 block leading-tight">
                                 TEMPORARY
                               </span>
-                              <span className="text-xs text-amber-600 font-semibold">
+                              <span className="text-xs text-amber-700 font-semibold">
                                 Walk-In
                               </span>
                             </div>
@@ -1697,7 +1698,7 @@ export function ClientManagement() {
                               password: e.target.value,
                             })
                           }
-                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
+                          className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
                           placeholder="Enter password for client login"
                         />
                         <p className="text-xs text-slate-500 mt-1">
@@ -1747,7 +1748,7 @@ export function ClientManagement() {
                                   onChange={(e: any) =>
                                     setFormData({ ...formData, [f.key]: parseFloat(e.target.value) || 0 })
                                   }
-                                  className="rounded-lg w-full pl-12 pr-3 py-2 bg-emerald-50 border border-emerald-300 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 focus:bg-white transition-all font-semibold text-slate-900 text-sm placeholder:text-emerald-400/60"
+                                  className="rounded-lg w-full pl-12 pr-3 py-2 bg-emerald-50 border border-emerald-300 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 focus:bg-white transition-all font-semibold text-slate-900 text-sm placeholder:text-slate-500/60"
                                   placeholder="0.00"
                                 />
                               </div>
@@ -1816,21 +1817,21 @@ export function ClientManagement() {
                       <h2 className="text-xl font-semibold text-white mb-0.5">
                         Edit Client
                       </h2>
-                      <p className="text-blue-100 text-xs font-medium">
+                      <p className="text-blue-50 text-xs font-medium">
                         Update client information
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-white/20 border border-white/30 rounded-lg text-xs font-semibold text-white">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-800 border border-white/30 rounded-lg text-xs font-semibold text-white">
                           <Hash className="w-3 h-3" />
                           {selectedClient.code}
                         </span>
                         {selectedClient.clientType === ClientType.Permanent ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/30 border border-emerald-400/40 rounded-lg text-xs font-semibold text-emerald-100">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-700 border border-emerald-400/40 rounded-lg text-xs font-semibold text-white">
                             <UserCheck className="w-3 h-3" />
                             Permanent
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-500/30 border border-amber-400/40 rounded-lg text-xs font-semibold text-amber-100">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-700 border border-amber-400/40 rounded-lg text-xs font-semibold text-white">
                             <Clock className="w-3 h-3" />
                             Temporary
                           </span>
@@ -1847,44 +1848,33 @@ export function ClientManagement() {
                 </div>
               </div>
 
-              {/* Account Balance Preview */}
+              {/* Account Balance Preview — the bureau's home currency first (UGX in Uganda),
+                  then every other currency this client holds. It used to show KES and USD only,
+                  so a Ugandan client's real balance never appeared here. */}
               <div className="px-6 py-3  bg-slate-50  border-b border-slate-200">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-xl bg-white p-3 border border-blue-200 shadow-sm">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Wallet className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-xs font-semibold text-slate-600  ">
-                        KES
-                      </span>
+                {(() => {
+                  const lines = clientCurrencyLines(selectedClient);
+                  if (!lines.some((l) => l.currency === homeCurrency))
+                    lines.unshift({ currency: homeCurrency, code: currencyCode(homeCurrency), moneyIn: 0, moneyOut: 0, balance: 0 });
+                  lines.sort((a, b) => (a.currency === homeCurrency ? -1 : b.currency === homeCurrency ? 1 : a.currency - b.currency));
+                  return (
+                    <div className={`grid gap-3 ${lines.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                      {lines.map((l) => (
+                        <div key={l.currency} className={`rounded-xl bg-white p-3 border shadow-sm ${l.currency === homeCurrency ? "border-blue-200" : "border-slate-200"}`}>
+                          <div className="flex items-center gap-1.5 mb-1.5">
+                            <Wallet className="w-3.5 h-3.5 text-blue-600" />
+                            <span className="text-xs font-semibold text-slate-600">
+                              {l.code}{l.currency === homeCurrency ? " · home" : ""}
+                            </span>
+                          </div>
+                          <p className={`text-lg font-semibold tabular-nums ${l.balance >= 0 ? "text-emerald-700" : "text-red-600"}`}>
+                            {l.code} {l.balance.toLocaleString("en-US", { maximumFractionDigits: 2 })}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                    <p
-                      className={`text-lg font-semibold ${
-                        selectedClient.balanceKES >= 0
-                          ? "text-emerald-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      KES {selectedClient.balanceKES.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-xl bg-white p-3 border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <DollarSign className="w-3.5 h-3.5 text-blue-600" />
-                      <span className="text-xs font-semibold text-slate-600  ">
-                        USD
-                      </span>
-                    </div>
-                    <p
-                      className={`text-lg font-semibold ${
-                        selectedClient.balanceUSD >= 0
-                          ? "text-blue-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      ${selectedClient.balanceUSD.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
 
               {/* Form Content */}
@@ -1896,7 +1886,7 @@ export function ClientManagement() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <User className="w-4 h-4 text-slate-400" />
+                        <User className="w-4 h-4 text-slate-500" />
                         Full Name
                       </label>
                       <input
@@ -1908,13 +1898,13 @@ export function ClientManagement() {
                             fullName: e.target.value,
                           })
                         }
-                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-slate-400" />
+                        <Phone className="w-4 h-4 text-slate-500" />
                         WhatsApp Number
                       </label>
                       <input
@@ -1926,8 +1916,8 @@ export function ClientManagement() {
                             whatsAppNumber: e.target.value,
                           })
                         }
-                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                        placeholder="+254712345678"
+                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        placeholder={samples.phoneCompact}
                       />
                     </div>
                   </div>
@@ -1935,7 +1925,7 @@ export function ClientManagement() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-slate-400" />
+                        <Mail className="w-4 h-4 text-slate-500" />
                         Email
                       </label>
                       <input
@@ -1947,13 +1937,13 @@ export function ClientManagement() {
                             email: e.target.value,
                           })
                         }
-                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-slate-400" />
+                        <Hash className="w-4 h-4 text-slate-500" />
                         ID / Passport
                       </label>
                       <input
@@ -1965,7 +1955,7 @@ export function ClientManagement() {
                             idPassport: e.target.value,
                           })
                         }
-                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
                   </div>
@@ -2013,7 +2003,7 @@ export function ClientManagement() {
                           </h4>
                           <p className="text-xs text-slate-600 mb-3">
                             This client is currently{" "}
-                            <span className="font-semibold text-amber-600">
+                            <span className="font-semibold text-amber-700">
                               temporary
                             </span>
                             . Convert to permanent status for full access.
@@ -2114,21 +2104,21 @@ export function ClientManagement() {
                       <h2 className="text-xl font-semibold text-white mb-1 tracking-tight">
                         Delete Client
                       </h2>
-                      <p className="text-red-100 text-xs font-medium">
+                      <p className="text-white text-xs font-medium">
                         This action is permanent and cannot be undone
                       </p>
                       <div className="flex items-center gap-2 mt-3">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 border border-white/30 text-xs font-semibold text-white rounded-lg">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-800 border border-white/30 text-xs font-semibold text-white rounded-lg">
                           <Hash className="w-3 h-3" />
                           {selectedClient.code}
                         </span>
                         {selectedClient.clientType === ClientType.Permanent ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/30 border border-emerald-400/40 text-xs font-semibold text-emerald-100 rounded-lg">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-700 border border-emerald-400/40 text-xs font-semibold text-white rounded-lg">
                             <UserCheck className="w-3 h-3" />
                             Permanent
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/30 border border-amber-400/40 text-xs font-semibold text-amber-100 rounded-lg">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-700 border border-amber-400/40 text-xs font-semibold text-white rounded-lg">
                             <Clock className="w-3 h-3" />
                             Temporary
                           </span>
@@ -2193,7 +2183,7 @@ export function ClientManagement() {
                         </p>
                         <p
                           className={`text-lg font-semibold tabular-nums ${
-                            b.balance >= 0 ? "text-emerald-600" : "text-red-600"
+                            b.balance >= 0 ? "text-emerald-700" : "text-red-600"
                           }`}
                         >
                           {formatMoney(b.balance, b.currency)}

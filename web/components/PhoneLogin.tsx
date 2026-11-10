@@ -23,9 +23,9 @@ const RESEND_SECONDS = 60;
 const cleanPhone = (v: string) => v.replace(/[\s-]/g, "");
 
 const inputBase =
-  "block w-full h-12 px-3.5 rounded-lg border border-slate-300 bg-white text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition-colors hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-slate-50";
+  "block w-full h-12 px-3.5 rounded-lg border border-slate-300 bg-white text-base text-slate-900 placeholder:text-slate-500 outline-none transition-colors hover:border-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-slate-50";
 const primaryBtn =
-  "flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-[15px] font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
+  "flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60";
 
 type Step = "phone" | "code" | "bureaus";
 
@@ -61,7 +61,7 @@ export function PhoneLogin() {
     setNotice(null);
     const p = cleanPhone(phone);
     if (!PHONE_PATTERN.test(p)) {
-      setError("Start with your country code, for example +254712345678.");
+      setError("Start with your country code, for example +254712345678 (Kenya) or +256772123456 (Uganda).");
       return;
     }
     setBusy("send");
@@ -159,7 +159,7 @@ export function PhoneLogin() {
   if (step === "phone") {
     return (
       <>
-        <p className="mt-2 text-[15px] text-slate-600">
+        <p className="mt-2 text-base text-slate-600">
           One sign-in for every bureau you use. We'll text you a code.
         </p>
         {alert}
@@ -219,7 +219,7 @@ export function PhoneLogin() {
               onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="6 digits"
               disabled={busy !== null}
-              className={`${inputBase} text-center text-[22px] tracking-[0.4em] tabular-nums`}
+              className={`${inputBase} text-center text-xl tracking-[0.4em] tabular-nums`}
             />
           </div>
           <button type="submit" disabled={busy !== null} className={primaryBtn}>
@@ -243,7 +243,7 @@ export function PhoneLogin() {
   // step === "bureaus"
   return (
     <>
-      <p className="mt-2 text-[15px] text-slate-600">
+      <p className="mt-2 text-base text-slate-600">
         {bureaus.length > 0 ? "Choose the bureau to open." : "Link the first bureau you use."}
       </p>
       {alert}
@@ -263,13 +263,13 @@ export function PhoneLogin() {
                   <Building2 className="h-5 w-5" />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold text-slate-900">{b.companyName}</span>
-                  <span className="block truncate text-[13px] text-slate-500">{b.clientCode}</span>
+                  <span className="block truncate text-base font-semibold text-slate-900">{b.companyName}</span>
+                  <span className="block truncate text-sm text-slate-500">{b.clientCode}</span>
                 </span>
                 {busy === b.companyId ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                  <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
                 ) : (
-                  <ChevronRight className="h-4 w-4 text-slate-400" />
+                  <ChevronRight className="h-4 w-4 text-slate-500" />
                 )}
               </button>
             </li>

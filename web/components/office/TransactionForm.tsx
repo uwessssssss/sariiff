@@ -112,6 +112,12 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
   // One idempotency session per open form; renewed after each successful save.
   const submitSession = useRef(newIdempotencyKey());
   const { base } = useBaseCurrency();
+  // Until an account is picked, the currency shown is the bureau's own (UGX in Uganda),
+  // not KES. The picked account then sets it (setCurrency(counterAccount.currency)).
+  const accountPickedRef = useRef(false);
+  useEffect(() => {
+    if (!accountPickedRef.current) setCurrency((c) => (c === Currency.KES && base !== Currency.KES ? base : c));
+  }, [base]);
   // Form state
   const [transactionType, setTransactionType] = useState<TransactionType>(
     TransactionType.Credit,
@@ -433,6 +439,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
   // AUTO-SET CURRENCY based on counter account selection
   useEffect(() => {
+    if (counterAccountId) accountPickedRef.current = true;
     if (counterAccount) {
       setCurrency(counterAccount.currency);
     }
@@ -716,11 +723,11 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
   // Dynamic colors based on balance effect
   const headerGradient = isBalanceIncrease
-    ? "bg-emerald-600"
+    ? "bg-emerald-700"
     : "bg-red-600";
 
   const buttonGradient = isBalanceIncrease
-    ? "hover:shadow-md bg-emerald-600"
+    ? "hover:shadow-md bg-emerald-700"
     : "hover:shadow-md bg-red-600";
 
   const summaryBorderColor = isBalanceIncrease
@@ -759,7 +766,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             </div>
             <div>
               <h2 className="text-lg font-semibold">New Transaction</h2>
-              <p className="text-xs opacity-90">
+              <p className="text-xs">
                 {isBalanceIncrease ? "Balance Increase" : "Balance Decrease"} •{" "}
                 {transactionType === TransactionType.Debit ? "Debit" : "Credit"}
               </p>
@@ -794,7 +801,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 <option value={AccountType.Mpesa}>Mobile money</option>
               </select>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   value={primarySearchTerm}
@@ -821,13 +828,13 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             {primaryAccountType === AccountType.Client &&
               filteredPrimaryAccounts.length === 0 &&
               primarySearchTerm && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-amber-700">
                   No clients found matching "{primarySearchTerm}"
                 </p>
               )}
             {primaryAccountType === AccountType.Client && (
               <p className="text-xs text-slate-500">
-                💡 Each client has separate KES and USD accounts
+                💡 Each client has a separate balance in every currency
               </p>
             )}
           </div>
@@ -852,7 +859,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                   <div
                     className={`w-8 h-8 flex items-center justify-center transition-all ${
                       isBalanceIncrease
-                        ? "bg-emerald-500 shadow-sm "
+                        ? "bg-emerald-600 shadow-sm "
                         : "bg-slate-100 group-hover:bg-emerald-100"
                     }`}
                   >
@@ -877,7 +884,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                     </div>
                   </div>
                 </div>
-                <div className="absolute top-1 right-1 text-xs font-mono text-slate-400">
+                <div className="absolute top-1 right-1 text-xs font-mono text-slate-500">
                   {actionLabels.increase.type === TransactionType.Debit
                     ? "DR"
                     : "CR"}
@@ -916,12 +923,12 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                     >
                       {actionLabels.decrease.label}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-600">
                       {actionLabels.decrease.description}
                     </div>
                   </div>
                 </div>
-                <div className="absolute top-1 right-1 text-xs font-mono text-slate-400">
+                <div className="absolute top-1 right-1 text-xs font-mono text-slate-600">
                   {actionLabels.decrease.type === TransactionType.Debit
                     ? "DR"
                     : "CR"}
@@ -969,7 +976,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                   className={`w-5 h-5 mx-auto mb-1 ${
                     paymentMethod === PaymentMethod.Cash
                       ? "text-blue-600"
-                      : "text-slate-400 group-hover:text-blue-500"
+                      : "text-slate-500 group-hover:text-blue-500"
                   }`}
                 />
                 <div
@@ -995,7 +1002,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                   className={`w-5 h-5 mx-auto mb-1 ${
                     paymentMethod === PaymentMethod.Bank
                       ? "text-blue-600"
-                      : "text-slate-400 group-hover:text-blue-500"
+                      : "text-slate-500 group-hover:text-blue-500"
                   }`}
                 />
                 <div
@@ -1021,7 +1028,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                   className={`w-5 h-5 mx-auto mb-1 ${
                     paymentMethod === PaymentMethod.Mpesa
                       ? "text-blue-600"
-                      : "text-slate-400 group-hover:text-blue-500"
+                      : "text-slate-500 group-hover:text-blue-500"
                   }`}
                 />
                 <div
@@ -1047,7 +1054,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                   className={`w-5 h-5 mx-auto mb-1 ${
                     paymentMethod === PaymentMethod.AccountTransfer
                       ? "text-blue-600"
-                      : "text-slate-400 group-hover:text-blue-500"
+                      : "text-slate-500 group-hover:text-blue-500"
                   }`}
                 />
                 <div
@@ -1094,7 +1101,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
 
             {paymentMethod === PaymentMethod.AccountTransfer && (
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 <input
                   type="text"
                   value={counterSearchTerm}
@@ -1132,7 +1139,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             {paymentMethod === PaymentMethod.AccountTransfer &&
               filteredCounterAccounts.length === 0 &&
               counterSearchTerm && (
-                <p className="text-xs text-amber-600">
+                <p className="text-xs text-amber-700">
                   No clients found matching "{counterSearchTerm}"
                 </p>
               )}
@@ -1296,7 +1303,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 <span className="text-slate-600">Action:</span>
                 <span
                   className={`font-semibold ${
-                    isBalanceIncrease ? "text-emerald-600" : "text-red-600"
+                    isBalanceIncrease ? "text-emerald-700" : "text-red-600"
                   }`}
                 >
                   {isBalanceIncrease
@@ -1326,7 +1333,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
               {convertedAmount && (
                 <div className="flex justify-between pt-1 border-t border-slate-200 mt-1">
                   <span className="text-slate-600">Converted:</span>
-                  <span className="font-semibold text-amber-600">
+                  <span className="font-semibold text-amber-700">
                     {getCurrencyLabel(convertedAmount.currency)}{" "}
                     {convertedAmount.amount.toLocaleString(undefined, {
                       minimumFractionDigits: 2,
@@ -1339,7 +1346,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                 <span className="text-slate-600">Balance Effect:</span>
                 <span
                   className={`font-semibold ${
-                    isBalanceIncrease ? "text-emerald-600" : "text-red-600"
+                    isBalanceIncrease ? "text-emerald-700" : "text-red-600"
                   }`}
                 >
                   {isBalanceIncrease ? "↑ Increase" : "↓ Decrease"}

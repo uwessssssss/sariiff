@@ -937,7 +937,7 @@ export function CashAtHand() {
                       <Banknote
                         className={`w-6 h-6 ${
                           account.currency === 0
-                            ? "text-emerald-600"
+                            ? "text-emerald-700"
                             : "text-blue-600"
                         }`}
                       />
@@ -984,7 +984,7 @@ export function CashAtHand() {
                       : "bg-blue-50 border-blue-500"
                   }`}
                 >
-                  <p className="text-xs text-slate-500 font-semibold mb-1">
+                  <p className="text-xs text-slate-600 font-semibold mb-1">
                     Current Balance
                   </p>
                   <p
@@ -1017,7 +1017,7 @@ export function CashAtHand() {
                     <p
                       className={`text-sm font-semibold ${
                         account.netMovement >= 0
-                          ? "text-emerald-600"
+                          ? "text-emerald-700"
                           : "text-red-600"
                       }`}
                     >
@@ -1030,7 +1030,7 @@ export function CashAtHand() {
                     <p className="text-xs text-emerald-700 font-semibold">
                       Total Debit (In)
                     </p>
-                    <p className="text-sm font-semibold text-emerald-600">
+                    <p className="text-sm font-semibold text-emerald-700">
                       +{getCurrencySymbol(account.currency)}{" "}
                       {account.totalDebit.toLocaleString()}
                     </p>
@@ -1039,7 +1039,7 @@ export function CashAtHand() {
                     <p className="text-xs text-red-700 font-semibold">
                       Total Credit (Out)
                     </p>
-                    <p className="text-sm font-semibold text-red-600">
+                    <p className="text-sm font-semibold text-red-700">
                       -{getCurrencySymbol(account.currency)}{" "}
                       {account.totalCredit.toLocaleString()}
                     </p>
@@ -1137,13 +1137,13 @@ export function CashAtHand() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-1">
               <div className="flex items-center gap-3 bg-slate-50 px-4 py-3 border border-slate-200 rounded-lg">
-                <Search className="w-5 h-5 text-slate-400" />
+                <Search className="w-5 h-5 text-slate-500" />
                 <input
                   type="text"
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e: any) => setSearchTerm(e.target.value)}
-                  className="rounded-lg flex-1 outline-none text-slate-700 placeholder-slate-400 bg-transparent"
+                  className="rounded-lg flex-1 outline-none text-slate-700 placeholder:text-slate-500 bg-transparent"
                 />
               </div>
             </div>
@@ -1258,13 +1258,13 @@ export function CashAtHand() {
                         >
                           <td className="px-4 py-4 text-sm text-slate-600 whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                              <Calendar className="w-3.5 h-3.5 text-slate-500" />
                               {new Date(txn.date).toLocaleString()}
                             </div>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
-                              <FileText className="w-3.5 h-3.5 text-slate-400" />
+                              <FileText className="w-3.5 h-3.5 text-slate-500" />
                               <span className="text-sm font-semibold text-slate-700">
                                 {txn.reference || txn.code}
                               </span>
@@ -1292,12 +1292,12 @@ export function CashAtHand() {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-right">
                             {txn.debit !== null ? (
-                              <span className="text-base font-semibold text-emerald-600">
+                              <span className="text-base font-semibold text-emerald-700">
                                 +{getCurrencySymbol(txn.currency)}{" "}
                                 {txn.debit.toLocaleString()}
                               </span>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-right">
@@ -1307,7 +1307,7 @@ export function CashAtHand() {
                                 {txn.credit.toLocaleString()}
                               </span>
                             ) : (
-                              <span className="text-slate-400">-</span>
+                              <span className="text-slate-500">-</span>
                             )}
                           </td>
                           <td className="px-4 py-4 text-base font-semibold text-slate-900 whitespace-nowrap text-right">
@@ -1494,7 +1494,7 @@ export function CashAtHand() {
                           } ${exists ? "cursor-not-allowed opacity-50" : ""}`}
                         >
                           <p className={`text-sm font-semibold ${selected ? "text-blue-700" : "text-slate-800"}`}>{c.code}</p>
-                          <p className="text-xs text-slate-500">{exists ? "Already added" : c.name}</p>
+                          <p className="text-xs text-slate-600">{exists ? "Already added" : c.name}</p>
                         </button>
                       );
                     })}
@@ -1601,7 +1601,7 @@ export function CashAtHand() {
               <div
                 className={`p-4 text-white ${
                   selectedAccount.currency === 0
-                    ? " bg-emerald-600 "
+                    ? " bg-emerald-700 "
                     : " bg-blue-600 "
                 }`}
               >
@@ -1612,7 +1612,7 @@ export function CashAtHand() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">Edit Cash Account</h3>
-                      <p className="text-xs opacity-80">
+                      <p className="text-xs">
                         Cash {getCurrencyName(selectedAccount.currency)}
                       </p>
                     </div>
@@ -1636,7 +1636,7 @@ export function CashAtHand() {
                       : "bg-blue-50 border-blue-500"
                   }`}
                 >
-                  <p className="text-xs text-slate-500 font-semibold">
+                  <p className="text-xs text-slate-600 font-semibold">
                     Current Balance
                   </p>
                   <p
@@ -1771,7 +1771,7 @@ export function CashAtHand() {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">Delete Cash Account</h3>
-                      <p className="text-xs opacity-80">
+                      <p className="text-xs">
                         This action cannot be undone
                       </p>
                     </div>
@@ -1800,7 +1800,7 @@ export function CashAtHand() {
                       <Banknote
                         className={`w-5 h-5 ${
                           selectedAccount.currency === 0
-                            ? "text-emerald-600"
+                            ? "text-emerald-700"
                             : "text-blue-600"
                         }`}
                       />
@@ -1946,7 +1946,7 @@ export function CashAtHand() {
                       : "bg-red-50 border-red-500"
                   }`}
                 >
-                  <p className="text-xs font-semibold text-slate-500 ">
+                  <p className="text-xs font-semibold text-slate-600 ">
                     Amount
                   </p>
                   <p
@@ -1990,8 +1990,8 @@ export function CashAtHand() {
                     <p
                       className={`text-sm sm:text-base font-semibold ${
                         selectedTransaction.debit !== null
-                          ? "text-emerald-600"
-                          : "text-slate-400"
+                          ? "text-emerald-700"
+                          : "text-slate-500"
                       }`}
                     >
                       {selectedTransaction.debit !== null
@@ -2008,14 +2008,14 @@ export function CashAtHand() {
                         : "bg-slate-50 border-slate-200"
                     }`}
                   >
-                    <p className="text-xs sm:text-xs font-semibold text-slate-500 ">
+                    <p className="text-xs sm:text-xs font-semibold text-slate-600 ">
                       Credit (Out)
                     </p>
                     <p
                       className={`text-sm sm:text-base font-semibold ${
                         selectedTransaction.credit !== null
-                          ? "text-red-600"
-                          : "text-slate-400"
+                          ? "text-red-700"
+                          : "text-slate-600"
                       }`}
                     >
                       {selectedTransaction.credit !== null
@@ -2052,7 +2052,7 @@ export function CashAtHand() {
                         : "bg-red-50 border-red-200"
                     }`}
                   >
-                    <p className="text-xs sm:text-xs font-semibold text-slate-500 ">
+                    <p className="text-xs sm:text-xs font-semibold text-slate-600 ">
                       Action
                     </p>
                     <p
@@ -2126,12 +2126,12 @@ export function CashAtHand() {
                             : "bg-red-50 border-red-200"
                         }`}
                       >
-                        <p className="text-slate-500">Action</p>
+                        <p className="text-slate-600">Action</p>
                         <p
                           className={`font-semibold ${
                             relatedIn(selectedTransaction.relatedAccount)
-                              ? "text-emerald-600"
-                              : "text-red-600"
+                              ? "text-emerald-700"
+                              : "text-red-700"
                           }`}
                         >
                           {selectedTransaction.relatedAccount.action}

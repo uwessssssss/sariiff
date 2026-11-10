@@ -1479,7 +1479,7 @@ export function Reconciliation() {
                     className="p-1 hover:bg-slate-200 rounded transition-colors"
                     title="Keyboard shortcuts (Shift + ?)"
                   >
-                    <Keyboard className="w-4 h-4 text-slate-400" />
+                    <Keyboard className="w-4 h-4 text-slate-500" />
                   </button>
                 </p>
               </div>
@@ -1546,7 +1546,7 @@ export function Reconciliation() {
               type: AccountType.Mpesa,
               label: "Mobile money",
               icon: Smartphone,
-              gradient: "bg-emerald-600",
+              gradient: "bg-emerald-700",
             },
             {
               type: AccountType.Cash,
@@ -1582,7 +1582,7 @@ export function Reconciliation() {
                   {typeAccounts.length}
                 </span>
                 {pendingCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-amber-500 text-white text-xs font-semibold rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                  <span className="absolute -top-2 -right-2 w-6 h-6 bg-amber-700 text-white text-xs font-semibold rounded-full flex items-center justify-center shadow-sm animate-pulse">
                     {pendingCount > 99 ? "99+" : pendingCount}
                   </span>
                 )}
@@ -1620,7 +1620,7 @@ export function Reconciliation() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
               </div>
             </div>
 
@@ -1647,8 +1647,8 @@ export function Reconciliation() {
                   <p
                     className={`text-xs font-semibold uppercase ${
                       selectedAccount.pendingCount === 0
-                        ? "text-emerald-600"
-                        : "text-amber-600"
+                        ? "text-emerald-700"
+                        : "text-amber-700"
                     }`}
                   >
                     Status
@@ -1701,11 +1701,11 @@ export function Reconciliation() {
                       {account.matchedCount} matched
                     </span>
                     {account.pendingCount > 0 ? (
-                      <span className="text-amber-600 font-semibold">
+                      <span className="text-amber-700 font-semibold">
                         {account.pendingCount} pending
                       </span>
                     ) : (
-                      <span className="text-emerald-600 font-semibold">
+                      <span className="text-emerald-700 font-semibold">
                         ✓ Complete
                       </span>
                     )}
@@ -1786,7 +1786,7 @@ export function Reconciliation() {
                     <p className="text-2xl font-semibold text-amber-700">
                       {balanceSummary.pendingCount}
                     </p>
-                    <p className="text-xs text-amber-600 font-medium">
+                    <p className="text-xs text-amber-700 font-medium">
                       Pending
                     </p>
                   </div>
@@ -1796,7 +1796,7 @@ export function Reconciliation() {
                     <p className="text-2xl font-semibold text-emerald-700">
                       {balanceSummary.matchedCount}
                     </p>
-                    <p className="text-xs text-emerald-600 font-medium">
+                    <p className="text-xs text-emerald-700 font-medium">
                       Matched
                     </p>
                   </div>
@@ -1806,7 +1806,7 @@ export function Reconciliation() {
                     <p className="text-2xl font-semibold text-red-700">
                       {balanceSummary.unmatchedCount}
                     </p>
-                    <p className="text-xs text-red-600 font-medium">
+                    <p className="text-xs text-red-700 font-medium">
                       Unmatched
                     </p>
                   </div>
@@ -1865,7 +1865,7 @@ export function Reconciliation() {
                   <div className="flex items-center gap-3">
                     {/* BUG FIX: Show reconciliation complete badge */}
                     {isReconciliationComplete && (
-                      <div className="bg-emerald-500 px-3 py-1.5 rounded flex items-center gap-2">
+                      <div className="bg-emerald-700 px-3 py-1.5 rounded flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-white" />
                         <span className="text-sm text-white font-semibold">
                           Reconciliation Complete
@@ -1913,7 +1913,7 @@ export function Reconciliation() {
                         selectedAccount.currency,
                       )}
                     </p>
-                    <p className="text-xs text-slate-400 mt-2">
+                    <p className="text-xs text-slate-500 mt-2">
                       As of{" "}
                       {new Date(
                         reconciliationPeriod.startDate,
@@ -1926,10 +1926,10 @@ export function Reconciliation() {
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-50"></div>
                     <div className="relative">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-semibold uppercase tracking-wider opacity-80">
+                        <p className="text-xs font-semibold uppercase tracking-wider">
                           Expected (System)
                         </p>
-                        <div className="bg-white/20 px-2 py-0.5 rounded text-xs font-semibold">
+                        <div className="bg-blue-800 px-2 py-0.5 rounded text-xs font-semibold">
                           CLOSING
                         </div>
                       </div>
@@ -2009,7 +2009,7 @@ export function Reconciliation() {
                         </>
                       )}
                       {isReconciliationComplete && (
-                        <div className="w-6 h-6 bg-emerald-500 flex items-center justify-center rounded-full">
+                        <div className="w-6 h-6 bg-emerald-600 flex items-center justify-center rounded-full">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                       )}
@@ -2063,7 +2063,7 @@ export function Reconciliation() {
                     <div
                       className={`flex items-center gap-2 mt-3 pt-3 border-t text-xs ${
                         isReconciliationComplete
-                          ? "border-emerald-200 text-emerald-600"
+                          ? "border-emerald-200 text-emerald-700"
                           : "border-slate-200 text-blue-600"
                       }`}
                     >
@@ -2100,13 +2100,13 @@ export function Reconciliation() {
                   >
                     <div className="absolute top-2 right-2">
                       {isReconciliationComplete || isBalanced ? (
-                        <div className="w-8 h-8 bg-emerald-500 flex items-center justify-center rounded-full shadow-sm">
+                        <div className="w-8 h-8 bg-emerald-600 flex items-center justify-center rounded-full shadow-sm">
                           <Check className="w-4 h-4 text-white" />
                         </div>
                       ) : (
                         <div
                           className={`w-8 h-8 flex items-center justify-center rounded-full shadow-sm ${
-                            hasLargeVariance ? "bg-red-500" : "bg-amber-500"
+                            hasLargeVariance ? "bg-red-500" : "bg-amber-600"
                           }`}
                         >
                           <AlertTriangle className="w-4 h-4 text-white" />
@@ -2132,7 +2132,7 @@ export function Reconciliation() {
                           ? "text-emerald-600"
                           : hasLargeVariance
                             ? "text-red-600"
-                            : "text-amber-600"
+                            : "text-amber-700"
                       }`}
                     >
                       {isReconciliationComplete || isBalanced ? (
@@ -2151,10 +2151,10 @@ export function Reconciliation() {
                     <div
                       className={`flex items-center justify-between mt-3 pt-3 border-t text-xs ${
                         isReconciliationComplete || isBalanced
-                          ? "border-emerald-200 text-emerald-600"
+                          ? "border-emerald-200 text-emerald-700"
                           : hasLargeVariance
-                            ? "border-red-200 text-red-600"
-                            : "border-amber-200 text-amber-600"
+                            ? "border-red-200 text-red-700"
+                            : "border-amber-200 text-amber-700"
                       }`}
                     >
                       <span>
@@ -2166,8 +2166,8 @@ export function Reconciliation() {
                           onClick={() => setShowAdjustmentForm(true)}
                           className={`px-2 py-1 rounded font-semibold transition-colors ${
                             hasLargeVariance
-                              ? "bg-red-200 hover:bg-red-300 text-red-700"
-                              : "bg-amber-200 hover:bg-amber-300 text-amber-700"
+                              ? "bg-red-200 hover:bg-red-300 text-red-800"
+                              : "bg-amber-200 hover:bg-amber-300 text-amber-800"
                           }`}
                         >
                           Adjust
@@ -2262,14 +2262,14 @@ export function Reconciliation() {
                                 className={`w-5 h-5 ${
                                   hasLargeVariance
                                     ? "text-red-600"
-                                    : "text-amber-600"
+                                    : "text-amber-700"
                                 }`}
                               />
                               <span
                                 className={`text-sm font-medium ${
                                   hasLargeVariance
                                     ? "text-red-700"
-                                    : "text-amber-700"
+                                    : "text-amber-800"
                                 }`}
                               >
                                 Actual is{" "}
@@ -2288,14 +2288,14 @@ export function Reconciliation() {
                                 className={`w-5 h-5 ${
                                   hasLargeVariance
                                     ? "text-red-600"
-                                    : "text-amber-600"
+                                    : "text-amber-700"
                                 }`}
                               />
                               <span
                                 className={`text-sm font-medium ${
                                   hasLargeVariance
                                     ? "text-red-700"
-                                    : "text-amber-700"
+                                    : "text-amber-800"
                                 }`}
                               >
                                 Actual is{" "}
@@ -2313,8 +2313,8 @@ export function Reconciliation() {
                         <span
                           className={`text-xs font-semibold px-2 py-1 rounded ${
                             hasLargeVariance
-                              ? "bg-red-200 text-red-700"
-                              : "bg-amber-200 text-amber-700"
+                              ? "bg-red-200 text-red-800"
+                              : "bg-amber-200 text-amber-800"
                           }`}
                         >
                           {variancePercentage}%
@@ -2328,14 +2328,14 @@ export function Reconciliation() {
                 {isReconciliationComplete && (
                   <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <div className="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center">
                         <CheckCircle2 className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <p className="text-lg font-semibold text-emerald-700">
                           All Transactions Reconciled!
                         </p>
-                        <p className="text-sm text-emerald-600">
+                        <p className="text-sm text-emerald-700">
                           {balanceSummary.matchedCount} transactions matched •
                           Expected and Actual balances are equal
                         </p>
@@ -2359,9 +2359,9 @@ export function Reconciliation() {
                   </span>
                 </div>
                 {showBreakdown ? (
-                  <ChevronUp className="w-5 h-5 text-slate-400" />
+                  <ChevronUp className="w-5 h-5 text-slate-500" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-slate-400" />
+                  <ChevronDown className="w-5 h-5 text-slate-500" />
                 )}
               </button>
 
@@ -2527,9 +2527,9 @@ export function Reconciliation() {
                             <p className="text-xs text-slate-500 uppercase font-semibold mb-1">
                               Reconciled
                             </p>
-                            <p className="text-xl font-semibold text-emerald-600">
+                            <p className="text-xl font-semibold text-emerald-700">
                               {balanceSummary.matchedCount}
-                              <span className="text-sm font-normal text-slate-400 ml-1">
+                              <span className="text-sm font-normal text-slate-500 ml-1">
                                 ({matchRate}%)
                               </span>
                             </p>
@@ -2543,8 +2543,8 @@ export function Reconciliation() {
                                 balanceSummary.pendingCount +
                                   balanceSummary.unmatchedCount ===
                                 0
-                                  ? "text-emerald-600"
-                                  : "text-amber-600"
+                                  ? "text-emerald-700"
+                                  : "text-amber-700"
                               }`}
                             >
                               {balanceSummary.pendingCount +
@@ -2622,7 +2622,7 @@ export function Reconciliation() {
                           {getCurrencySymbol(suggestion.transaction.currency)}
                           {suggestion.transaction.amount.toLocaleString()}
                         </span>
-                        <span className="text-slate-500">
+                        <span className="text-slate-600">
                           {new Date(
                             suggestion.transaction.transactionDate,
                           ).toLocaleDateString()}
@@ -2644,8 +2644,8 @@ export function Reconciliation() {
                             suggestion.confidence >= 90
                               ? "text-emerald-600"
                               : suggestion.confidence >= 70
-                                ? "text-amber-600"
-                                : "text-amber-600"
+                                ? "text-amber-700"
+                                : "text-amber-700"
                           }`}
                         />
                       </div>
@@ -2662,7 +2662,7 @@ export function Reconciliation() {
                           {getCurrencySymbol(suggestion.transaction.currency)}
                           {suggestion.statementEntry.amount.toLocaleString()}
                         </span>
-                        <span className="text-slate-500">
+                        <span className="text-slate-600">
                           {new Date(
                             suggestion.statementEntry.date,
                           ).toLocaleDateString()}
@@ -2684,8 +2684,8 @@ export function Reconciliation() {
                             suggestion.confidence >= 90
                               ? "text-emerald-700"
                               : suggestion.confidence >= 70
-                                ? "text-amber-700"
-                                : "text-amber-700"
+                                ? "text-amber-800"
+                                : "text-amber-800"
                           }`}
                         >
                           {suggestion.confidence}%
@@ -2698,7 +2698,7 @@ export function Reconciliation() {
                         aria-label="Accept match"
                         onClick={() => handleAcceptMatch(suggestion)}
                         disabled={isSubmitting}
-                        className="p-3 bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                        className="p-3 bg-emerald-700 text-white hover:bg-emerald-800 transition-colors disabled:opacity-50"
                       >
                         <Check className="w-5 h-5" />
                       </button>
@@ -2741,7 +2741,7 @@ export function Reconciliation() {
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="flex-1 min-w-[200px] max-w-md">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                   <input
                     type="text"
                     value={searchTerm}
@@ -2804,7 +2804,7 @@ export function Reconciliation() {
               <button
                 onClick={handleAutoReconcile}
                 disabled={balanceSummary.pendingCount === 0 || isSubmitting}
-                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 text-white font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-700 text-white font-semibold shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -3008,14 +3008,14 @@ export function Reconciliation() {
                               {selectedTransactions.has(txn.id) ? (
                                 <CheckSquare className="w-5 h-5 text-blue-600" />
                               ) : (
-                                <Square className="w-5 h-5 text-slate-400" />
+                                <Square className="w-5 h-5 text-slate-500" />
                               )}
                             </button>
                           )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-slate-400" />
+                            <Calendar className="w-4 h-4 text-slate-500" />
                             <span className="text-sm font-medium text-slate-900">
                               {new Date(txn.transactionDate).toLocaleDateString(
                                 "en-US",
@@ -3069,23 +3069,23 @@ export function Reconciliation() {
                               })}
                             </span>
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-600">-</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-right whitespace-nowrap">
                           {txn.variance !== null ? (
                             Math.abs(txn.variance) < 0.01 ? (
-                              <span className="text-sm font-semibold text-emerald-600">
+                              <span className="text-sm font-semibold text-emerald-700">
                                 ✓
                               </span>
                             ) : (
-                              <span className="text-sm font-semibold text-red-600">
+                              <span className="text-sm font-semibold text-red-700">
                                 {txn.variance >= 0 ? "+" : ""}
                                 {txn.variance.toLocaleString()}
                               </span>
                             )
                           ) : (
-                            <span className="text-slate-400">-</span>
+                            <span className="text-slate-600">-</span>
                           )}
                         </td>
                         <td className="px-4 py-4 text-center">
@@ -3217,7 +3217,7 @@ export function Reconciliation() {
               onClick={(e: any) => e.stopPropagation()}
               className="bg-white shadow-2xl max-w-md w-full overflow-hidden rounded-lg"
             >
-              <div className="bg-amber-600 p-6 text-white">
+              <div className="bg-amber-700 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 flex items-center justify-center rounded-lg">
@@ -3296,7 +3296,7 @@ export function Reconciliation() {
                         handleCreateAdjustment(currentVariance, adjustmentNote);
                     }}
                     disabled={!adjustmentNote.trim()}
-                    className="flex-1 px-4 py-3 bg-amber-600 text-white font-semibold hover:shadow-md transition-all rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-3 bg-amber-700 text-white font-semibold hover:shadow-md transition-all rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     <Check className="w-4 h-4" />
                     Create Adjustment
@@ -3335,7 +3335,7 @@ export function Reconciliation() {
                       <h3 className="text-xl font-semibold">
                         Upload Bank Statement
                       </h3>
-                      <p className="text-blue-300 text-sm">
+                      <p className="text-blue-50 text-sm">
                         CSV format supported
                       </p>
                     </div>
@@ -3366,7 +3366,7 @@ export function Reconciliation() {
                   <p className="text-slate-900 font-semibold mb-1">
                     Drop your CSV file here
                   </p>
-                  <p className="text-sm text-slate-500">or click to browse</p>
+                  <p className="text-sm text-slate-600">or click to browse</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -3483,7 +3483,7 @@ export function Reconciliation() {
                       <h3 className="text-xl font-semibold">
                         Reconcile Transaction
                       </h3>
-                      <p className="text-blue-100 text-sm">
+                      <p className="text-blue-50 text-sm">
                         {selectedTransaction.code}
                       </p>
                     </div>
@@ -3561,7 +3561,7 @@ export function Reconciliation() {
                             status: ReconciliationStatus.Matched,
                           })
                         }
-                        className="w-4 h-4 text-emerald-600"
+                        className="w-4 h-4 text-emerald-700"
                       />
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                       <span className="text-sm font-semibold">Matched</span>
@@ -3623,8 +3623,8 @@ export function Reconciliation() {
                             reconcileForm.actualAmount -
                               selectedTransaction.amount,
                           ) < 0.01
-                            ? "text-emerald-600"
-                            : "text-red-600"
+                            ? "text-emerald-700"
+                            : "text-red-700"
                         }`}
                       >
                         {Math.abs(
@@ -3714,7 +3714,7 @@ export function Reconciliation() {
                       handleBulkReconcile(ReconciliationStatus.Matched)
                     }
                     disabled={isSubmitting}
-                    className="w-full px-4 py-4 bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full px-4 py-4 bg-emerald-700 text-white font-semibold hover:bg-emerald-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isSubmitting ? (
                       <Loader2 className="w-5 h-5 animate-spin" />
@@ -3777,7 +3777,7 @@ export function Reconciliation() {
                       <h3 className="text-xl font-semibold">
                         Complete Reconciliation
                       </h3>
-                      <p className="text-blue-100 text-sm">
+                      <p className="text-blue-50 text-sm">
                         {selectedAccount.name}
                       </p>
                     </div>
@@ -3825,8 +3825,8 @@ export function Reconciliation() {
                     <span
                       className={`text-xl font-semibold ${
                         isBalanced || isReconciliationComplete
-                          ? "text-emerald-600"
-                          : "text-red-600"
+                          ? "text-emerald-700"
+                          : "text-red-700"
                       }`}
                     >
                       {isBalanced || isReconciliationComplete
@@ -3840,7 +3840,7 @@ export function Reconciliation() {
                 <div className="bg-slate-50 border border-slate-200 p-4 space-y-2 rounded-xl">
                   <div className="flex justify-between">
                     <span className="text-sm text-slate-600">Matched:</span>
-                    <span className="text-sm font-semibold text-emerald-600">
+                    <span className="text-sm font-semibold text-emerald-700">
                       {balanceSummary.matchedCount}
                     </span>
                   </div>
@@ -3852,7 +3852,7 @@ export function Reconciliation() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-slate-600">Pending:</span>
-                    <span className="text-sm font-semibold text-amber-600">
+                    <span className="text-sm font-semibold text-amber-700">
                       {balanceSummary.pendingCount}
                     </span>
                   </div>
@@ -3904,11 +3904,11 @@ export function Reconciliation() {
                 className={`p-6 text-white ${
                   selectedTransaction.reconciliationStatus ===
                   ReconciliationStatus.Matched
-                    ? "bg-emerald-600"
+                    ? "bg-emerald-700"
                     : selectedTransaction.reconciliationStatus ===
                         ReconciliationStatus.Unmatched
                       ? "bg-red-600"
-                      : "bg-amber-600"
+                      : "bg-amber-700"
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -3920,7 +3920,7 @@ export function Reconciliation() {
                       <h3 className="text-2xl font-semibold">
                         Transaction Details
                       </h3>
-                      <p className="text-white/80 text-sm font-mono">
+                      <p className="text-white text-sm font-mono">
                         {selectedTransaction.code}
                       </p>
                     </div>
@@ -3981,7 +3981,7 @@ export function Reconciliation() {
                       className={`text-2xl font-semibold ${
                         selectedTransaction.actualAmount !== null
                           ? "text-[#0F172A]"
-                          : "text-slate-400"
+                          : "text-slate-500"
                       }`}
                     >
                       {selectedTransaction.actualAmount !== null
@@ -4007,7 +4007,7 @@ export function Reconciliation() {
                     <p
                       className={`text-2xl font-semibold ${
                         selectedTransaction.actualAmount === null
-                          ? "text-slate-400"
+                          ? "text-slate-500"
                           : selectedTransaction.variance !== null &&
                               Math.abs(selectedTransaction.variance) < 0.01
                             ? "text-emerald-600"
@@ -4162,26 +4162,26 @@ export function Reconciliation() {
                         </div>
                         <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
                           <div>
-                            <p className="text-slate-500">Expected</p>
+                            <p className="text-slate-600">Expected</p>
                             <p className="font-semibold">
                               {getCurrencySymbol(rec.currency)}
                               {rec.expectedBalance.toLocaleString()}
                             </p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Actual</p>
+                            <p className="text-slate-600">Actual</p>
                             <p className="font-semibold">
                               {getCurrencySymbol(rec.currency)}
                               {rec.actualBalance.toLocaleString()}
                             </p>
                           </div>
                           <div>
-                            <p className="text-slate-500">Variance</p>
+                            <p className="text-slate-600">Variance</p>
                             <p
                               className={`font-semibold ${
                                 Math.abs(rec.variance) < 0.01
-                                  ? "text-emerald-600"
-                                  : "text-red-600"
+                                  ? "text-emerald-700"
+                                  : "text-red-700"
                               }`}
                             >
                               {Math.abs(rec.variance) < 0.01

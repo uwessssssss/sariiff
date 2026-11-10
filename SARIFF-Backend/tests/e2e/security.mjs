@@ -75,13 +75,21 @@ async function paced(fn) {
     const r = await api("GET", path, KE);
     check(`Kenyan office cannot read the Ugandan ${name}`, refusedStatus(r) && noLeak(r, "Test Amina", "Test Brian", "Stanbic", "Test Kampala"), `${r.status} ${(r.text || "").slice(0, 160)}`);
   }
+  // ("Test Amina" is deliberately a client at BOTH bureaus — the phone-login test — so compare ids.)
   const keClients = await api("GET", "/api/client?page=1&pageSize=200", KE);
-  check("Kenyan client list contains no Ugandan clients", noLeak(keClients, "Test Amina", "Test Brian"), "Ugandan client found");
+  const ugIds = [S.client.id, S.clientB].filter(Boolean);
+  check("Kenyan client list contains none of the Ugandan bureau's clients (by id)", keClients.status === 200 && noLeak(keClients, ...ugIds, "Test Brian"), ugIds.filter((i) => (keClients.text || "").includes(i)).join(", ") || "Test Brian found");
   const before = (await api("GET", `/api/client/${S.client.id}`, UG)).data;
   const steal = await api("POST", "/api/transaction", KE, txn(Txn.Debit, Acc.Client, S.client.id, Acc.Cash, S.tillId, 1000, Cur.UGX, "Cross-bureau"));
   const after = (await api("GET", `/api/client/${S.client.id}`, UG)).data;
   check("Kenyan office cannot post to a Ugandan client and till", steal.success !== true && JSON.stringify(before?.otherBalances) === JSON.stringify(after?.otherBalances), `${steal.status} ${steal.message}`);
-  if (someTx) check("Kenyan office cannot delete a Ugandan transaction", refusedStatus(await api("DELETE", `/api/transaction/${someTx}`, KE)));
+  if (someTx) {
+    const countUg = async () => (await api("GET", "/api/transaction?page=1&pageSize=1", UG)).data?.totalCount;
+    const n0 = await countUg();
+    const r = await api("DELETE", `/api/transaction/${someTx}`, KE, { reason: "cross-bureau" });
+    const still = (await api("GET", `/api/transaction/${someTx}`, UG)).status === 200;
+    check("Kenyan office cannot delete a Ugandan transaction", r.success !== true && still && (await countUg()) === n0, `${r.status} ${r.message}`);
+  }
   const aTx = ugTx.find((t) => t.description === "Accuracy deposit")?.id;
   if (aTx) {
     const ugxOf = async () => ((await api("GET", `/api/client/${S.client.id}`, UG)).data?.otherBalances || []).find((b) => b.currency === Cur.UGX)?.balance;
@@ -90,7 +98,10 @@ async function paced(fn) {
     const b1 = await ugxOf();
     check("Kenyan office cannot reverse a Ugandan client's transaction", refusedStatus(r) && typeof b0 === "number" && b0 === b1, `${r.status} ${r.message}; balance ${b0} → ${b1}`);
   }
-  check("Kenyan office cannot edit a Ugandan client", refusedStatus(await api("PUT", `/api/client/${S.client.id}`, KE, { fullName: "Hacked Name" })));
+  const editBody = { fullName: "Hacked Name", email: null, idPassport: null, clientType: 0, isActive: true, whatsAppNumber: S.client.phone };
+  const ed = await api("PUT", `/api/client/${S.client.id}`, KE, editBody);
+  const nameAfter = (await api("GET", `/api/client/${S.client.id}`, UG)).data?.fullName;
+  check("Kenyan office cannot edit a Ugandan client", ed.success !== true && nameAfter === "Test Amina", `${ed.status} ${ed.message}; name now ${nameAfter}`);
   check("Kenyan office cannot delete a Ugandan bank account", refusedStatus(await api("DELETE", `/api/bank/${S.bankId}`, KE)));
   if (bTx) {
     const r = await api("GET", `/api/portal/transactions/${bTx}`, CL);
@@ -209,8 +220,13 @@ async function paced(fn) {
   // ---------- 8. the security features the README promises leave a trail
   const hist = await api("GET", "/api/admin/login-history?page=1&pageSize=200", SA);
   check("Login history records the failed sign-ins", /wrong|invalid|fail/i.test(hist.text || "") && hist.status === 200, `${hist.status}`);
-  const audit = await api("GET", "/api/admin/audit-logs?page=1&pageSize=200", SA);
-  check("Audit log records office actions", audit.status === 200 && list(audit.data).length > 0, `${audit.status} ${(audit.text || "").slice(0, 120)}`);
+  const audit = await api("GET", `/api/admin/audit-logs?page=1&pageSize=200&companyId=${S.ugOffice.companyId}`, SA);
+  const rows = list(audit.data);
+  const kinds = [...new Set(rows.map((x) => `${x.entityType}:${x.action}`))];
+  check("Audit log records the Ugandan office's money actions", audit.status === 200 && rows.some((x) => x.entityType === "Transaction" && x.action === 0), `${rows.length} rows: ${kinds.join(", ")}`);
+  check("Audit log records who did it (the office user)", rows.some((x) => x.entityType === "Transaction" && x.userId === S.ugOffice.companyId), `${rows.slice(0, 3).map((x) => `${x.entityType} by ${x.userId}`).join("; ")}`);
+  check("Audit log records expenses and exchange trades too", rows.some((x) => x.entityType === "Expense") && rows.some((x) => x.entityType === "ExchangeTransaction"), kinds.join(", "));
+  check("Audit log never contains password or PIN hashes", !/\$2[aby]\$|PasswordHash":"[^(]/.test(audit.text || ""), "hash found");
   const alerts = await api("GET", "/api/admin/security/alerts", SA);
   check("Security alerts endpoint answers", alerts.status === 200, `${alerts.status}`);
 

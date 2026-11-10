@@ -76,3 +76,18 @@ export function useAllowedCurrencies(): { base: Currency; baseCode: string; allo
   const allowed = allowedCurrenciesFor(base);
   return { base, baseCode, allowed, codes: allowed.map((c) => currencyCode(c)), has: (c) => isCurrencyAllowed(base, c) };
 }
+
+/**
+ * Example values for form placeholders in the bureau's own country, so a Ugandan bureau
+ * isn't shown "+254 712 345 678 / John Kamau / Nairobi, Kenya" (found in the Nov 2026 review).
+ */
+export type CountrySamples = { phone: string; phoneCompact: string; name: string; place: string };
+export const samplesFor = (base: number): CountrySamples =>
+  base === Currency.UGX
+    ? { phone: "+256 772 123 456", phoneCompact: "+256772123456", name: "Sarah Nakato", place: "Kampala, Uganda" }
+    : { phone: "+254 712 345 678", phoneCompact: "+254712345678", name: "John Kamau", place: "Nairobi, Kenya" };
+
+export function useCountrySamples(): CountrySamples {
+  const { base } = useBaseCurrency();
+  return samplesFor(base);
+}

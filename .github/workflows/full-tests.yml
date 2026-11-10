@@ -126,6 +126,11 @@ jobs:
       - name: Accuracy — every operation moves exactly the right money; statements and totals agree
         if: success() || failure()
         run: node SARIFF-Backend/tests/e2e/accuracy.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json"
+      - name: Documents — the invoice and statement PDFs a user downloads carry the right numbers
+        if: success() || failure()
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright
+        run: node SARIFF-Backend/tests/browser/documents.mjs http://127.0.0.1:3000 http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/documents"
       - name: Requirements — every listed feature answers; recorded product decisions hold
         if: success() || failure()
         run: node SARIFF-Backend/tests/e2e/requirements.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json"

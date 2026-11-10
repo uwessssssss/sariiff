@@ -56,7 +56,7 @@ public class ExceptionMiddleware
                 if (Guid.TryParse(userIdClaim, out var uId)) userId = uId;
             }
 
-            var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+            var ipAddress = context.Connection.RemoteIpAddress is { } ra ? SARIFF.Infrastructure.Services.IpAccess.Normalize(ra.ToString()) : null;
             var requestPath = context.Request.Path.ToString();
             var method = context.Request.Method;
 
@@ -272,7 +272,7 @@ public class RateLimitingMiddleware
         if ((context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path.StartsWithSegments("/api/identity"))
             && !context.Request.Path.StartsWithSegments("/api/identity/enabled"))
         {
-            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ip = context.Connection.RemoteIpAddress is { } ra ? SARIFF.Infrastructure.Services.IpAccess.Normalize(ra.ToString()) : "unknown";
             // Normalise the path: routing is case-insensitive and ignores a trailing slash,
             // so "/api/auth/LOGIN/" must share the "/api/auth/login" bucket.
             var key = $"{ip}:{context.Request.Path.Value?.TrimEnd('/').ToLowerInvariant()}";

@@ -33,7 +33,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <Loader2 className="w-5 h-5 text-slate-400 animate-spin mx-auto mb-3" />
+          <Loader2 className="w-5 h-5 text-slate-500 animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-500">Loading…</p>
         </div>
       </div>
@@ -44,7 +44,7 @@ export default function AdminLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
-          <Loader2 className="w-5 h-5 text-slate-400 animate-spin mx-auto mb-3" />
+          <Loader2 className="w-5 h-5 text-slate-500 animate-spin mx-auto mb-3" />
           <p className="text-sm text-slate-500">Redirecting…</p>
         </div>
       </div>

@@ -5,6 +5,7 @@ import "../styles/globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { A11yManager } from "@/components/A11yManager";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -49,6 +50,8 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <div className="min-h-screen relative">
+              {/* keyboard + screen-reader behaviour for every pop-up and field */}
+              <A11yManager />
               {/* Toast Notifications */}
               <Toaster
                 position="top-right"

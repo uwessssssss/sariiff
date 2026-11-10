@@ -596,13 +596,13 @@ export function BankAccounts() {
       <div className="bg-white rounded-2xl border border-slate-200 p-6 ">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
             <input
               type="text"
               placeholder="Search by bank name, account number, or ID..."
               value={searchTerm}
               onChange={(e: any) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border text-slate-400 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white   transition-all duration-300 placeholder:text-slate-400"
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border text-slate-500 border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white   transition-all duration-300 placeholder:text-slate-500"
             />
           </div>
           <div className="flex gap-2">
@@ -721,7 +721,7 @@ export function BankAccounts() {
                       <span
                         className={`text-sm font-semibold ${
                           account.balance >= 0
-                            ? "text-emerald-600"
+                            ? "text-emerald-700"
                             : "text-red-600"
                         }`}
                       >
@@ -733,7 +733,7 @@ export function BankAccounts() {
                       <span
                         className={`text-sm font-semibold ${
                           account.netMovement >= 0
-                            ? "text-emerald-600"
+                            ? "text-emerald-700"
                             : "text-red-600"
                         }`}
                       >
@@ -861,7 +861,7 @@ export function BankAccounts() {
                       <Plus className="w-6 h-6" />
                       Add New Bank Account
                     </h3>
-                    <p className="text-xs text-blue-100 mt-1">
+                    <p className="text-xs text-blue-50 mt-1">
                       Create a new bank account record
                     </p>
                   </div>
@@ -885,9 +885,9 @@ export function BankAccounts() {
                     {/* Bank Name */}
                     <div className="group">
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-slate-400" />
+                        <Building2 className="w-4 h-4 text-slate-500" />
                         Bank Name
-                        <span className="text-red-500">*</span>
+                        <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -896,7 +896,7 @@ export function BankAccounts() {
                           setFormData({ ...formData, bankName: e.target.value })
                         }
                         placeholder="e.g., Equity Bank"
-                        className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                         required
                       />
                     </div>
@@ -904,9 +904,9 @@ export function BankAccounts() {
                     {/* Account Number */}
                     <div className="group">
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-slate-400" />
+                        <Hash className="w-4 h-4 text-slate-500" />
                         Account Number
-                        <span className="text-red-500">*</span>
+                        <span className="text-red-600">*</span>
                       </label>
                       <input
                         type="text"
@@ -918,7 +918,7 @@ export function BankAccounts() {
                           })
                         }
                         placeholder="0123456789"
-                        className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                         required
                       />
                     </div>
@@ -926,7 +926,7 @@ export function BankAccounts() {
                     {/* Branch Code */}
                     <div className="group">
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-slate-400" />
+                        <Hash className="w-4 h-4 text-slate-500" />
                         Branch Code
                       </label>
                       <input
@@ -939,16 +939,16 @@ export function BankAccounts() {
                           })
                         }
                         placeholder="068"
-                        className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
 
                     {/* Account Type/Currency */}
                     <div className="group">
                       <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <DollarSign className="w-4 h-4 text-slate-400" />
+                        <DollarSign className="w-4 h-4 text-slate-500" />
                         Currency
-                        <span className="text-red-500">*</span>
+                        <span className="text-red-600">*</span>
                       </label>
                       <select
                         value={formData.currency}
@@ -971,9 +971,9 @@ export function BankAccounts() {
                   {/* Account Name */}
                   <div className="group">
                     <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-slate-400" />
+                      <CreditCard className="w-4 h-4 text-slate-500" />
                       Account Name
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="text"
@@ -984,8 +984,8 @@ export function BankAccounts() {
                           accountName: e.target.value,
                         })
                       }
-                      placeholder="Sarif Exchange - KES"
-                      className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      placeholder={`e.g. Main account - ${baseCode}`}
+                      className="rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       required
                     />
                   </div>
@@ -1013,7 +1013,7 @@ export function BankAccounts() {
                         placeholder="0"
                         min="0"
                         step="0.01"
-                        className="rounded-lg w-full px-4 py-3 border text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none bg-white border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                        className="rounded-lg w-full px-4 py-3 border text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none bg-white border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       />
                     </div>
 
@@ -1082,11 +1082,11 @@ export function BankAccounts() {
                       <h2 className="text-xl font-semibold text-white mb-0.5">
                         Edit Bank Account
                       </h2>
-                      <p className="text-blue-100 text-xs font-medium">
+                      <p className="text-blue-50 text-xs font-medium">
                         Update bank account information
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-white/20 border border-white/30 rounded-lg text-xs font-semibold text-white">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-800 border border-white/30 rounded-lg text-xs font-semibold text-white">
                           <Hash className="w-3 h-3" />
                           {selectedAccount.code}
                         </span>
@@ -1114,9 +1114,9 @@ export function BankAccounts() {
                   {/* Bank Name */}
                   <div className="group">
                     <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-slate-400" />
+                      <Building2 className="w-4 h-4 text-slate-500" />
                       Bank Name
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="text"
@@ -1128,7 +1128,7 @@ export function BankAccounts() {
                         })
                       }
                       placeholder="Enter bank name"
-                      className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       required
                     />
                   </div>
@@ -1136,9 +1136,9 @@ export function BankAccounts() {
                   {/* Account Name */}
                   <div className="group">
                     <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-slate-400" />
+                      <CreditCard className="w-4 h-4 text-slate-500" />
                       Account Name
-                      <span className="text-red-500">*</span>
+                      <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="text"
@@ -1149,8 +1149,8 @@ export function BankAccounts() {
                           accountName: e.target.value,
                         })
                       }
-                      placeholder="Sarif Exchange - KES"
-                      className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      placeholder={`e.g. Main account - ${baseCode}`}
+                      className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                       required
                     />
                   </div>
@@ -1158,7 +1158,7 @@ export function BankAccounts() {
                   {/* Branch Code */}
                   <div className="group">
                     <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <Hash className="w-4 h-4 text-slate-400" />
+                      <Hash className="w-4 h-4 text-slate-500" />
                       Branch Code
                     </label>
                     <input
@@ -1171,14 +1171,14 @@ export function BankAccounts() {
                         })
                       }
                       placeholder="068"
-                      className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                      className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                     />
                   </div>
 
                   {/* Account Status */}
                   <div className="group">
                     <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-slate-400" />
+                      <Activity className="w-4 h-4 text-slate-500" />
                       Account Status
                     </label>
                     <select
@@ -1286,7 +1286,7 @@ export function BankAccounts() {
                       <h2 className="text-xl font-semibold text-white mb-0.5">
                         Delete Account
                       </h2>
-                      <p className="text-red-100 text-xs font-medium">
+                      <p className="text-white text-xs font-medium">
                         This action cannot be undone
                       </p>
                     </div>
@@ -1348,7 +1348,7 @@ export function BankAccounts() {
                     <span className="text-xs font-semibold text-slate-600 ">
                       Balance:
                     </span>
-                    <span className="text-sm font-semibold text-red-600">
+                    <span className="text-sm font-semibold text-red-700">
                       {getCurrencySymbol(accountToDelete.currency)}
                       {accountToDelete.balance.toLocaleString()}
                     </span>

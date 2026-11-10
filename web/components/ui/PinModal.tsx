@@ -141,7 +141,7 @@ export function PinModal({
         )}
 
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs text-gray-500 text-center">
             Contact your administrator if you don't know the PIN
           </p>
           <button

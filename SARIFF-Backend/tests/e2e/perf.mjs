@@ -5,6 +5,8 @@
 // median + slowest) and records how much data each one sends — a phone on mobile data
 // pays for every megabyte. Optionally times the busiest web screens in a real browser.
 import { readFileSync } from "node:fs";
+import http from "node:http";
+import https from "node:https";
 import { createRequire } from "node:module";
 import { client, reporter, Cur, Acc, Txn, list, sleep } from "../lib/sarif.mjs";
 
@@ -14,6 +16,14 @@ const { check, done } = reporter("PERFORMANCE");
 const UGX = Cur.UGX;
 const q = (a, p) => { const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(p * s.length))] || 0; };
 const kb = (n) => (n / 1024).toFixed(0) + " KB";
+// Bytes that actually cross the network (the API compresses JSON), read without decoding.
+const wire = (path, tok) => new Promise((res) => {
+  const u = new URL(BASE + path), lib = u.protocol === "https:" ? https : http;
+  const req = lib.request(u, { method: "GET", headers: { Authorization: `Bearer ${tok}`, "Accept-Encoding": "br, gzip" } }, (r) => {
+    let n = 0; r.on("data", (c) => (n += c.length)); r.on("end", () => res({ bytes: n, enc: r.headers["content-encoding"] || "none" }));
+  });
+  req.on("error", () => res({ bytes: -1, enc: "error" })); req.end();
+});
 
 async function pool(n, workers, fn) {
   let next = 0, ok = 0, fail = 0;
@@ -36,20 +46,22 @@ async function pool(n, workers, fn) {
   const t0 = Date.now();
   const names = ["Amina", "Brian", "Grace", "Joseph", "Mariam", "Peter", "Sarah", "David", "Fatuma", "Moses", "Ruth", "Isaac", "Esther", "Samuel", "Hadija", "Paul", "Agnes", "John", "Zainab", "Robert"];
   const last = ["Okello", "Namubiru", "Mugisha", "Achieng", "Ssempala", "Nakato", "Odongo", "Kirabo", "Waiswa", "Atim", "Lubega", "Nansubuga"];
-  const ids = [];
+  const ids = [], idByI = [];
   const mk = await pool(250, 10, async (i) => {
     const r = await api("POST", "/api/client", T, { fullName: `Perf ${names[i % 20]} ${last[i % 12]} ${String.fromCharCode(65 + (i % 26))}${String.fromCharCode(65 + Math.floor(i / 26) % 26)}`.replace(/\d/g, ""), whatsAppNumber: `+25677${String(1000000 + i).slice(-7)}`, email: null, idPassport: null, clientType: i % 3 ? 1 : 0, password: i % 3 ? null : "Client#2026x", openingBalanceKES: 0, openingBalanceUSD: 0, openingBalanceHome: 100000 + i * 1000 });
-    if (r.data?.id) ids.push(r.data.id);
+    if (r.data?.id) { ids.push(r.data.id); idByI[i] = r.data.id; }
     return r.success;
   });
   check(`250 clients created (${mk.ok} ok)`, mk.ok >= 245, `${mk.fail} failed`);
-  const busy = ids[0];
+  // client #0 has the portal password and +256771000000; ids[] is in finishing order
+  const busy = idByI[0] ?? ids[0];
+  const others = ids.filter((x) => x !== busy);
   const tx1 = await pool(1500, 20, async (i) => (await (i % 4 === 3 ? withdraw(busy, 500) : deposit(busy, 1000 + (i % 7) * 250, `Busy client deposit ${i}`))).success);
-  const tx2 = await pool(4500, 20, async (i) => (await (i % 5 === 4 ? withdraw(ids[1 + (i % (ids.length - 1))], 300) : deposit(ids[1 + (i % (ids.length - 1))], 2000 + (i % 11) * 100, `Deposit ${i}`))).success);
+  const tx2 = await pool(4500, 20, async (i) => (await (i % 5 === 4 ? withdraw(others[i % others.length], 300) : deposit(others[i % others.length], 2000 + (i % 11) * 100, `Deposit ${i}`))).success);
   const secs = ((Date.now() - t0) / 1000).toFixed(0);
   console.log(`        filled in ${secs} s: ${tx1.ok + tx2.ok} transactions posted (${tx1.fail + tx2.fail} refused)`);
   check("≥ 5,800 transactions posted", tx1.ok + tx2.ok >= 5800, `${tx1.ok + tx2.ok}`);
-  const busyClient = ids[0];
+  const busyClient = busy;
   const cLogin = await api("POST", "/api/auth/login", null, { code: (await api("GET", `/api/client/${busyClient}`, T)).data?.code, phoneNumber: "+256771000000", password: "Client#2026x" });
   const CT = cLogin.data?.accessToken;
   check("Busy client signs in (1,500 transactions)", !!CT, cLogin.message);
@@ -84,16 +96,22 @@ async function pool(n, workers, fn) {
   ];
   const SA = await login({ code: "SA-2026-001", phone: "+254700000000", password: "Test@123" });
   if (SA) endpoints.push(["Admin dashboard", SA, "/api/admin/dashboard/extended"], ["Admin bureaus", SA, "/api/admin/companies"], ["Admin analytics", SA, "/api/admin/analytics/overview"], ["Admin audit log", SA, "/api/admin/audit-logs?page=1&pageSize=50"]);
-  console.log("\n        endpoint                                   median    slowest    size");
+  console.log("\n        endpoint                                   median    slowest      JSON   on the wire");
   for (const [name, tok, path] of endpoints) {
     if (!tok) { check(`${name}: has a token`, false); continue; }
     const times = []; let size = 0, status = 0;
     for (let i = 0; i < 5; i++) { const r = await api("GET", path, tok); times.push(r.ms); size = (r.text || "").length; status = r.status; }
     const med = q(times, 0.5), max = Math.max(...times);
-    console.log(`        ${name.padEnd(42)} ${med.toFixed(0).padStart(6)} ms ${max.toFixed(0).padStart(7)} ms ${kb(size).padStart(9)}`);
+    const w = await wire(path, tok);
+    console.log(`        ${name.padEnd(42)} ${med.toFixed(0).padStart(6)} ms ${max.toFixed(0).padStart(7)} ms ${kb(size).padStart(9)} ${kb(w.bytes).padStart(9)} ${w.enc}`);
     check(`${name}: answers OK`, status === 200, `status ${status}`);
     check(`${name}: median under 1.5 s with a busy bureau`, med < 1500, `${med.toFixed(0)} ms`);
-    if (!/PDF|CSV|statement \(|Busy/.test(name)) check(`${name}: response under 500 KB`, size < 512000, kb(size));
+    // A statement / day report lists every line of its period by design (and the 6,000
+    // lines here all fall on one day), so what counts for those is the download a phone
+    // pays for; paged lists must be small either way.
+    if (/^Busy/.test(name)) { /* all-time stress lists: sizes reported above, not gated */ }
+    else if (/statement|Daily report|CSV|PDF/i.test(name)) check(`${name}: under 500 KB to download`, w.bytes >= 0 && w.bytes < 512000, `${kb(w.bytes)} on the wire (${w.enc}), ${kb(size)} of JSON`);
+    else check(`${name}: response under 500 KB`, size < 512000, kb(size));
   }
 
   // ---------- writes stay fast with a big ledger

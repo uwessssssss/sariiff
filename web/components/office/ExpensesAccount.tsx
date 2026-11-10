@@ -1133,7 +1133,7 @@ export function ExpensesAccount() {
           <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-5 text-white shadow-sm sm:col-span-2">
             <div aria-hidden className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/10 blur-3xl" />
             <div className="relative mb-3 flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wide text-blue-100">Total spent</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-blue-50">Total spent</span>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
                 <Receipt className="h-4 w-4 text-white" />
               </div>
@@ -1147,7 +1147,7 @@ export function ExpensesAccount() {
                     <span className={`font-semibold tabular-nums ${i === 0 ? "text-3xl" : "text-lg"}`}>
                       {formatMoney(r.total, r.currency)}
                     </span>
-                    <span className="text-xs tabular-nums text-blue-100">
+                    <span className="text-xs tabular-nums text-blue-50">
                       {formatMoney(r.thisMonth, r.currency)} this month
                     </span>
                   </div>
@@ -1181,7 +1181,7 @@ export function ExpensesAccount() {
                 Expense Categories
               </h2>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type="text"
                   placeholder="Search categories..."
@@ -1197,19 +1197,16 @@ export function ExpensesAccount() {
             <table className="w-full">
               <thead className="border-gray-200 bg-[#E9EEF6]">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider tracking-wide text-[#334155]">
-                    ID
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider tracking-wide text-[#334155]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#334155]">
                     Name
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider tracking-wide text-[#334155]">
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#334155]">
                     Total spent
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider tracking-wide text-[#334155]">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#334155]">
                     Expenses
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider tracking-wide text-[#334155]">
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#334155]">
                     Actions
                   </th>
                 </tr>
@@ -1218,7 +1215,7 @@ export function ExpensesAccount() {
                 {currentCategories.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={4}
                       className="px-4 py-12 text-center text-gray-500"
                     >
                       No categories found
@@ -1231,13 +1228,8 @@ export function ExpensesAccount() {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3">
-                        <span className="text-sm font-mono font-medium text-blue-600 bg-[#E9EEF6] px-2 py-1">
-                          {cat.id.slice(0, 8).toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-900">
-                          <Tag className="w-4 h-4 text-gray-400" />
+                          <Tag className="w-4 h-4 text-gray-500" />
                           {cat.name}
                         </span>
                       </td>
@@ -1325,7 +1317,7 @@ export function ExpensesAccount() {
                     <h3 className="text-lg font-semibold">
                       {selectedCategory.name}
                     </h3>
-                    <p className="text-blue-300 text-sm">
+                    <p className="text-blue-50 text-sm">
                       {getCategoryExpenses(selectedCategory.id).length} Expense
                       Records
                     </p>
@@ -1356,7 +1348,7 @@ export function ExpensesAccount() {
                   </p>
                 </div>
                 <div className="bg-blue-600 p-3 text-white">
-                  <p className="text-xs text-blue-300 uppercase font-medium mb-1">
+                  <p className="text-xs text-blue-50 uppercase font-medium mb-1">
                     Category
                   </p>
                   <p className="text-lg font-semibold truncate">
@@ -1368,7 +1360,7 @@ export function ExpensesAccount() {
               {/* Search */}
               <div className="p-4 border-b border-gray-200">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input
                     type="text"
                     placeholder="Search expenses..."
@@ -1439,14 +1431,14 @@ export function ExpensesAccount() {
                               <div className="flex items-center justify-center gap-2">
                                 <button
                                   onClick={() => openEditModal(txn)}
-                                  className="p-1.5 bg-blue-100 text-blue-600 hover:bg-blue-200 transition-colors"
+                                  className="p-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
                                   title="Edit"
                                 >
                                   <Edit className="w-4 h-4" />
                                 </button>
                                 <button
                                   onClick={() => openDeleteModal(txn)}
-                                  className="p-1.5 bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                                  className="p-1.5 bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
                                   title="Delete"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1501,7 +1493,7 @@ export function ExpensesAccount() {
               <div className="flex gap-3 p-4 border-t border-gray-200 bg-gray-50">
                 <button
                   onClick={handleExportPDF}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   Download PDF
@@ -1525,7 +1517,7 @@ export function ExpensesAccount() {
           <ModalWrapper onClose={() => setShowAddExpense(false)}>
             <div className="bg-white w-full max-w-xl max-h-[90vh] flex flex-col">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-emerald-600 text-white">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-emerald-700 text-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 flex items-center justify-center">
                     <Plus className="w-5 h-5" />
@@ -1534,7 +1526,7 @@ export function ExpensesAccount() {
                     <h3 className="text-lg font-semibold">
                       Record New Expense
                     </h3>
-                    <p className="text-emerald-200 text-sm">
+                    <p className="text-emerald-100 text-sm">
                       Double-entry accounting applied automatically
                     </p>
                   </div>
@@ -1555,7 +1547,7 @@ export function ExpensesAccount() {
                 {/* Category */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Expense Category <span className="text-red-500">*</span>
+                    Expense Category <span className="text-red-600">*</span>
                   </label>
                   <select
                     value={formData.categoryId}
@@ -1576,7 +1568,7 @@ export function ExpensesAccount() {
                 {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description <span className="text-red-500">*</span>
+                    Description <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -1593,7 +1585,7 @@ export function ExpensesAccount() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Amount <span className="text-red-500">*</span>
+                      Amount <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="number"
@@ -1612,7 +1604,7 @@ export function ExpensesAccount() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Currency <span className="text-red-500">*</span>
+                      Currency <span className="text-red-600">*</span>
                     </label>
                     <select
                       value={formData.currency}
@@ -1658,7 +1650,7 @@ export function ExpensesAccount() {
                 {/* Payment Account Type */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Payment Account Type <span className="text-red-500">*</span>
+                    Payment Account Type <span className="text-red-600">*</span>
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {[
@@ -1712,7 +1704,7 @@ export function ExpensesAccount() {
                 {availableAccounts.length > 0 ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Account <span className="text-red-500">*</span>
+                      Select Account <span className="text-red-600">*</span>
                     </label>
                     <select
                       value={formData.paymentAccountId}
@@ -1751,7 +1743,7 @@ export function ExpensesAccount() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Expense Date <span className="text-red-500">*</span>
+                      Expense Date <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="date"
@@ -1825,7 +1817,7 @@ export function ExpensesAccount() {
                           Account
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-emerald-600">
+                      <span className="text-sm font-semibold text-emerald-700">
                         -{formatMoney(formData.amount, formData.currency)}
                       </span>
                     </div>
@@ -1846,7 +1838,7 @@ export function ExpensesAccount() {
                   type="submit"
                   onClick={handleCreateExpense}
                   disabled={isSubmitting || !formData.paymentAccountId}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-700 text-white text-sm font-medium hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isSubmitting ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -1867,7 +1859,7 @@ export function ExpensesAccount() {
           <ModalWrapper onClose={() => setShowEditExpense(false)}>
             <div className="bg-white w-full max-w-md">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-amber-500 text-white">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-amber-700 text-white">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 flex items-center justify-center">
                     <Edit className="w-5 h-5" />
@@ -1891,7 +1883,7 @@ export function ExpensesAccount() {
               <form onSubmit={handleUpdateExpense} className="p-4 space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description <span className="text-red-500">*</span>
+                    Description <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -1909,7 +1901,7 @@ export function ExpensesAccount() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Amount <span className="text-red-500">*</span>
+                      Amount <span className="text-red-600">*</span>
                     </label>
                     <input
                       type="number"
@@ -2005,7 +1997,7 @@ export function ExpensesAccount() {
                               className={`font-medium ${
                                 editFormData.amount > selectedExpense.amount
                                   ? "text-red-600"
-                                  : "text-emerald-600"
+                                  : "text-emerald-700"
                               }`}
                             >
                               {editFormData.amount > selectedExpense.amount
@@ -2063,7 +2055,7 @@ export function ExpensesAccount() {
                   <AlertTriangle className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-semibold">Delete Expense?</h3>
-                <p className="text-red-200 text-sm mt-1">
+                <p className="text-white text-sm mt-1">
                   This action cannot be undone
                 </p>
               </div>

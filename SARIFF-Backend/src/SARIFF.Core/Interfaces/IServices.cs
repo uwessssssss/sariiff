@@ -99,6 +99,8 @@ public interface ITransactionService
     Task<ApiResponse<bool>> DeleteAsync(Guid companyId, Guid id, Guid userId, DeleteTransactionDto dto, Guid? clientContext = null);
     Task<ApiResponse<TransactionSummaryDto>> GetTodaySummaryAsync(Guid companyId);
     Task<ApiResponse<List<TransactionResponseDto>>> GetRecentAsync(Guid companyId, int count = 10);
+    /// <summary>Many transactions as response rows, with account names loaded in a few queries (not one per row).</summary>
+    Task<List<TransactionResponseDto>> ToResponsesAsync(IReadOnlyCollection<SARIFF.Core.Entities.Transaction> transactions);
 }
 
 /// <summary>

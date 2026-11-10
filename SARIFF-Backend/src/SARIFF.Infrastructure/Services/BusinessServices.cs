@@ -717,12 +717,9 @@ public class ReportService : IReportService
         CurrencyRollup.CashBank(cashAccounts, bankAccounts, opening: false),
         CurrencyRollup.Wallets(mpesaAgents, homeCur, opening: false));
 
-    var txnDtos = new List<TransactionResponseDto>();
-    foreach (var t in transactions)
-    {
-        var result = await _transactionService.GetByIdAsync(companyId, t.Id);
-        if (result.Data != null) txnDtos.Add(result.Data);
-    }
+    // One query for the day's rows plus a few for account names. (Before Nov 2026 this
+    // re-read every transaction one by one: 6,000 queries and ~6 s on a busy day.)
+    var txnDtos = await _transactionService.ToResponsesAsync(transactions);
 
     return new ApiResponse<DailyReportDto>(true, "Success", 
         new DailyReportDto(DateTime.SpecifyKind(date.Date, DateTimeKind.Utc), opening, summary, closing, txnDtos)); // the day as picked
@@ -738,11 +735,15 @@ public class ReportService : IReportService
         var query = _context.Users.Where(u => u.CompanyId == companyId && u.Role == UserRole.Client);
         var ccbs = _context.ClientCurrencyBalances.Where(b => b.CompanyId == companyId && !b.IsDeleted);
 
-        // Debit/credit in ANY currency — a client owing only UGX still counts.
+        // A client account is a liability: a deposit (Credit) raises it. So a POSITIVE
+        // balance is a credit balance — money the bureau holds for (owes) the client — and a
+        // NEGATIVE one is a debit balance — the client owes the bureau. This report had it
+        // the other way round (Nov 2026): every depositor was listed as owing the bureau.
+        // In ANY currency — a client owing only UGX still counts.
         if (balanceType == "debit")
-            query = query.Where(u => u.BalanceKES > 0 || u.BalanceUSD > 0 || ccbs.Any(b => b.ClientId == u.Id && b.Balance > 0));
-        else if (balanceType == "credit")
             query = query.Where(u => u.BalanceKES < 0 || u.BalanceUSD < 0 || ccbs.Any(b => b.ClientId == u.Id && b.Balance < 0));
+        else if (balanceType == "credit")
+            query = query.Where(u => u.BalanceKES > 0 || u.BalanceUSD > 0 || ccbs.Any(b => b.ClientId == u.Id && b.Balance > 0));
 
         var clients = await query.ToListAsync();
         var clientIds = clients.Select(c => c.Id).ToList();
@@ -754,7 +755,7 @@ public class ReportService : IReportService
             othersByClient.TryGetValue(c.Id, out var mine);
             mine ??= new List<ClientCurrencyBalance>();
             var all = new[] { c.BalanceKES, c.BalanceUSD }.Concat(mine.Select(b => b.Balance)).ToList();
-            var type = all.Any(v => v > 0) ? "Debit" : all.Any(v => v < 0) ? "Credit" : "Zero";
+            var type = all.Any(v => v < 0) ? "Debit" : all.Any(v => v > 0) ? "Credit" : "Zero"; // Debit = owes the bureau
             return new ClientBalanceItemDto(c.Id, c.FullName, c.WhatsAppNumber, c.BalanceKES, c.BalanceUSD, type,
                 mine.Select(b => new CurrencyAmountDto(b.Currency, CurrencyInfo.Code(b.Currency), b.Balance)).ToList());
         }).ToList();
@@ -766,19 +767,20 @@ public class ReportService : IReportService
         var byCurrency = balances.GroupBy(x => x.Item1).OrderBy(g => g.Key)
             .Select(g =>
             {
-                var owing = g.Where(x => x.Item2 > 0).Sum(x => x.Item2);
-                var owed = g.Where(x => x.Item2 < 0).Sum(x => Math.Abs(x.Item2));
-                return new CurrencyFlowTotalsDto(g.Key, CurrencyInfo.Code(g.Key), owing, owed, owing - owed);
+                var owedToClients = g.Where(x => x.Item2 > 0).Sum(x => x.Item2);            // credit balances
+                var owedByClients = g.Where(x => x.Item2 < 0).Sum(x => Math.Abs(x.Item2));   // debit balances
+                // TotalDebit = owed BY clients, TotalCredit = owed TO clients, NetFlow = net held for clients
+                return new CurrencyFlowTotalsDto(g.Key, CurrencyInfo.Code(g.Key), owedByClients, owedToClients, owedToClients - owedByClients);
             })
             .Where(x => x.TotalDebit != 0 || x.TotalCredit != 0)
             .ToList();
 
         return new ApiResponse<ClientBalanceReportDto>(true, "Success", new ClientBalanceReportDto(
             items,
-            clients.Where(c => c.BalanceKES > 0).Sum(c => c.BalanceKES),
-            clients.Where(c => c.BalanceUSD > 0).Sum(c => c.BalanceUSD),
-            clients.Where(c => c.BalanceKES < 0).Sum(c => Math.Abs(c.BalanceKES)),
+            clients.Where(c => c.BalanceKES < 0).Sum(c => Math.Abs(c.BalanceKES)),   // TotalDebitKES: owed by clients
             clients.Where(c => c.BalanceUSD < 0).Sum(c => Math.Abs(c.BalanceUSD)),
+            clients.Where(c => c.BalanceKES > 0).Sum(c => c.BalanceKES),             // TotalCreditKES: owed to clients
+            clients.Where(c => c.BalanceUSD > 0).Sum(c => c.BalanceUSD),
             byCurrency));
     }
 

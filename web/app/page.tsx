@@ -37,7 +37,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
       <SarifMark size={44} />
-      <Loader2 className="h-5 w-5 animate-spin text-slate-400" aria-label="Loading" />
+      <Loader2 className="h-5 w-5 animate-spin text-slate-500" aria-label="Loading" />
     </div>
   );
 }

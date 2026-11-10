@@ -1131,6 +1131,11 @@ public class SuperAdminService : ISuperAdminService
     {
         if (dto.Amount <= 0)
             return new ApiResponse<PaymentHistoryDto>(false, "Payment amount must be more than zero", null!);
+        // Sarif bills every bureau in KES, Ugandan ones too. Revenue totals add amounts up
+        // as KES, so a UGX or USD amount here would silently corrupt them.
+        var billingCurrency = string.IsNullOrWhiteSpace(dto.Currency) ? "KES" : dto.Currency.Trim().ToUpperInvariant();
+        if (billingCurrency != "KES")
+            return new ApiResponse<PaymentHistoryDto>(false, "Subscriptions are billed in KES. Enter the amount in KES.", null!);
         try
         {
             var company = await _context.Companies.FindAsync(dto.CompanyId);
@@ -1148,7 +1153,7 @@ public class SuperAdminService : ISuperAdminService
             {
                 CompanyId = dto.CompanyId,
                 Amount = dto.Amount,
-                Currency = dto.Currency,
+                Currency = billingCurrency,
                 PaymentMethod = dto.PaymentMethod,
                 Reference = dto.Reference,
                 Status = "Completed",

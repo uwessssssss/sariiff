@@ -190,7 +190,18 @@ public class CompanyService : ICompanyService
             if (!check.IsValid) return new ApiResponse<CompanyResponseDto>(false, check.Error!, null);
             company.Email = dto.Email;
         }
-        if (dto.LogoUrl != null) company.LogoUrl = dto.LogoUrl;
+        if (dto.LogoUrl != null)
+        {
+            // A small PNG/JPEG data: URL (the apps shrink logos to ~400 px) or an https link.
+            // Anything else — a 5 MB photo, a script URL — is refused.
+            var logo = dto.LogoUrl.Trim();
+            var isImageData = logo.StartsWith("data:image/png;base64,") || logo.StartsWith("data:image/jpeg;base64,");
+            if (logo.Length > 0 && !(isImageData || logo.StartsWith("https://")))
+                return new ApiResponse<CompanyResponseDto>(false, "The logo must be a PNG or JPG image.", null);
+            if (logo.Length > 700_000)
+                return new ApiResponse<CompanyResponseDto>(false, "The logo is too large (512 KB at most).", null);
+            company.LogoUrl = logo.Length == 0 ? null : logo;
+        }
         if (dto.TaxId != null) company.TaxId = dto.TaxId;
         if (dto.Website != null) company.Website = dto.Website;
         if (dto.Address != null) company.Address = dto.Address;

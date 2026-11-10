@@ -39,7 +39,7 @@ import {
   MOBILE_MONEY_PROVIDERS,
   providerLabel,
 } from "@/lib/api";
-import { useBaseCurrency, isCurrencyAllowed } from "@/lib/useBaseCurrency";
+import { useBaseCurrency, isCurrencyAllowed, useCountrySamples } from "@/lib/useBaseCurrency";
 import { StatementModal, refreshOpenStatement } from "./StatementModal";
 import { TransactionDetailsDialog, RelatedAccountDialog, ReverseTransactionDialog } from "./TransactionDialogs";
 import { EditTransactionDialog } from "./EditTransactionDialog";
@@ -132,6 +132,7 @@ export function MPesaAccounts() {
   // Each wallet holds its NETWORK's currency (M-Pesa = KES, MTN MoMo = UGX, Airtel = home);
   // the summary cards show home-currency wallets, other currencies are listed under them.
   const { base, baseCode } = useBaseCurrency();
+  const samples = useCountrySamples();
   const networks = MOBILE_MONEY_PROVIDERS.filter((p) => isCurrencyAllowed(base, walletCurrency(p.value, base)));
   // Data states
   const [allAgents, setAllAgents] = useState<MPesaAgent[]>([]);
@@ -564,7 +565,7 @@ export function MPesaAccounts() {
               {stats.totalAgents || allAgents.length}
             </p>
             <div className="mt-3 pt-3 border-t border-white/20">
-              <p className="text-xs opacity-75">All mobile money agents</p>
+              <p className="text-xs">All mobile money agents</p>
             </div>
           </div>
         </motion.div>
@@ -598,7 +599,7 @@ export function MPesaAccounts() {
                 <p className="text-xs text-slate-500 font-semibold">
                   Money In
                 </p>
-                <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
               </div>
             </div>
           </div>
@@ -741,13 +742,13 @@ export function MPesaAccounts() {
       <div className="bg-white rounded-2xl border border-slate-200 p-6 ">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-500" />
             <input
               type="text"
               placeholder="Search by agent name, phone, store number, or agent number..."
               value={searchTerm}
               onChange={(e: any) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-400 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300 placeholder:text-slate-400"
+              className="w-full pl-12 pr-4 py-3.5 bg-slate-50 text-slate-500 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300 placeholder:text-slate-500"
             />
           </div>
           <div className="flex gap-2">
@@ -849,14 +850,14 @@ export function MPesaAccounts() {
                           {agent.storeNumber}
                         </span>
                       ) : (
-                        <span className="text-xs text-slate-400">-</span>
+                        <span className="text-xs text-slate-500">-</span>
                       )}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span
                         className={`text-sm font-semibold ${
                           agent.balance >= 0
-                            ? "text-emerald-600"
+                            ? "text-emerald-700"
                             : "text-red-600"
                         }`}
                       >
@@ -867,7 +868,7 @@ export function MPesaAccounts() {
                       <span
                         className={`text-sm font-semibold ${
                           agent.netMovement >= 0
-                            ? "text-emerald-600"
+                            ? "text-emerald-700"
                             : "text-red-600"
                         }`}
                       >
@@ -1011,7 +1012,7 @@ export function MPesaAccounts() {
                     <h2 className="font-semibold text-white tracking-tight">
                       Add mobile money agent
                     </h2>
-                    <p className="text-blue-300 text-xs font-medium">
+                    <p className="text-blue-50 text-xs font-medium">
                       Register new mobile money agent
                     </p>
                   </div>
@@ -1045,7 +1046,7 @@ export function MPesaAccounts() {
                                 agentName: e.target.value,
                               })
                             }
-                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
+                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
                             placeholder="Sarif Exchange Agent - CBD"
                             required
                           />
@@ -1064,8 +1065,8 @@ export function MPesaAccounts() {
                                 phoneNumber: e.target.value,
                               })
                             }
-                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
-                            placeholder="+254 712 345 678"
+                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
+                            placeholder={samples.phone}
                             required
                           />
                         </div>
@@ -1083,7 +1084,7 @@ export function MPesaAccounts() {
                                 agentNumber: e.target.value,
                               })
                             }
-                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
+                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
                             placeholder="AGT-001"
                             required
                           />
@@ -1102,7 +1103,7 @@ export function MPesaAccounts() {
                                 storeNumber: e.target.value,
                               })
                             }
-                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-400"
+                            className="rounded-lg w-full px-3 py-2 bg-slate-50 border border-slate-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 focus:bg-white transition-all font-medium text-slate-900 text-sm placeholder:text-slate-500"
                             placeholder="567890"
                           />
                         </div>
@@ -1239,7 +1240,7 @@ export function MPesaAccounts() {
                                     parseFloat(e.target.value) || 0,
                                 })
                               }
-                              className="rounded-lg w-full pl-12 pr-3 py-2 bg-emerald-50 border border-emerald-300 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 focus:bg-white transition-all font-semibold text-slate-900 text-sm placeholder:text-emerald-400/60"
+                              className="rounded-lg w-full pl-12 pr-3 py-2 bg-emerald-50 border border-emerald-300 focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600/20 focus:bg-white transition-all font-semibold text-slate-900 text-sm placeholder:text-slate-500/60"
                               placeholder="0.00"
                             />
                           </div>
@@ -1301,19 +1302,19 @@ export function MPesaAccounts() {
                       <h2 className="text-xl font-semibold text-white mb-0.5">
                         Edit mobile money agent
                       </h2>
-                      <p className="text-blue-300 text-xs font-medium">
+                      <p className="text-blue-50 text-xs font-medium">
                         Update agent information and settings
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-white/20 border border-white/30 rounded-lg text-xs font-semibold text-white">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-800 border border-white/30 rounded-lg text-xs font-semibold text-white">
                           <Hash className="w-3 h-3" />
                           {selectedAgent.code}
                         </span>
                         <span
                           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 border rounded-lg text-xs font-semibold ${
                             selectedAgent.isActive
-                              ? "bg-emerald-500/30 border-emerald-400/40 text-emerald-100"
-                              : "bg-red-500/30 border-red-400/40 text-red-100"
+                              ? "bg-emerald-700 border-emerald-400/40 text-white"
+                              : "bg-red-700 border-red-400/40 text-white"
                           }`}
                         >
                           <Zap className="w-3 h-3" />
@@ -1350,7 +1351,7 @@ export function MPesaAccounts() {
                         <p className="text-xs text-slate-500 mb-0.5">
                           Opening Balance
                         </p>
-                        <p className="text-xs font-semibold text-emerald-600">
+                        <p className="text-xs font-semibold text-emerald-700">
                           {selectedAgent.openingBalance.toLocaleString()}
                         </p>
                       </div>
@@ -1387,9 +1388,9 @@ export function MPesaAccounts() {
                         {/* Agent Name */}
                         <div className="md:col-span-2">
                           <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Smartphone className="w-4 h-4 text-slate-400" />
+                            <Smartphone className="w-4 h-4 text-slate-500" />
                             Agent Name
-                            <span className="text-red-500">*</span>
+                            <span className="text-red-600">*</span>
                           </label>
                           <input
                             type="text"
@@ -1401,14 +1402,14 @@ export function MPesaAccounts() {
                               })
                             }
                             placeholder="Enter agent name"
-                            className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                            className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                           />
                         </div>
 
                         {/* Phone Number - Read Only */}
                         <div className="group">
                           <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-slate-400" />
+                            <Phone className="w-4 h-4 text-slate-500" />
                             Phone Number
                           </label>
                           <input
@@ -1422,7 +1423,7 @@ export function MPesaAccounts() {
                         {/* Agent Number - Read Only */}
                         <div className="group">
                           <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Hash className="w-4 h-4 text-slate-400" />
+                            <Hash className="w-4 h-4 text-slate-500" />
                             Agent Number
                           </label>
                           <input
@@ -1438,7 +1439,7 @@ export function MPesaAccounts() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="group">
                           <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Hash className="w-4 h-4 text-slate-400" />
+                            <Hash className="w-4 h-4 text-slate-500" />
                             Store Number
                           </label>
                           <input
@@ -1451,13 +1452,13 @@ export function MPesaAccounts() {
                               })
                             }
                             placeholder="567890"
-                            className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                            className="rounded-lg w-full px-4 py-3.5 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
                           />
                         </div>
 
                         <div className="group">
                           <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-slate-400" />
+                            <Activity className="w-4 h-4 text-slate-500" />
                             Account Status
                           </label>
                           <select
@@ -1497,7 +1498,7 @@ export function MPesaAccounts() {
                       {/* Agent Type */}
                       <div className="group">
                         <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                          <Zap className="w-4 h-4 text-slate-400" />
+                          <Zap className="w-4 h-4 text-slate-500" />
                           Agent Type
                         </label>
                         <select
@@ -1518,7 +1519,7 @@ export function MPesaAccounts() {
                       {/* Registered Date */}
                       <div className="group">
                         <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-slate-400" />
+                          <Calendar className="w-4 h-4 text-slate-500" />
                           Registered Since
                         </label>
                         <input
@@ -1586,7 +1587,7 @@ export function MPesaAccounts() {
                       <h2 className="text-xl font-semibold text-white mb-0.5">
                         Delete mobile money agent
                       </h2>
-                      <p className="text-red-100 text-xs font-medium">
+                      <p className="text-white text-xs font-medium">
                         This action cannot be undone
                       </p>
                     </div>
@@ -1650,7 +1651,7 @@ export function MPesaAccounts() {
                     <span className="text-xs font-semibold text-slate-600 ">
                       Balance:
                     </span>
-                    <span className="text-sm font-semibold text-red-600">
+                    <span className="text-sm font-semibold text-red-700">
                       {currencyCode(selectedAgent.currency)} {selectedAgent.balance.toLocaleString()}
                     </span>
                   </div>

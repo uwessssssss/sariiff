@@ -453,7 +453,7 @@ export function OfficeUserDashboard({
               })}
               {lastUpdated && (
                 <>
-                  <span className="mx-2 text-slate-300">/</span>
+                  <span className="mx-2 text-slate-500">/</span>
                   Updated{" "}
                   {lastUpdated.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
                 </>
@@ -484,12 +484,12 @@ export function OfficeUserDashboard({
                 <table className="w-full">
                   <thead className={ui.thead}>
                     <tr>
-                      <th className={`${th} pl-5`}>Account</th>
+                      <th className={`${th} pl-4 sm:pl-5`}>Account</th>
                       {shown.map((h, i) => (
-                        <th key={h.currency} className={`${th} text-right ${i === shown.length - 1 ? "pr-5" : ""}`}>
+                        <th key={h.currency} className={`${th} px-2 text-right sm:px-4 ${i === shown.length - 1 ? "pr-4 sm:pr-5" : ""}`}>
                           {h.code}
                           {h.currency === base && (
-                            <span className="ml-1.5 rounded bg-blue-600 px-1.5 py-px text-xs font-medium normal-case tracking-normal text-white">
+                            <span className="ml-1.5 hidden rounded bg-blue-600 px-1.5 py-px text-xs font-medium normal-case tracking-normal text-white sm:inline">
                               home
                             </span>
                           )}
@@ -502,9 +502,10 @@ export function OfficeUserDashboard({
                       const Icon = ROW_ICON[r.key];
                       return (
                         <tr key={r.label} className={`${ui.row} hover:bg-slate-50`}>
-                          <td className={`${td} pl-5`}>
+                          <td className={`${td} pl-4 sm:pl-5`}>
                             <span className="inline-flex items-center gap-2.5 font-medium text-slate-800">
-                              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#E9EEF6] text-[#0F172A]">
+                              {/* icons only from tablet up: on a phone every column must fit */}
+                              <span className="hidden h-7 w-7 items-center justify-center rounded-lg bg-[#E9EEF6] text-[#0F172A] sm:flex">
                                 <Icon className="h-3.5 w-3.5" />
                               </span>
                               {r.label}
@@ -513,10 +514,10 @@ export function OfficeUserDashboard({
                           {shown.map((h, i) => (
                             <td
                               key={h.currency}
-                              className={`${td} text-right font-medium text-slate-900 ${i === shown.length - 1 ? "pr-5" : ""}`}
+                              className={`${td} whitespace-nowrap px-2 text-right font-medium text-slate-900 sm:px-4 ${i === shown.length - 1 ? "pr-4 sm:pr-5" : ""}`}
                             >
                               {r.key === "mpesa" && !h.mpesa && h.currency !== base ? (
-                                <span className="text-slate-300">—</span>
+                                <span className="text-slate-500">—</span>
                               ) : (
                                 fmt(h[r.key], currencyDecimals(h.currency))
                               )}
@@ -659,7 +660,7 @@ export function OfficeUserDashboard({
                               ? "bg-emerald-50 text-emerald-700"
                               : f.net < 0
                                 ? "bg-red-50 text-red-700"
-                                : "bg-slate-100 text-slate-500"
+                                : "bg-slate-100 text-slate-600"
                           }`}
                         >
                           {signed(f.net, f.f)}

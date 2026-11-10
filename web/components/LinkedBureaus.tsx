@@ -98,8 +98,8 @@ export function BureauSwitcher({ phone }: { phone: string }) {
       >
         <Building2 className="h-4 w-4 shrink-0 text-blue-300" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13px] font-medium text-white">{current?.companyName ?? "This bureau"}</span>
-          <span className="block text-[11px] text-slate-400">Switch bureau</span>
+          <span className="block truncate text-sm font-medium text-white">{current?.companyName ?? "This bureau"}</span>
+          <span className="block text-xs text-slate-400">Switch bureau</span>
         </span>
         <ArrowLeftRight className="h-4 w-4 shrink-0 text-slate-400" />
       </button>
@@ -113,7 +113,7 @@ export function BureauSwitcher({ phone }: { phone: string }) {
                   type="button"
                   disabled={isHere || switching !== null}
                   onClick={() => go(b.companyId)}
-                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-[13px] text-slate-300 hover:bg-white/5 hover:text-white disabled:cursor-default disabled:hover:bg-transparent"
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-slate-300 hover:bg-white/5 hover:text-white disabled:cursor-default disabled:hover:bg-transparent"
                 >
                   <span className="min-w-0 flex-1 truncate">{b.companyName}</span>
                   {isHere && <Check className="h-4 w-4 text-blue-300" aria-label="Current" />}
@@ -191,7 +191,7 @@ export function LinkedBureausCard({ phone, onSignedOut }: { phone: string; onSig
   };
 
   const field =
-    "block w-full h-11 px-3 rounded-lg border border-slate-300 bg-white text-[14px] text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20";
+    "block w-full h-11 px-3 rounded-lg border border-slate-300 bg-white text-sm text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20";
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white">
@@ -206,20 +206,20 @@ export function LinkedBureausCard({ phone, onSignedOut }: { phone: string; onSig
           const isHere = b.companyId === here;
           return (
             <li key={b.companyId} className="flex items-center gap-3 px-6 py-3.5">
-              <Building2 className="h-5 w-5 shrink-0 text-slate-400" />
+              <Building2 className="h-5 w-5 shrink-0 text-slate-500" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[15px] font-medium text-slate-900">{b.companyName}</p>
-                <p className="truncate text-[13px] text-slate-500">{b.clientCode}</p>
+                <p className="truncate text-base font-medium text-slate-900">{b.companyName}</p>
+                <p className="truncate text-sm text-slate-500">{b.clientCode}</p>
               </div>
               {isHere ? (
-                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[12px] font-medium text-blue-700">Open now</span>
+                <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">Open now</span>
               ) : (
                 <>
                   <button
                     type="button"
                     onClick={() => go(b.companyId)}
                     disabled={switching !== null || busy !== null}
-                    className="rounded-md px-2.5 py-1.5 text-[13px] font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                    className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
                   >
                     {switching === b.companyId ? "Opening…" : "Open"}
                   </button>
@@ -227,7 +227,7 @@ export function LinkedBureausCard({ phone, onSignedOut }: { phone: string; onSig
                     type="button"
                     onClick={() => remove(b)}
                     disabled={busy !== null}
-                    className="rounded-md px-2.5 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                    className="rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100 disabled:opacity-50"
                   >
                     {busy === b.companyId ? "Removing…" : "Remove"}
                   </button>

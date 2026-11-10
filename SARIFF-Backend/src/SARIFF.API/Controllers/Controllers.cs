@@ -19,7 +19,8 @@ public abstract class BaseApiController : ControllerBase
     protected Guid? CompanyId => HttpContext.Items["CompanyId"] as Guid?;
     protected Guid? UserId => HttpContext.Items["UserId"] as Guid?;
     protected string? UserRole => HttpContext.Items["UserRole"] as string;
-    protected string IpAddress => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+    // "::ffff:1.2.3.4" (IPv4 seen through an IPv6 socket) is stored and shown as "1.2.3.4"
+    protected string IpAddress => HttpContext.Connection.RemoteIpAddress is { } ra ? SARIFF.Infrastructure.Services.IpAccess.Normalize(ra.ToString()) : "unknown";
     protected string? UserAgent => HttpContext.Request.Headers["User-Agent"].FirstOrDefault();
 
     /// <summary>

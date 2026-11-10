@@ -1320,8 +1320,10 @@ public class ExchangeService : IExchangeService
     public async Task<ApiResponse<ProfitReportDto>> GetProfitReportAsync(Guid companyId, DateTime from, DateTime to)
     {
         var baseCur = await _context.BaseCurrencyAsync(companyId);
-        var fromUtc = BureauClock.DayStartUtc(from);               // bureau-local days,
-        var toExclusive = BureauClock.DayStartUtc(to).AddDays(1);  // end day included
+        // bureau-local days, end day included; an omitted date means no limit
+        var (rf, rt) = BureauClock.Range(from, to);
+        var fromUtc = rf ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+        var toExclusive = rt ?? DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
         var exchanges = await _context.ExchangeTransactions.AsNoTracking()
             .Where(e => e.CompanyId == companyId
                         && e.TransactionDate >= fromUtc
@@ -1385,8 +1387,10 @@ public class ExchangeService : IExchangeService
     public async Task<ApiResponse<List<LargeTransactionReportDto>>> GetLargeTransactionsAsync(Guid companyId, DateTime from, DateTime to, decimal threshold)
     {
         var baseCur = await _context.BaseCurrencyAsync(companyId);
-        var fromUtc = BureauClock.DayStartUtc(from);               // bureau-local days,
-        var toExclusive = BureauClock.DayStartUtc(to).AddDays(1);  // end day included
+        // bureau-local days, end day included; an omitted date means no limit
+        var (rf, rt) = BureauClock.Range(from, to);
+        var fromUtc = rf ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
+        var toExclusive = rt ?? DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
         var exchanges = await _context.ExchangeTransactions.AsNoTracking()
             .Where(e => e.CompanyId == companyId
                         && e.TransactionDate >= fromUtc

@@ -740,7 +740,7 @@ export function ExchangeSection() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
         <div className="lg:col-span-1  rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-5 text-white">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-blue-100 text-sm font-medium">
+            <span className="text-blue-50 text-sm font-medium">
               Current Rate
             </span>
             <button aria-label="Settings"
@@ -754,30 +754,30 @@ export function ExchangeSection() {
             <>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-blue-100 text-xs mb-1">Buy Rate</p>
+                  <p className="text-blue-50 text-xs mb-1">Buy Rate</p>
                   <p className="text-2xl font-semibold">
                     {currentRate.buyRate.toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-blue-100 text-xs mb-1">Sell Rate</p>
+                  <p className="text-blue-50 text-xs mb-1">Sell Rate</p>
                   <p className="text-2xl font-semibold">
                     {currentRate.sellRate.toFixed(2)}
                   </p>
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-blue-100">
+                <span className="text-blue-50">
                   Spread: {spread.toFixed(2)}
                 </span>
-                <span className="bg-white/20 px-2 py-0.5 text-xs font-medium">
+                <span className="bg-blue-800 px-2 py-0.5 text-xs font-medium">
                   {marginPercent}% margin
                 </span>
               </div>
             </>
           ) : (
             <div className="text-center py-4">
-              <p className="text-blue-100 text-sm mb-2">No rate set</p>
+              <p className="text-blue-50 text-sm mb-2">No rate set</p>
               <button
                 onClick={() => setShowSetRateModal(true)}
                 className="rounded-lg text-white underline text-sm"
@@ -792,13 +792,13 @@ export function ExchangeSection() {
         <div className="rounded-xl bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-3">
             <span className="text-gray-500 text-sm font-medium">{baseCode} Float</span>
-            <Wallet className="w-5 h-5 text-gray-400" />
+            <Wallet className="w-5 h-5 text-gray-500" />
           </div>
           <p className="text-2xl font-semibold text-gray-900 mb-1">
             {formatCurrency(exchangeFloat?.kesBalance || 0, base)}
           </p>
           {exchangeFloat && exchangeFloat.kesBalance < (base === Currency.UGX ? 1400000 : 50000) && (
-            <p className="text-xs text-amber-600 flex items-center gap-1">
+            <p className="text-xs text-amber-700 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               Low balance
             </p>
@@ -821,7 +821,7 @@ export function ExchangeSection() {
             <span className="text-gray-500 text-sm font-medium">
               {(exchangeFloat?.otherBalances || []).length > 0 ? "Foreign float" : "USD Float"}
             </span>
-            <DollarSign className="w-5 h-5 text-gray-400" />
+            <DollarSign className="w-5 h-5 text-gray-500" />
           </div>
           <p className="text-2xl font-semibold text-gray-900 mb-1">
             ${formatNumber(exchangeFloat?.usdBalance || 0)}
@@ -859,7 +859,7 @@ export function ExchangeSection() {
                   ? "bg-emerald-100 text-emerald-700"
                   : todaySummary?.openingKes
                     ? "bg-amber-100 text-amber-700"
-                    : "bg-gray-100 text-gray-500"
+                    : "bg-gray-100 text-gray-600"
               }`}
             >
               {todaySummary?.isClosed
@@ -878,7 +878,7 @@ export function ExchangeSection() {
           </p>
           {todaySummary?.kesVariance != null &&
             todaySummary.kesVariance !== 0 && (
-              <p className="text-xs text-amber-600 flex items-center gap-1">
+              <p className="text-xs text-amber-700 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 Variance: {baseCode} {formatNumber(todaySummary.kesVariance)}
               </p>
@@ -906,7 +906,7 @@ export function ExchangeSection() {
           className="rounded-lg flex items-center gap-3 p-4 bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
         >
           <div className="w-10 h-10 bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-            <Minus className="w-5 h-5 text-amber-600" />
+            <Minus className="w-5 h-5 text-amber-700" />
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">Withdraw</p>
@@ -954,7 +954,7 @@ export function ExchangeSection() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type="text"
                   placeholder="Search..."
@@ -1040,7 +1040,7 @@ export function ExchangeSection() {
                     <td className="px-4 py-3 whitespace-nowrap tabular-nums text-sm font-medium text-gray-900">
                       <div className="flex items-center gap-2">
                         {txn.isLargeTransaction && (
-                          <AlertTriangle className="w-4 h-4 text-amber-500" />
+                          <AlertTriangle className="w-4 h-4 text-amber-600" />
                         )}
                         {txn.code}
                       </div>
@@ -1064,7 +1064,7 @@ export function ExchangeSection() {
                           : "Account"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap tabular-nums text-sm text-right text-emerald-600 font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap tabular-nums text-sm text-right text-emerald-700 font-medium">
                       +{formatCurrency(txn.amountGiven, txn.currencyGiven)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap tabular-nums text-sm text-right text-red-600 font-medium">
@@ -1077,7 +1077,7 @@ export function ExchangeSection() {
                     {/* Buys book no profit (average cost): show a dash, not "KES 0". A sale
                         below cost is a loss and shows red. */}
                     <td className={`px-4 py-3 whitespace-nowrap tabular-nums text-sm text-right font-medium ${
-                      txn.profit > 0 ? "text-emerald-600" : txn.profit < 0 ? "text-red-600" : "text-slate-400"
+                      txn.profit > 0 ? "text-emerald-700" : txn.profit < 0 ? "text-red-600" : "text-slate-500"
                     }`}>
                       {txn.profit ? `${txn.profit > 0 ? "+" : "−"}${formatCurrency(Math.abs(txn.profit), txn.profitCurrency)}` : "—"}
                     </td>
@@ -1226,7 +1226,7 @@ export function ExchangeSection() {
               </div>
               <div className="p-4 max-h-96 overflow-y-auto">
                 {floatHistory.length === 0 ? (
-                  <p className="text-center text-gray-400 py-8">
+                  <p className="text-center text-gray-500 py-8">
                     No daily records this month. Start by recording an opening
                     float.
                   </p>
@@ -1244,7 +1244,7 @@ export function ExchangeSection() {
                           <th className="py-2 px-2 font-semibold text-right uppercase tracking-wide text-[#334155] text-xs">
                             Exchanges
                           </th>
-                          <th className="py-2 px-2 font-semibold text-emerald-600 text-right uppercase tracking-wide text-[#334155] text-xs">
+                          <th className="py-2 px-2 font-semibold text-emerald-700 text-right uppercase tracking-wide text-[#334155] text-xs">
                             {baseCode} Profit
                           </th>
                           <th className="py-2 px-2 font-semibold text-blue-600 text-right uppercase tracking-wide text-[#334155] text-xs">
@@ -1292,14 +1292,14 @@ export function ExchangeSection() {
                               ${formatNumber(day.usdProfit || 0)}
                             </td>
                             <td
-                              className={`py-2 px-2 text-right font-medium ${(day.kesVariance || 0) === 0 ? "text-gray-400" : (day.kesVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
+                              className={`py-2 px-2 text-right font-medium ${(day.kesVariance || 0) === 0 ? "text-gray-600" : (day.kesVariance || 0) > 0 ? "text-blue-600" : "text-red-700"}`}
                             >
                               {(day.kesVariance || 0) === 0
                                 ? "—"
                                 : formatNumber(day.kesVariance)}
                             </td>
                             <td
-                              className={`py-2 px-2 text-right font-medium ${(day.usdVariance || 0) === 0 ? "text-gray-400" : (day.usdVariance || 0) > 0 ? "text-blue-600" : "text-red-600"}`}
+                              className={`py-2 px-2 text-right font-medium ${(day.usdVariance || 0) === 0 ? "text-gray-600" : (day.usdVariance || 0) > 0 ? "text-blue-600" : "text-red-700"}`}
                             >
                               {(day.usdVariance || 0) === 0
                                 ? "—"
@@ -1367,7 +1367,7 @@ export function ExchangeSection() {
               </div>
               <div className="p-4 max-h-96 overflow-y-auto">
                 {rateHistory.length === 0 ? (
-                  <p className="text-center text-gray-400 py-8">
+                  <p className="text-center text-gray-500 py-8">
                     No rate history available
                   </p>
                 ) : (
@@ -1378,7 +1378,7 @@ export function ExchangeSection() {
                           <th className="text-left py-2 px-2 font-semibold uppercase tracking-wide text-[#334155] text-xs">
                             Date
                           </th>
-                          <th className="text-right py-2 px-2 font-semibold text-emerald-600 uppercase tracking-wide text-[#334155] text-xs">
+                          <th className="text-right py-2 px-2 font-semibold text-emerald-700 uppercase tracking-wide text-[#334155] text-xs">
                             Buy Rate
                           </th>
                           <th className="text-right py-2 px-2 font-semibold text-blue-600 uppercase tracking-wide text-[#334155] text-xs">
@@ -1403,7 +1403,7 @@ export function ExchangeSection() {
                                 month: "short",
                                 year: "numeric",
                               })}
-                              <span className="text-xs text-gray-400 ml-1">
+                              <span className="text-xs text-gray-600 ml-1">
                                 {new Date(
                                   r.effectiveFrom || r.createdAt,
                                 ).toLocaleTimeString("en-GB", {
@@ -1600,7 +1600,7 @@ function SetRateModal({
                   {spread.toFixed(2)} {baseCode}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 Your profit per {activeCode} exchanged
               </p>
             </div>
@@ -1768,10 +1768,10 @@ function NewExchangeModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Client{" "}
               {exchangeType === ExchangeType.FromAccount && (
-                <span className="text-red-500">*</span>
+                <span className="text-red-600">*</span>
               )}
               {exchangeType === ExchangeType.Cash && (
-                <span className="text-gray-400 text-xs ml-1">(Optional)</span>
+                <span className="text-gray-500 text-xs ml-1">(Optional)</span>
               )}
             </label>
             <select
@@ -1801,7 +1801,7 @@ function NewExchangeModal({
           {exchangeType === ExchangeType.Cash && !clientId && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Client Name <span className="text-red-500">*</span>
+                Client Name <span className="text-red-600">*</span>
               </label>
               <input
                 type="text"
@@ -1918,7 +1918,7 @@ function NewExchangeModal({
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Client Receives:</span>
-                <span className="font-semibold text-emerald-600">
+                <span className="font-semibold text-emerald-700">
                   {direction === ExchangeDirection.UsdToKes
                     ? `${baseCode} ${formatNumber(receivedAmount)}`
                     : `${fx} ${formatNumber(receivedAmount)}`}
@@ -2142,7 +2142,7 @@ function FundFloatModal({
               })
             }
             disabled={!isValid || loading}
-            className="rounded-lg px-4 py-2 bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
+            className="rounded-lg px-4 py-2 bg-emerald-700 text-white hover:bg-emerald-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Fund Float
@@ -2243,7 +2243,7 @@ function WithdrawFloatModal({
               placeholder="0.00"
             />
             {amountNum > availableBalance && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-red-600 mt-1">
                 Amount exceeds available balance
               </p>
             )}
@@ -2268,7 +2268,7 @@ function WithdrawFloatModal({
               ))}
             </select>
             {filteredAccounts.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1">
+              <p className="text-xs text-amber-700 mt-1">
                 No {currencyCode(currency)} accounts
                 available
               </p>
@@ -2330,7 +2330,7 @@ function WithdrawFloatModal({
               });
             }}
             disabled={!isValid || loading}
-            className="rounded-lg px-4 py-2 bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
+            className="rounded-lg px-4 py-2 bg-amber-700 text-white hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             Withdraw
@@ -2387,13 +2387,13 @@ function SettleProfitModal({
             <p className="text-sm text-emerald-700 mb-2">Available Profit</p>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-emerald-600">{baseCode}</p>
+                <p className="text-xs text-emerald-700">{baseCode}</p>
                 <p className="text-xl font-semibold text-emerald-700">
                   {formatNumber(exchangeFloat?.kesProfit || 0)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-emerald-600">USD</p>
+                <p className="text-xs text-emerald-700">USD</p>
                 <p className="text-xl font-semibold text-emerald-700">
                   ${formatNumber(exchangeFloat?.usdProfit || 0)}
                 </p>
@@ -2583,7 +2583,7 @@ function UsdPositionModal({
               <div className="text-right">
                 <p
                   className={`text-xl font-semibold ${
-                    isProfitable ? "text-emerald-600" : "text-red-600"
+                    isProfitable ? "text-emerald-700" : "text-red-700"
                   }`}
                 >
                   {isProfitable ? "+" : ""}{baseCode}{" "}
@@ -2591,7 +2591,7 @@ function UsdPositionModal({
                 </p>
                 <p
                   className={`text-sm ${
-                    isProfitable ? "text-emerald-600" : "text-red-600"
+                    isProfitable ? "text-emerald-700" : "text-red-700"
                   }`}
                 >
                   ({isProfitable ? "+" : ""}
@@ -2735,7 +2735,7 @@ function CalculatorModal({
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-200">
               <span className="text-gray-600">Your Profit</span>
-              <span className="font-semibold text-emerald-600">
+              <span className="font-semibold text-emerald-700">
                 {baseCode} {formatNumber(profit)}
               </span>
             </div>
@@ -2935,7 +2935,7 @@ function DayCloseModal({
                 <div className="flex justify-between">
                   <span className="text-sm">{baseCode}:</span>
                   <span
-                    className={`font-medium ${kesVariance === 0 ? "text-emerald-600" : kesVariance > 0 ? "text-blue-600" : "text-red-600"}`}
+                    className={`font-medium ${kesVariance === 0 ? "text-emerald-700" : kesVariance > 0 ? "text-blue-600" : "text-red-600"}`}
                   >
                     {kesVariance > 0 ? "+" : ""}
                     {formatNumber(kesVariance)}
@@ -2944,7 +2944,7 @@ function DayCloseModal({
                 <div className="flex justify-between">
                   <span className="text-sm">USD:</span>
                   <span
-                    className={`font-medium ${usdVariance === 0 ? "text-emerald-600" : usdVariance > 0 ? "text-blue-600" : "text-red-600"}`}
+                    className={`font-medium ${usdVariance === 0 ? "text-emerald-700" : usdVariance > 0 ? "text-blue-600" : "text-red-600"}`}
                   >
                     {usdVariance > 0 ? "+" : ""}
                     {formatNumber(usdVariance)}
@@ -2956,7 +2956,7 @@ function DayCloseModal({
                     <div key={v.currency} className="flex justify-between">
                       <span className="text-sm">{v.code}:</span>
                       <span
-                        className={`font-medium ${v.variance === 0 ? "text-emerald-600" : v.variance > 0 ? "text-blue-600" : "text-red-600"}`}
+                        className={`font-medium ${v.variance === 0 ? "text-emerald-700" : v.variance > 0 ? "text-blue-600" : "text-red-600"}`}
                       >
                         {v.variance > 0 ? "+" : ""}
                         {formatNumber(v.variance)}
@@ -3006,7 +3006,7 @@ function DayCloseModal({
             disabled={!isValid || loading}
             className={`rounded-lg px-6 py-2 text-white disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center gap-2 ${
               mode === "opening"
-                ? "bg-amber-600 hover:bg-amber-700"
+                ? "bg-amber-700 hover:bg-amber-800"
                 : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
@@ -3107,7 +3107,7 @@ function TransactionDetailModal({
           <div className="border-t border-gray-200 pt-3 space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-500">Given</span>
-              <span className="font-medium text-emerald-600">
+              <span className="font-medium text-emerald-700">
                 +
                 {formatCurrency(
                   transaction.amountGiven,
@@ -3135,7 +3135,7 @@ function TransactionDetailModal({
               <span className={`font-medium ${transaction.profit < 0 ? "text-red-700" : transaction.profit > 0 ? "text-emerald-700" : "text-slate-600"}`}>
                 {transaction.profit < 0 ? "Loss" : "Profit"}
               </span>
-              <span className={`font-semibold ${transaction.profit < 0 ? "text-red-700" : transaction.profit > 0 ? "text-emerald-700" : "text-slate-500"}`}>
+              <span className={`font-semibold ${transaction.profit < 0 ? "text-red-700" : transaction.profit > 0 ? "text-emerald-700" : "text-slate-600"}`}>
                 {transaction.profit
                   ? `${transaction.profit > 0 ? "+" : "−"}${formatCurrency(Math.abs(transaction.profit), transaction.profitCurrency)}`
                   : "None on a purchase — profit is booked when the currency is sold"}

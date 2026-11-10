@@ -446,6 +446,9 @@ export function Reports() {
 
   // Data states
   const [dailyReport, setDailyReport] = useState<DailyReportData | null>(null);
+  // The day's table shows 50 rows at a time (a busy day has thousands; exports still take all).
+  const [dailyShown, setDailyShown] = useState(50);
+  useEffect(() => { setDailyShown(50); }, [dailyReport]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [clientBalances, setClientBalances] = useState<ClientBalance[]>([]);
   const [accountSummary, setAccountSummary] = useState<AccountSummary | null>(
@@ -637,11 +640,12 @@ export function Reports() {
             balanceKES: client.balanceKES || 0,
             balanceUSD: client.balanceUSD || 0,
             balances: clientBalanceMap(client),
-            // For clients: positive balance means they owe us (we gave them credit)
-            // negative balance means we owe them — in ANY currency
-            balanceType: Object.values(clientBalanceMap(client)).some((v) => v > 0)
+            // A client's POSITIVE balance is money the bureau holds for them (a deposit
+            // raises it) — "We Owe". NEGATIVE means the client owes the bureau — "Owes Us".
+            // In ANY currency. (This was reversed until Nov 2026: depositors showed as debtors.)
+            balanceType: Object.values(clientBalanceMap(client)).some((v) => v < 0)
               ? "Owes Us"
-              : Object.values(clientBalanceMap(client)).some((v) => v < 0)
+              : Object.values(clientBalanceMap(client)).some((v) => v > 0)
                 ? "We Owe"
                 : "Settled",
           }));
@@ -1914,9 +1918,9 @@ export function Reports() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      {/* Header — stacks on phones (the buttons used to push the page past the screen edge) */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
             Reports & Analytics
           </h2>
@@ -1924,7 +1928,7 @@ export function Reports() {
             Comprehensive business intelligence and insights
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
             onClick={() => fetchReportData()}
             disabled={loading}
@@ -2182,7 +2186,7 @@ export function Reports() {
               Search
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
               <input
                 type="text"
                 value={searchTerm}
@@ -2468,7 +2472,7 @@ export function Reports() {
                               year: "numeric",
                             })}
                           </div>
-                          <div className="text-xs text-slate-400 mt-0.5">
+                          <div className="text-xs text-slate-500 mt-0.5">
                             {new Date(txn.date).toLocaleTimeString("en-GB", {
                               hour: "2-digit",
                               minute: "2-digit",
@@ -2478,7 +2482,7 @@ export function Reports() {
                         <td className="px-6 py-4 text-sm text-slate-900">
                           <div>{txn.description}</div>
                           {txn.reference && (
-                            <div className="text-xs text-blue-500 font-mono mt-0.5">
+                            <div className="text-xs text-blue-600 font-mono mt-0.5">
                               {txn.reference}
                             </div>
                           )}
@@ -2488,7 +2492,7 @@ export function Reports() {
                             {txn.sourceAccountName || "—"}
                           </div>
                           {txn.destAccountName && (
-                            <div className="text-xs text-slate-400 mt-0.5">
+                            <div className="text-xs text-slate-500 mt-0.5">
                               → {txn.destAccountName}
                             </div>
                           )}
@@ -2539,8 +2543,8 @@ export function Reports() {
                         {/* Per currency: KES and USD are never added together. */}
                         {computeCashflowByCurrency(filteredTransactions).map((b) => (
                           <div key={b.currency} className="text-sm font-semibold tabular-nums">
-                            <span className="text-emerald-600">In {formatMoney(b.in, b.currency)}</span>
-                            <span className="mx-1 text-slate-300">·</span>
+                            <span className="text-emerald-700">In {formatMoney(b.in, b.currency)}</span>
+                            <span className="mx-1 text-slate-500">·</span>
                             <span className="text-red-600">Out {formatMoney(b.out, b.currency)}</span>
                           </div>
                         ))}
@@ -2589,7 +2593,7 @@ export function Reports() {
                         </td>
                       </tr>
                     ) : (
-                      dailyReport.transactions.map(
+                      dailyReport.transactions.slice(0, dailyShown).map(
                         (txn: any, index: number) => {
                           const flow = bureauFlow(txn);
 
@@ -2611,7 +2615,7 @@ export function Reports() {
                               <td className="px-6 py-4 text-sm text-slate-900">
                                 <div>{txn.description || txn.notes || ""}</div>
                                 {(txn.reference || txn.code) && (
-                                  <div className="text-xs text-blue-500 font-mono mt-0.5">
+                                  <div className="text-xs text-blue-600 font-mono mt-0.5">
                                     {txn.reference || txn.code}
                                   </div>
                                 )}
@@ -2621,7 +2625,7 @@ export function Reports() {
                                   {txn.sourceAccountName || "—"}
                                 </div>
                                 {txn.destAccountName && (
-                                  <div className="text-xs text-slate-400 mt-0.5">
+                                  <div className="text-xs text-slate-500 mt-0.5">
                                     → {txn.destAccountName}
                                   </div>
                                 )}
@@ -2662,6 +2666,21 @@ export function Reports() {
                     )}
                   </tbody>
                 </table>
+                {dailyReport.transactions.length > dailyShown && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-6 py-3">
+                    <p className="text-sm text-slate-600">
+                      Showing {dailyShown.toLocaleString()} of {dailyReport.transactions.length.toLocaleString()} transactions. Exports include all of them.
+                    </p>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setDailyShown((n) => n + 100)} className="border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                        Show 100 more
+                      </button>
+                      <button type="button" onClick={() => setDailyShown(dailyReport.transactions.length)} className="border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                        Show all
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2698,7 +2717,7 @@ export function Reports() {
                           <p className="text-slate-600 font-medium">
                             No clients found
                           </p>
-                          <p className="text-slate-400 text-sm mt-1">
+                          <p className="text-slate-500 text-sm mt-1">
                             Client data will appear here once loaded
                           </p>
                         </td>
@@ -2727,7 +2746,7 @@ export function Reports() {
                               <td
                                 key={c}
                                 className={`px-6 py-4 whitespace-nowrap text-right text-sm font-semibold tabular-nums ${
-                                  v > 0 ? "text-emerald-600" : v < 0 ? "text-red-600" : "text-slate-500"
+                                  v > 0 ? "text-emerald-700" : v < 0 ? "text-red-600" : "text-slate-500"
                                 }`}
                               >
                                 {v > 0 ? "+" : ""}
@@ -2738,10 +2757,12 @@ export function Reports() {
                           <td className="px-6 py-4 whitespace-nowrap text-center">
                             <span
                               className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold uppercase ${
+                                // colour follows the balance like everywhere else: holding the
+                                // client's money (positive) green, client in debt (negative) red
                                 client.balanceType === "Owes Us"
-                                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg"
+                                  ? "bg-red-100 text-red-700 border border-red-200 rounded-lg"
                                   : client.balanceType === "We Owe"
-                                    ? "bg-red-100 text-red-700 border border-red-200 rounded-lg"
+                                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg"
                                     : "bg-slate-100 text-slate-600 border border-slate-200 rounded-lg"
                               }`}
                             >
@@ -2772,7 +2793,7 @@ export function Reports() {
                           const total = clientBalances.reduce((sum, cl) => sum + (cl.balances[c] || 0), 0);
                           return (
                             <td key={c} className="px-6 py-4 text-right">
-                              <span className={`font-semibold tabular-nums ${total >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                              <span className={`font-semibold tabular-nums ${total >= 0 ? "text-emerald-700" : "text-red-600"}`}>
                                 {money(total, c)}
                               </span>
                             </td>
@@ -3038,7 +3059,7 @@ export function Reports() {
               <div className="p-6 space-y-6">
                 {!exchangeSummary ? (
                   <div className="flex flex-col items-center justify-center py-20">
-                    <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
+                    <Loader2 className="w-12 h-12 text-emerald-600 animate-spin mb-4" />
                     <p className="text-slate-600">Loading exchange data...</p>
                   </div>
                 ) : (
@@ -3046,18 +3067,18 @@ export function Reports() {
                     {/* Exchange Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {/* Current Rates Card */}
-                      <div className="relative overflow-hidden bg-emerald-600 p-5 text-white">
+                      <div className="relative overflow-hidden bg-emerald-700 p-5 text-white">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-3">
-                            <Scale className="w-5 h-5 text-emerald-200" />
+                            <Scale className="w-5 h-5 text-emerald-100" />
                             <span className="text-sm font-medium text-emerald-100">
                               Current Rates
                             </span>
                           </div>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-emerald-200 text-sm">
+                              <span className="text-emerald-100 text-sm">
                                 Buy:
                               </span>
                               <span className="text-xl font-semibold">
@@ -3065,7 +3086,7 @@ export function Reports() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-emerald-200 text-sm">
+                              <span className="text-emerald-100 text-sm">
                                 Sell:
                               </span>
                               <span className="text-xl font-semibold">
@@ -3074,7 +3095,7 @@ export function Reports() {
                             </div>
                           </div>
                           <div className="mt-3 pt-3 border-t border-white/20">
-                            <span className="text-xs text-emerald-200">
+                            <span className="text-xs text-emerald-100">
                               Spread:{" "}
                               {(
                                 exchangeSummary.currentSellRate -
@@ -3092,13 +3113,13 @@ export function Reports() {
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-3">
                             <Wallet className="w-5 h-5 text-blue-200" />
-                            <span className="text-sm font-medium text-blue-100">
+                            <span className="text-sm font-medium text-blue-50">
                               Float Balance
                             </span>
                           </div>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-blue-200 text-sm">
+                              <span className="text-blue-50 text-sm">
                                 {baseCode}:
                               </span>
                               <span className="text-xl font-semibold">
@@ -3106,7 +3127,7 @@ export function Reports() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-blue-200 text-sm">
+                              <span className="text-blue-50 text-sm">
                                 USD:
                               </span>
                               <span className="text-xl font-semibold">
@@ -3115,7 +3136,7 @@ export function Reports() {
                             </div>
                             {exchangeSummary.floatOther.map((f) => (
                               <div key={f.currency} className="flex justify-between items-center">
-                                <span className="text-blue-200 text-sm">{CURRENCY_CODES[f.currency]}:</span>
+                                <span className="text-blue-50 text-sm">{CURRENCY_CODES[f.currency]}:</span>
                                 <span className="text-xl font-semibold">{f.balance.toLocaleString()}</span>
                               </div>
                             ))}
@@ -3128,32 +3149,32 @@ export function Reports() {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-3">
-                            <ArrowLeftRight className="w-5 h-5 text-blue-300" />
-                            <span className="text-sm font-medium text-blue-300">
+                            <ArrowLeftRight className="w-5 h-5 text-blue-200" />
+                            <span className="text-sm font-medium text-blue-50">
                               Volume
                             </span>
                           </div>
                           <div className="space-y-2">
                             {Object.entries(exchangeSummary.volumeByCurrency).length === 0 && (
-                              <span className="text-blue-300 text-sm">No exchanges</span>
+                              <span className="text-blue-50 text-sm">No exchanges</span>
                             )}
                             {Object.entries(exchangeSummary.volumeByCurrency)
                               .sort(([a], [b]) => Number(a) - Number(b))
                               .map(([c, v]) => (
                                 <div key={c} className="space-y-1">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-blue-300 text-sm">{CURRENCY_CODES[Number(c)]} bought:</span>
+                                    <span className="text-blue-50 text-sm">{CURRENCY_CODES[Number(c)]} bought:</span>
                                     <span className="text-lg font-semibold">{money(v.bought, Number(c))}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-blue-300 text-sm">{CURRENCY_CODES[Number(c)]} sold:</span>
+                                    <span className="text-blue-50 text-sm">{CURRENCY_CODES[Number(c)]} sold:</span>
                                     <span className="text-lg font-semibold">{money(v.sold, Number(c))}</span>
                                   </div>
                                 </div>
                               ))}
                           </div>
                           <div className="mt-3 pt-3 border-t border-white/20">
-                            <span className="text-xs text-blue-300">
+                            <span className="text-xs text-blue-50">
                               {exchangeSummary.totalExchanges} transactions
                             </span>
                           </div>
@@ -3161,18 +3182,18 @@ export function Reports() {
                       </div>
 
                       {/* Profit Card */}
-                      <div className="relative overflow-hidden bg-amber-600 p-5 text-white">
+                      <div className="relative overflow-hidden bg-amber-700 p-5 text-white">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-3">
-                            <TrendingUp className="w-5 h-5 text-amber-200" />
+                            <TrendingUp className="w-5 h-5 text-amber-50" />
                             <span className="text-sm font-medium text-amber-100">
                               Profit
                             </span>
                           </div>
                           <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                              <span className="text-amber-200 text-sm">
+                              <span className="text-amber-100 text-sm">
                                 {baseCode}:
                               </span>
                               <span className="text-xl font-semibold">
@@ -3180,7 +3201,7 @@ export function Reports() {
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-amber-200 text-sm">
+                              <span className="text-amber-100 text-sm">
                                 USD:
                               </span>
                               <span className="text-xl font-semibold">
@@ -3281,7 +3302,7 @@ export function Reports() {
                                         {CURRENCY_CODES[txn.currencyReceived] ?? txn.currencyReceived}
                                       </span>
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-right font-medium text-emerald-600">
+                                    <td className="px-4 py-3 text-sm text-right font-medium text-emerald-700">
                                       +{money(txn.amountGiven || 0, txn.currencyGiven)}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-right font-medium text-red-600">
@@ -3292,7 +3313,7 @@ export function Reports() {
                                         ? (txn.exchangeRate || 0).toFixed(4)
                                         : (txn.exchangeRate || 0).toFixed(2)}
                                     </td>
-                                    <td className="px-4 py-3 text-sm text-right font-semibold text-emerald-600">
+                                    <td className="px-4 py-3 text-sm text-right font-semibold text-emerald-700">
                                       {baseCode} {(txn.profit || 0).toLocaleString()}
                                     </td>
                                   </tr>
@@ -3355,12 +3376,12 @@ export function Reports() {
                     {/* P&L Summary Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       {/* Total Income */}
-                      <div className="relative overflow-hidden bg-emerald-600 p-6 text-white">
+                      <div className="relative overflow-hidden bg-emerald-700 p-6 text-white">
                         <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full" />
                         <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-2">
-                            <ArrowUpRight className="w-5 h-5 text-emerald-200" />
+                            <ArrowUpRight className="w-5 h-5 text-emerald-100" />
                             <span className="text-sm font-medium text-emerald-100">
                               Total Income
                             </span>
@@ -3368,7 +3389,7 @@ export function Reports() {
                           <p className="text-3xl font-semibold">
                             {baseCode} {profitLossData.totalIncome.toLocaleString()}
                           </p>
-                          <div className="mt-2 flex items-center gap-1 text-emerald-200 text-sm">
+                          <div className="mt-2 flex items-center gap-1 text-emerald-100 text-sm">
                             <TrendingUp className="w-4 h-4" />
                             <span>All revenue sources</span>
                           </div>
@@ -3382,14 +3403,14 @@ export function Reports() {
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-2">
                             <ArrowDownRight className="w-5 h-5 text-red-200" />
-                            <span className="text-sm font-medium text-red-100">
+                            <span className="text-sm font-medium text-white">
                               Total Expenses
                             </span>
                           </div>
                           <p className="text-3xl font-semibold">
                             {baseCode} {profitLossData.totalExpenses.toLocaleString()}
                           </p>
-                          <div className="mt-2 flex items-center gap-1 text-red-200 text-sm">
+                          <div className="mt-2 flex items-center gap-1 text-white text-sm">
                             <TrendingDown className="w-4 h-4" />
                             <span>All outflows</span>
                           </div>
@@ -3397,12 +3418,12 @@ export function Reports() {
                       </div>
 
                       {/* Exchange Profit */}
-                      <div className="relative overflow-hidden bg-amber-600 p-6 text-white">
+                      <div className="relative overflow-hidden bg-amber-700 p-6 text-white">
                         <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full" />
                         <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-2">
-                            <ArrowLeftRight className="w-5 h-5 text-amber-200" />
+                            <ArrowLeftRight className="w-5 h-5 text-amber-50" />
                             <span className="text-sm font-medium text-amber-100">
                               Exchange Profit
                             </span>
@@ -3410,7 +3431,7 @@ export function Reports() {
                           <p className="text-3xl font-semibold">
                             {baseCode} {profitLossData.exchangeProfit.toLocaleString()}
                           </p>
-                          <div className="mt-2 flex items-center gap-1 text-amber-200 text-sm">
+                          <div className="mt-2 flex items-center gap-1 text-amber-100 text-sm">
                             <Coins className="w-4 h-4" />
                             <span>Currency exchange</span>
                           </div>
@@ -3422,23 +3443,23 @@ export function Reports() {
                         className={`relative overflow-hidden p-6 text-white ${
                           profitLossData.netProfit >= 0
                             ? "bg-blue-600"
-                            : "bg-slate-100"
+                            : "bg-red-700"
                         }`}
                       >
                         <div className="absolute -top-4 -right-4 w-24 h-24 bg-white/10 rounded-full" />
                         <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-white/5 rounded-full" />
                         <div className="relative">
                           <div className="flex items-center gap-2 mb-2">
-                            <Target className="w-5 h-5 text-blue-300" />
-                            <span className="text-sm font-medium text-blue-300">
+                            <Target className="w-5 h-5 text-white" />
+                            <span className="text-sm font-medium text-white">
                               Net Profit
                             </span>
                           </div>
                           <p className="text-3xl font-semibold">
-                            {profitLossData.netProfit >= 0 ? "+" : ""}{baseCode}{" "}
-                            {profitLossData.netProfit.toLocaleString()}
+                            {profitLossData.netProfit >= 0 ? "+" : "−"}{baseCode}{" "}
+                            {Math.abs(profitLossData.netProfit).toLocaleString()}
                           </p>
-                          <div className="mt-2 flex items-center gap-1 text-blue-300 text-sm">
+                          <div className="mt-2 flex items-center gap-1 text-white text-sm">
                             {profitLossData.netProfit >= 0 ? (
                               <>
                                 <CheckCircle className="w-4 h-4" />
@@ -3622,7 +3643,7 @@ export function Reports() {
                                 <td className="py-3 pl-6 text-slate-700">
                                   Exchange Profit
                                 </td>
-                                <td className="py-3 text-right font-medium text-emerald-600">
+                                <td className="py-3 text-right font-medium text-emerald-700">
                                   +
                                   {profitLossData.exchangeProfit.toLocaleString()}
                                 </td>
@@ -3641,7 +3662,7 @@ export function Reports() {
                                 <td className="py-3 pl-6 text-slate-700">
                                   Other Income
                                 </td>
-                                <td className="py-3 text-right font-medium text-emerald-600">
+                                <td className="py-3 text-right font-medium text-emerald-700">
                                   +
                                   {(
                                     profitLossData.totalIncome -
@@ -3667,7 +3688,7 @@ export function Reports() {
                                 <td className="py-3 text-right text-emerald-700">
                                   {profitLossData.totalIncome.toLocaleString()}
                                 </td>
-                                <td className="py-3 text-right text-emerald-600">
+                                <td className="py-3 text-right text-emerald-700">
                                   100%
                                 </td>
                               </tr>
@@ -3701,7 +3722,7 @@ export function Reports() {
                                   -
                                   {profitLossData.totalExpenses.toLocaleString()}
                                 </td>
-                                <td className="py-3 text-right text-red-600">
+                                <td className="py-3 text-right text-red-700">
                                   100%
                                 </td>
                               </tr>
@@ -3736,8 +3757,8 @@ export function Reports() {
                                 <td
                                   className={`py-4 text-right ${
                                     profitLossData.netProfit >= 0
-                                      ? "text-blue-600"
-                                      : "text-red-600"
+                                      ? "text-blue-700"
+                                      : "text-red-700"
                                   }`}
                                 >
                                   {profitLossData.totalIncome > 0
