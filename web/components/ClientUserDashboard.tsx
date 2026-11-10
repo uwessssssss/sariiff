@@ -2018,11 +2018,13 @@ export function ClientUserDashboard({
                                 outerRadius={100}
                                 fill="#8884d8"
                                 dataKey="value"
+                                isAnimationActive={false}
                               >
                                 {categoryChartData.map((entry, index) => (
                                   <Cell
                                     key={`cell-${index}`}
                                     fill={entry.color}
+                                    aria-label={`${entry.name}: ${entry.value}`}
                                   />
                                 ))}
                               </Pie>
@@ -2140,7 +2142,7 @@ export function ClientUserDashboard({
                           <h3 className="text-xl font-semibold text-white mb-2">
                             Summary
                           </h3>
-                          <p className="text-emerald-50 leading-relaxed">
+                          <p className="text-white leading-relaxed">
                             {analytics.totals.totalTransactions} total
                             transactions
                             {avgIn(analytics.totals) !== null && (
