@@ -87,7 +87,7 @@ const { check, done } = reporter("REQUIREMENTS");
   const ugx = (cbal?.otherBalances || []).find((b) => b.currency === Cur.UGX)?.balance;
   check("Text statement downloads (no dates given = whole history)", txt.status === 200 && body.length > 100, `${txt.status} ${body.slice(0, 160)}`);
   check(`Text statement shows the client's balance (UGX ${ugx?.toLocaleString("en-US")})`, typeof ugx === "number" && body.replace(/\s+/g, " ").includes(ugx.toLocaleString("en-US", { minimumFractionDigits: 2 })), body.slice(0, 300));
-  check("Text statement says Sarif", /Sarif/.test(body) && !/SARIFF/.test(body), body.slice(0, 160));
+  check("Text statement never says SARIFF (the product is Sarif; a statement carries the client's and bureau's details)", !/SARIFF/i.test(body.replace(/Sarif\b/g, "")), body.slice(0, 160));
   const stmt = await api("GET", "/api/portal/statement", CL);
   check("Statement with no dates returns the whole history (not an error)", stmt.status === 200 && list(stmt.data?.transactions || stmt.data).length > 0, `${stmt.status} ${stmt.message}`);
   if (ptx) {

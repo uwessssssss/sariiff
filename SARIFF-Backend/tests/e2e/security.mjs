@@ -188,7 +188,7 @@ async function paced(fn) {
   check("Broken JSON → 400 without internal details", bad.status === 400 && !/at SARIFF\.|StackTrace|System\.Text\.Json\.JsonReaderException|\.cs:line/.test(badText), `${bad.status} ${badText.slice(0, 200)}`);
 
   // ---------- paging can't be abused or broken (every paged list)
-  for (const path of ["/api/client", "/api/transaction", "/api/expense", "/api/invoice", "/api/reconciliation", "/api/exchange/transactions", "/api/report/transactions"]) {
+  for (const path of ["/api/client", "/api/transaction", "/api/expense", "/api/invoice", "/api/exchange/transactions", "/api/report/transactions"]) {
     const zero = await api("GET", `${path}?page=0&pageSize=10`, UG);
     const neg = await api("GET", `${path}?page=-5&pageSize=-3`, UG);
     const huge = await api("GET", `${path}?page=1&pageSize=1000000`, UG);

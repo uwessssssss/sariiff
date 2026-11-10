@@ -173,7 +173,7 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
     () => api("POST", "/api/exchange/float/fund", T, { currency: UGX, amount: 3000000, sourceType: Acc.Bank, sourceAccountId: BANK, purchaseRate: null, notes: "Opening float" }),
     [{ label: "bank", read: () => bal.bank(BANK), delta: -3000000 }, { label: "float UGX", read: () => bal.float(UGX), delta: 3000000 }]);
   await op(`Fund float USD ${FUND} from the USD till`,
-    () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: FUND, sourceType: Acc.Cash, sourceAccountId: USDTILL, purchaseRate: 3640, notes: "USD stock" }),
+    () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: FUND, sourceType: Acc.Cash, sourceAccountId: USDTILL, purchaseRate: null, notes: "USD stock" }),
     [{ label: "USD till", read: () => bal.cash(USDTILL), delta: -FUND }, { label: "float USD", read: () => bal.float(USD), delta: FUND }]);
 
   const ex = (body) => api("POST", "/api/exchange/transaction", T, { clientId: null, customRate: null, clientIdNumber: null, notes: null, foreignCurrency: USD, ...body });
