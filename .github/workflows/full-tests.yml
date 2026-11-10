@@ -4,6 +4,7 @@
 name: Full tests
 on:
   push:
+    branches-ignore: [ci-artifacts-web, ci-artifacts-android]
   workflow_dispatch:
 
 concurrency:
@@ -84,6 +85,133 @@ jobs:
             ${{ runner.temp }}/api.log
             ${{ runner.temp }}/web.log
 
+  audit-accuracy-security-design:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write   # only to publish the screenshots branch
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: API on a fresh database
+        run: bash SARIFF-Backend/tests/ci-api.sh sariff_audit 18080 "$RUNNER_TEMP/api.log"
+      - name: Web app built against that API, then started
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          NEXT_PUBLIC_API_URL=http://127.0.0.1:18080 npm run build 2>&1 | tee "$RUNNER_TEMP/web-build.log"
+          nohup npx next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3000/login >/dev/null && exit 0; sleep 1; done
+          tail -40 "$RUNNER_TEMP/web.log"; exit 1
+      - name: Tools (Chromium, axe-core accessibility engine, pdftotext)
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1.49.1 axe-core@4.10.2
+          npx playwright install --with-deps chromium
+          command -v pdftotext >/dev/null || sudo apt-get install -y poppler-utils
+      - name: Seed through the API (the 33-step end-to-end test)
+        run: E2E_STATE="$RUNNER_TEMP/state.json" node SARIFF-Backend/tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+      - name: Accuracy — every operation moves exactly the right money; statements and totals agree
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/e2e/accuracy.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json"
+      - name: Requirements — every listed feature answers; recorded product decisions hold
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/e2e/requirements.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json"
+      - name: Security — other bureaus, roles, sessions, brute force, injection, headers
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/e2e/security.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" http://127.0.0.1:3000
+      - name: Design — every screen and pop-up, desktop + phone; accessibility; fonts; XSS
+        if: success() || failure()
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright
+          AXE_MODULE: ${{ runner.temp }}/pw/node_modules/axe-core/axe.min.js
+        run: node SARIFF-Backend/tests/browser/design.mjs http://127.0.0.1:3000 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/design"
+      - name: Known vulnerabilities in dependencies (report)
+        if: success() || failure()
+        run: |
+          for d in web sariff-mobile; do
+            echo "== $d (production dependencies)"
+            (cd $d && npm audit --omit=dev --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const v=j.metadata?.vulnerabilities||{};console.log("vulnerabilities:",JSON.stringify(v));for(const [n,x] of Object.entries(j.vulnerabilities||{})) if(["high","critical"].includes(x.severity)) console.log("  ",x.severity,n,(x.via||[]).map(v=>v.title||v).join("; ").slice(0,160))}catch(e){console.log("no audit data",e.message)}})') || true
+          done
+          echo "== backend (NuGet)"
+          (cd SARIFF-Backend && dotnet list SARIFF.sln package --vulnerable --include-transitive 2>&1 | grep -E "has the following vulnerable|>|Critical|High|Moderate|no vulnerable" | head -40) || true
+          echo "== web bundle (First Load JS per page)"
+          grep -E "^(┌|├|└|○|ƒ|λ|●).*kB|First Load JS shared" "$RUNNER_TEMP/web-build.log" | head -40 || true
+
+      - name: Publish Web design screenshots to the ci-artifacts-web branch (for the design review)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -d "$RUNNER_TEMP/design" ] || exit 0
+          rm -rf "$RUNNER_TEMP/pub" && mkdir -p "$RUNNER_TEMP/pub" && cp -r "$RUNNER_TEMP/design/." "$RUNNER_TEMP/pub/"
+          cd "$RUNNER_TEMP/pub"
+          echo "Web design screenshots for ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})" > README.txt
+          git init -q && git checkout -q -b ci-artifacts-web && git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Web design screenshots for ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-artifacts-web
+
+      - name: Keep logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-logs
+          path: |
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/design/report.json
+
+  performance-busy-bureau:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: API on a fresh database
+        run: bash SARIFF-Backend/tests/ci-api.sh sariff_perf 18080 "$RUNNER_TEMP/api.log"
+      - name: Web app built against that API, then started
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          NEXT_PUBLIC_API_URL=http://127.0.0.1:18080 npm run build
+          nohup npx next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3000/login >/dev/null && exit 0; sleep 1; done
+          exit 1
+      - name: Chromium
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps chromium
+      - name: Seed
+        run: E2E_STATE="$RUNNER_TEMP/state.json" node SARIFF-Backend/tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+      - name: Performance — 250 clients, 6,000 transactions, every heavy endpoint and web screen timed
+        env:
+          PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright
+        run: node SARIFF-Backend/tests/e2e/perf.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" http://127.0.0.1:3000
+
   upgrade-existing-database:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -116,7 +244,9 @@ jobs:
 
   android-app:
     runs-on: ubuntu-24.04
-    timeout-minutes: 75
+    timeout-minutes: 85
+    permissions:
+      contents: write   # only to publish the screenshots branch
     services:
       postgres:
         image: postgres:16-alpine
@@ -178,7 +308,7 @@ jobs:
           sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
 
       - name: Android emulator — office user and client phone login, every tab
-        timeout-minutes: 45
+        timeout-minutes: 60
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -191,6 +321,20 @@ jobs:
           disable-animations: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot
           script: bash SARIFF-Backend/tests/mobile/run-maestro.sh "$GITHUB_WORKSPACE/sariff-mobile/android/app/build/outputs/apk/release/app-release.apk" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/maestro"
+
+
+      - name: Publish Android screenshots to the ci-artifacts-android branch (for the design review)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -d "$RUNNER_TEMP/maestro/screens" ] || exit 0
+          rm -rf "$RUNNER_TEMP/pub" && mkdir -p "$RUNNER_TEMP/pub" && cp -r "$RUNNER_TEMP/maestro/screens/." "$RUNNER_TEMP/pub/"
+          cd "$RUNNER_TEMP/pub"
+          echo "Android screenshots for ${GITHUB_SHA::7} (run ${GITHUB_RUN_ID})" > README.txt
+          git init -q && git checkout -q -b ci-artifacts-android && git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Android screenshots for ${GITHUB_SHA::7}"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-artifacts-android
 
       - name: Keep screenshots and logs
         if: always()

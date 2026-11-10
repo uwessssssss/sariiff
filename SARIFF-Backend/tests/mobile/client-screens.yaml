@@ -1,0 +1,42 @@
+# Client on Android: every tab (signed in by client.yaml).
+appId: com.sariff.mobile
+name: Client every screen
+---
+- launchApp
+- runFlow: dismiss.yaml
+- extendedWaitUntil:
+    visible: "Account Overview"
+    timeout: 60000
+- waitForAnimationToEnd
+- takeScreenshot: 40-client-home
+- runFlow: broken.yaml
+- tapOn:
+    point: "30%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 41-client-statements
+- runFlow: broken.yaml
+- tapOn:
+    point: "50%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 42-client-analytics
+- runFlow: broken.yaml
+- tapOn:
+    point: "70%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 43-client-alerts
+- runFlow: broken.yaml
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 44-client-profile
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "Change Password"
+    commands:
+      - tapOn: "Change Password"
+      - waitForAnimationToEnd
+      - takeScreenshot: 45-client-change-password
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd

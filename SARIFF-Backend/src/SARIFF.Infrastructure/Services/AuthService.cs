@@ -618,13 +618,20 @@ public partial class AuthService : IAuthService
         ));
     }
 
-    public async Task<ApiResponse<bool>> LogoutAsync(Guid userId)
+    public async Task<ApiResponse<bool>> LogoutAsync(Guid userId, UserRole? role = null)
     {
-        // Find all active (non-revoked) sessions for this user
-        // For OfficeUser, userId equals companyId — check both fields
-        var sessions = await _context.UserSessions
-            .Where(s => !s.IsRevoked && (s.UserId == userId || s.CompanyId == userId))
-            .ToListAsync();
+        // Only THIS person's sessions. It used to match "UserId == id OR CompanyId == id":
+        // an office user's id is the bureau's id, and every client session carries its
+        // bureau's id — so one office logout signed out all of that bureau's clients.
+        var q = _context.UserSessions.Where(s => !s.IsRevoked);
+        q = role switch
+        {
+            UserRole.OfficeUser => q.Where(s => s.UserRole == UserRole.OfficeUser && s.CompanyId == userId),
+            UserRole r => q.Where(s => s.UserRole == r && s.UserId == userId),
+            null => q.Where(s => s.UserId == userId && s.UserRole != UserRole.OfficeUser
+                              || s.UserRole == UserRole.OfficeUser && s.CompanyId == userId),
+        };
+        var sessions = await q.ToListAsync();
         
         foreach (var session in sessions)
         {
@@ -633,7 +640,10 @@ public partial class AuthService : IAuthService
         
         if (sessions.Any())
             await _context.SaveChangesAsync();
-        
+        foreach (var r in sessions.Select(x => x.UserRole).Distinct())
+            SessionAliveCache.Invalidate(userId, r.ToString());
+        if (role.HasValue) SessionAliveCache.Invalidate(userId, role.Value.ToString());
+
         return new ApiResponse<bool>(true, "Logged out successfully", true);
     }
 
@@ -737,6 +747,9 @@ public partial class AuthService : IAuthService
         Guid? identityId = null)
     {
         var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        // A new session: the "still signed in?" answer for this person changes now.
+        var principal = role == UserRole.OfficeUser ? companyId : userId;
+        if (principal.HasValue) SessionAliveCache.Invalidate(principal.Value, role.ToString());
         return new UserSession
         {
             CompanyId = companyId,

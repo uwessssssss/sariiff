@@ -1,0 +1,201 @@
+# Office user on Android: every screen and the main pop-ups, already signed in by office.yaml.
+appId: com.sariff.mobile
+name: Office every screen and pop-up
+---
+- launchApp
+- runFlow: dismiss.yaml
+- extendedWaitUntil:
+    visible: "Welcome back,"
+    timeout: 60000
+- waitForAnimationToEnd
+- takeScreenshot: 10-office-dashboard
+- runFlow: broken.yaml
+- tapOn:
+    point: "30%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 11-office-clients
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "Add"
+    commands:
+      - tapOn: "Add"
+      - waitForAnimationToEnd
+      - takeScreenshot: 12-clients-add
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: ".*Test Amina.*"
+    commands:
+      - tapOn: ".*Test Amina.*"
+      - waitForAnimationToEnd
+      - takeScreenshot: 13-client-details
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- tapOn:
+    point: "50%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 14-office-exchange
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "Set Rate"
+    commands:
+      - tapOn: "Set Rate"
+      - waitForAnimationToEnd
+      - takeScreenshot: 15-exchange-set-rate
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Fund Float"
+    commands:
+      - tapOn: "Fund Float"
+      - waitForAnimationToEnd
+      - takeScreenshot: 16-exchange-fund-float
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "New"
+    commands:
+      - tapOn: "New"
+      - waitForAnimationToEnd
+      - takeScreenshot: 17-exchange-new
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- tapOn:
+    point: "70%,96%"
+- waitForAnimationToEnd
+- takeScreenshot: 18-office-transactions
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "New"
+    commands:
+      - tapOn: "New"
+      - waitForAnimationToEnd
+      - takeScreenshot: 19-transactions-new
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- tapOn: "Accounts"
+- waitForAnimationToEnd
+- takeScreenshot: 20-more-accounts
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "Add"
+    commands:
+      - tapOn: "Add"
+      - waitForAnimationToEnd
+      - takeScreenshot: 21-accounts-add
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- back
+- waitForAnimationToEnd
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- tapOn: "Expenses"
+- waitForAnimationToEnd
+- takeScreenshot: 22-more-expenses
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "Add"
+    commands:
+      - tapOn: "Add"
+      - waitForAnimationToEnd
+      - takeScreenshot: 23-expenses-add
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- back
+- waitForAnimationToEnd
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- tapOn: "Invoices"
+- waitForAnimationToEnd
+- takeScreenshot: 24-more-invoices
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "New"
+    commands:
+      - tapOn: "New"
+      - waitForAnimationToEnd
+      - takeScreenshot: 25-invoices-new
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- back
+- waitForAnimationToEnd
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- tapOn: "Reconciliation"
+- waitForAnimationToEnd
+- takeScreenshot: 26-more-reconciliation
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "New"
+    commands:
+      - tapOn: "New"
+      - waitForAnimationToEnd
+      - takeScreenshot: 27-reconciliation-new
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- back
+- waitForAnimationToEnd
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- tapOn: "Reports"
+- waitForAnimationToEnd
+- takeScreenshot: 28-more-reports
+- runFlow: broken.yaml
+- back
+- waitForAnimationToEnd
+- tapOn:
+    point: "90%,96%"
+- waitForAnimationToEnd
+- tapOn: "Profile & Settings"
+- waitForAnimationToEnd
+- takeScreenshot: 29-more-profile
+- runFlow: broken.yaml
+- runFlow:
+    when:
+      visible: "Edit Profile"
+    commands:
+      - tapOn: "Edit Profile"
+      - waitForAnimationToEnd
+      - takeScreenshot: 30-profile-edit
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      visible: "Change Password"
+    commands:
+      - tapOn: "Change Password"
+      - waitForAnimationToEnd
+      - takeScreenshot: 31-profile-password
+      - runFlow: broken.yaml
+      - back
+      - waitForAnimationToEnd
+- back
+- waitForAnimationToEnd

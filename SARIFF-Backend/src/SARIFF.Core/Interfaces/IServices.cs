@@ -13,7 +13,7 @@ public interface IAuthService
     
     // Token management
     Task<ApiResponse<TokenResponseDto>> RefreshTokenAsync(RefreshTokenDto request, string ipAddress);
-    Task<ApiResponse<bool>> LogoutAsync(Guid userId);
+    Task<ApiResponse<bool>> LogoutAsync(Guid userId, UserRole? role = null);
 }
 
 public interface ICompanyService

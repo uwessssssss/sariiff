@@ -4,6 +4,7 @@ using System.Text.Json;
 using SARIFF.Core.DTOs;
 using SARIFF.Core.Interfaces;
 using SARIFF.Core.Entities;
+using SARIFF.Core.Enums;
 using SARIFF.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using SARIFF.Infrastructure.Services;
@@ -192,6 +193,35 @@ public class TenantMiddleware
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = false, message = block, data = (object?)null }));
+                return;
+            }
+        }
+
+        // A signed-out token stops working on the next request, not 60 minutes later.
+        // Every super admin / office / client request needs a live session for that person
+        // (cached 30 s; sign-in and sign-out reset it). The phone-login token has no session.
+        if (context.User.Identity?.IsAuthenticated == true
+            && context.Items["UserId"] is Guid principal
+            && context.Items["UserRole"] is string roleName
+            && roleName is "SuperAdmin" or "OfficeUser" or "Client"
+            && !context.Request.Path.StartsWithSegments("/api/auth"))
+        {
+            if (!SessionAliveCache.TryGet(principal, roleName, out var alive))
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var role = Enum.Parse<UserRole>(roleName);
+                var now = DateTime.UtcNow;
+                alive = await db.UserSessions.AsNoTracking().AnyAsync(x =>
+                    !x.IsRevoked && x.ExpiresAt > now && x.UserRole == role &&
+                    (role == UserRole.OfficeUser ? x.CompanyId == principal : x.UserId == principal));
+                SessionAliveCache.Set(principal, roleName, alive);
+            }
+            if (!alive)
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(JsonSerializer.Serialize(new { success = false, message = "You were signed out. Please sign in again.", data = (object?)null }));
                 return;
             }
         }

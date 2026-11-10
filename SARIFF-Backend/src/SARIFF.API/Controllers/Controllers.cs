@@ -115,7 +115,10 @@ public class AuthController : BaseApiController
     public async Task<IActionResult> Logout()
     {
         if (UserId.HasValue)
-            await _authService.LogoutAsync(UserId.Value);
+        {
+            UserRole? role = Enum.TryParse<UserRole>(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value, out var r) ? r : null;
+            await _authService.LogoutAsync(UserId.Value, role);
+        }
         return Ok(new ApiResponse<bool>(true, "Logged out", true));
     }
 }

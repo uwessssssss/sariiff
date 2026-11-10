@@ -4,6 +4,7 @@
 name: Fix mobile dependencies
 on:
   push:
+    branches-ignore: [ci-artifacts-web, ci-artifacts-android]
   workflow_dispatch:
 
 permissions:
