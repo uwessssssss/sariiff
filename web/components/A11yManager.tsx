@@ -81,18 +81,45 @@ function nameDialog(panel: HTMLElement) {
   }
 }
 
+/** A pop-up bigger than the screen (small phones) scrolls inside itself instead of running off it. */
+function fitPanel(layer: HTMLElement, panel: HTMLElement) {
+  if (panel === layer) return;
+  const r = panel.getBoundingClientRect();
+  const vh = window.innerHeight, vw = document.documentElement.clientWidth;
+  const layerScrolls = /(auto|scroll)/.test(getComputedStyle(layer).overflowY);
+  if ((r.height > vh - 8 || r.top < 0 || r.bottom > vh) && !layerScrolls) {
+    let inner = false; // already scrolls inside (header + scrolling body)?
+    panel.querySelectorAll<HTMLElement>("*").forEach((el) => { if (!inner && el.scrollHeight > el.clientHeight + 1 && /(auto|scroll)/.test(getComputedStyle(el).overflowY)) inner = true; });
+    if (!inner || r.height > vh) {
+      panel.style.maxHeight = "calc(100dvh - 1.5rem)";
+      panel.style.overflowY = "auto";
+    }
+  }
+  if (r.width > vw - 8 || r.left < 0 || r.right > vw) {
+    panel.style.maxWidth = "calc(100vw - 1rem)";
+    panel.style.overflowX = "auto";
+  }
+}
+
 function labelFields(root: ParentNode) {
   root.querySelectorAll<HTMLElement>("input:not([aria-label]):not([aria-labelledby]), select:not([aria-label]):not([aria-labelledby]), textarea:not([aria-label]):not([aria-labelledby])").forEach((f) => {
     const el = f as HTMLInputElement;
     if (el.type === "hidden" || el.getAttribute("aria-label") || el.getAttribute("aria-labelledby")) return;
     if (el.id && document.querySelector(`label[for="${CSS.escape(el.id)}"]`)) return;
-    if (el.closest("label")) return;
+    const wrap = el.closest("label");
+    if (wrap && (wrap.textContent || "").trim()) return;
     // nearest visible label text before the field, in the same small container
     let text = "";
-    let box: HTMLElement | null = el.parentElement;
+    let box: HTMLElement | null = (wrap || el).parentElement;
     for (let i = 0; i < 3 && box && !text; i++, box = box.parentElement) {
       const lab = Array.from(box.querySelectorAll("label")).find((l) => !l.htmlFor && !l.contains(el) && (l.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING));
       text = (lab?.textContent || "").replace(/\*/g, "").replace(/\s+/g, " ").trim();
+    }
+    // a switch (hidden checkbox inside an empty <label>): the row's own text names it
+    if (!text && wrap) {
+      const row = wrap.parentElement;
+      const t = row && Array.from(row.querySelectorAll("p, span, h3, h4, label")).find((n) => !wrap.contains(n) && (n.textContent || "").trim());
+      text = (t?.textContent || "").replace(/\s+/g, " ").trim();
     }
     if (!text) text = el.getAttribute("placeholder") || el.getAttribute("title") || "";
     if (!text && el.tagName === "SELECT") text = (el as unknown as HTMLSelectElement).options[0]?.text || "";
@@ -103,8 +130,9 @@ function labelFields(root: ParentNode) {
 function nameIconButtons(root: ParentNode) {
   root.querySelectorAll<HTMLElement>('button:not([aria-label]):not([aria-labelledby]), [role="button"]:not([aria-label]):not([aria-labelledby])').forEach((b) => {
     if (b.getAttribute("aria-label") || b.getAttribute("aria-labelledby")) return;
-    if ((b.textContent || "").trim()) return;
-    let name = b.getAttribute("title") || "";
+    // text that is on screen names the button; text hidden on small screens ("hidden sm:inline") doesn't
+    if ((b.innerText || "").trim()) return;
+    let name = b.getAttribute("title") || (b.textContent || "").replace(/\s+/g, " ").trim();
     if (!name) {
       const cls = b.querySelector("svg")?.getAttribute("class") || "";
       name = ICON_NAMES.find(([re]) => re.test(cls))?.[1] || "";
@@ -131,6 +159,17 @@ function scrollRegions(root: ParentNode) {
       if (!r.getAttribute("aria-label")) r.setAttribute("aria-label", "Scrollable table");
     }
   });
+  // lists that scroll up and down with nothing focusable inside (read-only history)
+  root.querySelectorAll<HTMLElement>(".overflow-y-auto, .overflow-auto").forEach((r) => {
+    if (r.scrollHeight > r.clientHeight + 2 && !r.hasAttribute("tabindex") && !r.querySelector(FOCUSABLE)) {
+      r.setAttribute("tabindex", "0");
+      if (!r.getAttribute("aria-label")) r.setAttribute("aria-label", "Scrollable list");
+    }
+  });
+  // chart shapes drawn as images need a name (the series they show)
+  root.querySelectorAll<SVGElement>('svg [role="img"]:not([aria-label]), svg[role="img"]:not([aria-label])').forEach((g) => {
+    if (!g.querySelector("title")) g.setAttribute("aria-label", g.getAttribute("name") || "Chart");
+  });
 }
 
 export function A11yManager() {
@@ -146,10 +185,11 @@ export function A11yManager() {
     const sweep = () => {
       const layers = openDialogs();
       for (const layer of layers) {
-        if (known.has(layer)) continue;
+        if (known.has(layer)) { fitPanel(layer, panelOf(layer)); continue; }
         known.add(layer);
         const panel = panelOf(layer);
         nameDialog(panel);
+        fitPanel(layer, panel);
         opener.set(layer, lastFocus);
         // focus into the pop-up unless something inside already has it
         requestAnimationFrame(() => {

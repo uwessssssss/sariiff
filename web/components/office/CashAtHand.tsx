@@ -1952,8 +1952,8 @@ export function CashAtHand() {
                   <p
                     className={`text-xl sm:text-2xl font-semibold ${
                       selectedTransaction.thisAccountAction === "Debit"
-                        ? "text-emerald-600"
-                        : "text-red-600"
+                        ? "text-emerald-700"
+                        : "text-red-700"
                     }`}
                   >
                     {selectedTransaction.thisAccountAction === "Debit"

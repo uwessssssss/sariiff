@@ -240,7 +240,7 @@ export function TransactionDetailsDialog({
           </p>
           <StatusPill t={txn} />
         </div>
-        <p className={`mt-1 text-2xl font-semibold tabular-nums ${moneyIn ? "text-emerald-700" : "text-red-700"} ${txn.isReversed ? "line-through opacity-70" : ""}`}>
+        <p className={`mt-1 text-2xl font-semibold tabular-nums ${moneyIn ? "text-emerald-700" : "text-red-700"} ${txn.isReversed ? "line-through" : ""}`}>
           {signed(txn.amount, txn.currency, moneyIn)}
         </p>
         <p className="mt-1 text-xs text-slate-600">

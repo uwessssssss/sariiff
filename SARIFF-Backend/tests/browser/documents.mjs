@@ -14,7 +14,8 @@ mkdirSync(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let pass = 0, fail = 0;
 const check = (n, ok, d = "") => { ok ? pass++ : fail++; console.log(`${ok ? "PASS" : "FAIL"}  ${n}${ok || !d ? "" : `\n        ${String(d).slice(0, 500)}`}`); return ok; };
-const money = (n, dp = 2) => Number(n).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: 2 });
+// as the app prints money: whole amounts bare, others with 2 decimals
+const money = (n) => Number(n).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 });
 const flat = (t) => t.replace(/\s+/g, " ");
 
 async function codeFor(phone, afterLen) {
@@ -86,7 +87,7 @@ async function download(page, click, name) {
         const d = await download(page, () => page.getByText("Bold Red").first().click(), "invoice.pdf");
         if (check("Choosing a template downloads the invoice PDF", !!d, "no download started")) {
           const t = flat(d.text);
-          console.log(`        invoice PDF text: ${t.slice(0, 300)}`);
+          console.log(`        invoice PDF text: ${t.slice(0, 1200)}`);
           check(`Invoice PDF shows the total ${money(inv?.total)}`, !!inv && t.includes(money(inv.total)), `total ${inv?.total}`);
           check(`Invoice PDF shows the subtotal ${money(inv?.subtotal)}`, !!inv && t.includes(money(inv.subtotal)));
           check("Invoice PDF is in the invoice's currency (UGX), not KES", /UGX|USh/.test(t) && !/\bKES\b|\bKSh\b/.test(t), t.slice(0, 200));
@@ -110,13 +111,14 @@ async function download(page, click, name) {
       const d = await download(page, () => page.getByRole("button", { name: /Download PDF/i }).first().click(), "statement.pdf");
       if (check("Statements → Download PDF downloads a statement", !!d, "no download started")) {
         const t = flat(d.text);
-        console.log(`        statement PDF text: ${t.slice(0, 400)}`);
+        console.log(`        statement PDF text: ${t.slice(0, 1500)}`);
         check("Statement PDF opens as a real PDF", !/PDFTOTEXT FAILED/.test(d.text), d.text.slice(0, 200));
         check("Statement PDF names the client", t.includes("Test Amina"));
-        if (typeof ugx === "number") check(`Statement PDF shows the UGX balance ${money(ugx, 0)}`, t.includes(money(ugx, 0)) || t.includes(money(ugx)), `looked for ${money(ugx)}`);
+        if (typeof ugx === "number") check(`Statement PDF shows the UGX balance ${money(ugx)}`, t.includes(money(ugx)), `looked for ${money(ugx)}`);
         else check("Client's UGX balance readable from the portal profile", false, JSON.stringify(prof || {}).slice(0, 200));
-        check("Statement PDF totals are not all zero", /[1-9][\d,]*\.\d\d/.test(t), t.slice(0, 200));
-        check("Statement PDF says Sarif, not SARIFF", /Sarif/.test(t) && !/SARIFF/.test(t), t.slice(0, 200));
+        check("Statement PDF lists amounts (not all zero)", (t.match(/\b[1-9]\d{0,2}(,\d{3})+(\.\d\d)?\b/g) || []).length >= 3, t.slice(0, 200));
+        check("Statement PDF column headings are not broken across lines", /\bType\b/.test(t) && !/\bTyp\b/.test(t), t.match(/Date Reference.{0,60}/)?.[0]);
+        check("Statement PDF never says SARIFF (the product is Sarif; the statement carries the bureau's own name)", !/SARIFF/.test(t), t.slice(0, 200));
         check("Statement PDF times are East Africa Time (no 'UTC' / 'Z')", !/\bUTC\b|\d\dZ\b/.test(t));
         check("Statement PDF has no broken values", !/NaN|undefined|Invalid Date|\[object/.test(t), t.match(/NaN|undefined|Invalid Date|\[object[^\]]*\]/)?.[0]);
       }

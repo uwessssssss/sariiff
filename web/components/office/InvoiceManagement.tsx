@@ -201,6 +201,11 @@ const INVOICE_TEMPLATES = [
   },
 ];
 
+// Money on invoices and their PDFs: whole amounts as they are, anything else with 2 decimals
+// (was "337,501.5" beside "388,251.77" on the same invoice).
+const money = (n: number) =>
+  Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(Number(n || 0)) ? 0 : 2, maximumFractionDigits: 2 });
+
 export default function InvoiceManagement() {
   // Kenyan bureaus don't use UGX; Ugandan ones use KES too (lib/useBaseCurrency).
   const { has: currencyOk } = useAllowedCurrencies();
@@ -626,7 +631,7 @@ export default function InvoiceManagement() {
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.text(
-        `${invoice.currency} ${invoice.total.toLocaleString()}`,
+        `${invoice.currency} ${money(invoice.total)}`,
         pageWidth - 18,
         yPos + 37,
         { align: "right" },
@@ -637,8 +642,8 @@ export default function InvoiceManagement() {
       const tableData = invoice.items.map((item) => [
         item.description,
         item.quantity.toString(),
-        `${invoice.currency} ${item.unitPrice.toLocaleString()}`,
-        `${invoice.currency} ${item.amount.toLocaleString()}`,
+        `${invoice.currency} ${money(item.unitPrice)}`,
+        `${invoice.currency} ${money(item.amount)}`,
       ]);
 
       autoTable(doc, {
@@ -684,7 +689,7 @@ export default function InvoiceManagement() {
 
       doc.text("Subtotal:", totalsX, finalY);
       doc.text(
-        `${invoice.currency} ${invoice.subtotal.toLocaleString()}`,
+        `${invoice.currency} ${money(invoice.subtotal)}`,
         pageWidth - 14,
         finalY,
         { align: "right" },
@@ -693,7 +698,7 @@ export default function InvoiceManagement() {
       if (invoice.tax > 0) {
         doc.text("Tax:", totalsX, finalY + 6);
         doc.text(
-          `${invoice.currency} ${invoice.tax.toLocaleString()}`,
+          `${invoice.currency} ${money(invoice.tax)}`,
           pageWidth - 14,
           finalY + 6,
           { align: "right" },
@@ -704,7 +709,7 @@ export default function InvoiceManagement() {
         doc.setTextColor(220, 38, 38);
         doc.text("Discount:", totalsX, finalY + 12);
         doc.text(
-          `-${invoice.currency} ${invoice.discount.toLocaleString()}`,
+          `-${invoice.currency} ${money(invoice.discount)}`,
           pageWidth - 14,
           finalY + 12,
           { align: "right" },
@@ -731,7 +736,7 @@ export default function InvoiceManagement() {
       );
       doc.setFontSize(13);
       doc.text(
-        `${invoice.currency} ${invoice.total.toLocaleString()}`,
+        `${invoice.currency} ${money(invoice.total)}`,
         pageWidth - 14,
         finalY + (invoice.discount > 0 ? 23 : 17),
         { align: "right" },
@@ -1078,7 +1083,7 @@ export default function InvoiceManagement() {
                       </td>
                       <td className="px-6 py-5 whitespace-nowrap">
                         <div className="font-semibold text-lg text-slate-900">
-                          {invoice.currency} {invoice.total.toLocaleString()}
+                          {invoice.currency} {money(invoice.total)}
                         </div>
                         <div className="text-xs text-slate-500">
                           {invoice.items.length} item
@@ -1552,7 +1557,7 @@ export default function InvoiceManagement() {
                         </div>
                         <div className="col-span-3 md:col-span-2">
                           <div className="px-4 py-3 bg-slate-50 border border-blue-300 text-blue-700 font-semibold text-lg text-right rounded-lg">
-                            {item.amount.toLocaleString()}
+                            {money(item.amount)}
                           </div>
                         </div>
                         <div className="col-span-1">
@@ -1643,7 +1648,7 @@ export default function InvoiceManagement() {
                             Subtotal:
                           </span>
                           <span className="text-xl font-semibold text-slate-900">
-                            {formData.currency} {subtotal.toLocaleString()}
+                            {formData.currency} {money(subtotal)}
                           </span>
                         </div>
                         {formData.tax > 0 && (
@@ -1652,7 +1657,7 @@ export default function InvoiceManagement() {
                               Tax ({formData.tax}%):
                             </span>
                             <span className="text-xl font-semibold text-blue-700">
-                              {formData.currency} {taxAmount.toLocaleString()}
+                              {formData.currency} {money(taxAmount)}
                             </span>
                           </div>
                         )}
@@ -1663,7 +1668,7 @@ export default function InvoiceManagement() {
                             </span>
                             <span className="text-xl font-semibold text-red-600">
                               -{formData.currency}{" "}
-                              {formData.discount.toLocaleString()}
+                              {money(formData.discount)}
                             </span>
                           </div>
                         )}
@@ -1672,7 +1677,7 @@ export default function InvoiceManagement() {
                             TOTAL:
                           </span>
                           <span className="text-3xl font-semibold text-slate-900">
-                            {formData.currency} {total.toLocaleString()}
+                            {formData.currency} {money(total)}
                           </span>
                         </div>
                       </div>

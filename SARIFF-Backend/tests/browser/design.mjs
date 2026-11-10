@@ -15,7 +15,7 @@ const AXE = readFileSync(require.resolve(process.env.AXE_MODULE || "axe-core/axe
 const WEB = process.argv[2], LOG = process.argv[3], S = JSON.parse(readFileSync(process.argv[4], "utf8")), OUT = process.argv[5];
 mkdirSync(OUT, { recursive: true });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const report = { screens: [], modals: [], xss: [], errors: [], clickProblems: [] };
+const report = { screens: [], modals: [], xss: [], errors: [], clickProblems: [], menus: {} };
 let shotNo = 0;
 const slug = (s) => s.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase().slice(0, 60);
 
@@ -129,11 +129,17 @@ async function layout(page) {
       if (inner) continue;
       (how === "clipped" ? out.clipped : out.overflow).push(`${name(el)} (${Math.round(r.left)}…${Math.round(r.right)}px of ${W}px)`);
     }
+    if (out.pageScrollsSideways && !out.overflow.length) {
+      // nothing readable is past the edge: name whatever invisible thing widens the page
+      const wide = [...document.body.querySelectorAll("*")].filter((el) => { const r = el.getBoundingClientRect(); return r.right > W + 1 && r.width > 0 && !el.closest('[aria-hidden="true"]'); })
+        .filter((el) => { for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) if (/(auto|scroll|hidden|clip)/.test(getComputedStyle(a).overflowX) && getComputedStyle(el).position !== "absolute" && getComputedStyle(el).position !== "fixed") return false; return true; });
+      out.overflow = wide.slice(0, 5).map((el) => `${name(el)} [${getComputedStyle(el).position}] (${Math.round(el.getBoundingClientRect().left)}…${Math.round(el.getBoundingClientRect().right)}px of ${W}px)`);
+    }
     out.overflow = out.overflow.slice(0, 8); out.clipped = out.clipped.slice(0, 8);
     const aside = [...document.querySelectorAll("aside, nav")].find((e) => { const c = getComputedStyle(e); const r = e.getBoundingClientRect(); return c.display !== "none" && r.width > 40 && r.height > 300 && r.left < 5; });
     if (aside && W >= 1024) {
       const ar = aside.getBoundingClientRect();
-      const main = document.querySelector("main") || [...document.querySelectorAll("h1, h2")].find((h) => !aside.contains(h));
+      const main = [...document.querySelectorAll("main h1, main h2, h1, h2")].find((h) => !aside.contains(h) && h.getBoundingClientRect().width > 0);
       const mr = main ? main.getBoundingClientRect() : null;
       out.sidebar = { width: Math.round(ar.width), contentLeft: mr ? Math.round(mr.left) : null, overlap: !!mr && mr.left < ar.right - 1 && mr.width > 0 };
     }
@@ -151,14 +157,14 @@ async function targetSize(page) {
 // a closed drawer stays in the page as an aria-hidden fixed layer: never count it as open
 const DIALOG = '[role="dialog"]:not([aria-hidden="true"] *):visible, [role="alertdialog"]:not([aria-hidden="true"] *):visible, div.fixed.inset-0:not([aria-hidden="true"]):visible';
 const INCLUDE = /^(\+\s*)?(add|new|create|record|edit|view|open|details|statement|deposit|withdraw|transfer|buy|sell|exchange|expense|invoice|reconcile|set|fund|top up|convert|change|share|filter|more|manage|settle|opening|closing|alert|pin|history|move|link|start|count)\b/i;
-const EXCLUDE = /delete|remove|log ?out|sign ?out|deactivate|suspend|reset|block|void|cancel|close|confirm|save|submit|pay|send|unlink|approve|reject|disable|archive|mark all|download|export|print|csv|pdf|refresh|activate/i;
+// (the slide-out menu is checked on its own in screen(), not as a discovered pop-up)
+const EXCLUDE = /\bmenu\b|delete|remove|log ?out|sign ?out|deactivate|suspend|reset|block|void|cancel|close|confirm|save|submit|pay|send|unlink|approve|reject|disable|archive|mark all|download|export|print|csv|pdf|refresh|activate/i;
 
 async function openDialogCount(page) { return page.locator(DIALOG).count(); }
 
 async function closeDialog(page, before = 0) {
   await page.keyboard.press("Escape").catch(() => {});
-  await sleep(350);
-  if ((await openDialogCount(page)) <= before) return "escape";
+  for (let i = 0; i < 8; i++) { await sleep(200); if ((await openDialogCount(page)) <= before) return "escape"; } // closing animations take up to ~1 s
   const btn = page.locator(DIALOG).last().locator('button:has-text("Cancel"), button:has-text("Close"), button[aria-label*="lose" i], button:has-text("×"), button:has-text("✕")').first();
   if (await btn.count()) { await btn.click({ timeout: 2000 }).catch(() => {}); await sleep(350); if ((await openDialogCount(page)) <= before) return "button"; }
   return "stuck";
@@ -248,6 +254,22 @@ async function screen(page, view, url, opts = {}) {
   const tc = await typeAndColour(page);
   const lay = await layout(page);
   const offScale = tc.fontSizes.map((f) => f[0]).filter((f) => !SCALE.has(f));
+  // phone: the slide-out menu opens, takes focus and closes with Escape (once per role)
+  const role = view.split(" · ")[1]?.split(" ")[0];
+  if (isPhone && ["Office", "Admin", "Client"].includes(role) && !report.menus[role]) {
+    const onScreen = () => page.evaluate(() => { const a = [...document.querySelectorAll("aside")].find((e) => { const r = e.getBoundingClientRect(); return r.width > 100 && r.left >= -1 && r.right <= innerWidth + 1 && !e.closest('[aria-hidden="true"]'); }); return a ? { focusIn: a.contains(document.activeElement) } : null; });
+    const btn = page.locator('button[aria-label*="menu" i]:visible').first();
+    if (await btn.count()) {
+      await btn.click({ timeout: 3000 }).catch(() => {});
+      await sleep(700);
+      const open = await onScreen();
+      await page.keyboard.press("Escape").catch(() => {});
+      let closed = false; for (let i = 0; i < 8 && !closed; i++) { await sleep(200); closed = !(await onScreen()); }
+      report.menus[role] = { opened: !!open, focusIn: !!open?.focusIn, escapeCloses: closed };
+      console.log(`  ☰ ${role} menu on phone: ${open ? "opens" : "DOES NOT OPEN"}, ${open?.focusIn ? "takes focus" : "focus stays behind"}, ${closed ? "Escape closes it" : "ESCAPE DOES NOT CLOSE IT"}`);
+      if (!closed) { await page.reload(); await settle(page); }
+    } else report.menus[role] = { opened: false, focusIn: false, escapeCloses: false, missing: true };
+  }
   const tiny = isPhone ? await targetSize(page) : [];
   report.screens.push({ view, shot, axe: a11y, ...tc, offScale, layout: lay, smallTargets: tiny, sideScroll: lay.pageScrollsSideways ? `${lay.pageScrollsSideways}px on the screen` : null });
   const notes = [
@@ -369,6 +391,7 @@ function watch(page, who) {
     [`no pop-up taller than the screen without scrolling (${m.filter((x) => x.tooTall).length})`, m.every((x) => !x.tooTall)],
     [`no pop-up wider than the screen (${m.filter((x) => x.tooWide).length})`, m.every((x) => !x.tooWide)],
     [`pop-ups found on phone as well as desktop (${m.filter((x) => x.view.startsWith("phone")).length} on phone)`, m.some((x) => x.view.startsWith("phone"))],
+    [`phone menu opens, takes focus and closes with Escape for office, admin and client (${Object.entries(report.menus).map(([k, v]) => `${k}: ${v.opened && v.focusIn && v.escapeCloses ? "ok" : JSON.stringify(v)}`).join("; ") || "not checked"})`, ["Office", "Admin", "Client"].every((r) => report.menus[r]?.opened && report.menus[r]?.focusIn && report.menus[r]?.escapeCloses)],
     [`every button can be pressed — nothing covers it (${report.clickProblems.length} blocked)`, report.clickProblems.length === 0],
     [`one type scale (${report.screens.filter((x) => x.offScale.length).length} screen(s) off it)`, report.screens.every((x) => !x.offScale.length)],
     [`nothing scrolls the page sideways or runs off the screen (${report.screens.filter((x) => x.layout?.pageScrollsSideways || x.layout?.overflow.length).length} screen(s))`, report.screens.every((x) => !x.layout?.pageScrollsSideways && !x.layout?.overflow.length)],

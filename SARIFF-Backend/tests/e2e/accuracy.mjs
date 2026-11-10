@@ -91,6 +91,11 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
     const second = await api("POST", "/api/cash", T, { currency: USD, openingBalance: 2000 });
     check("A second USD till is refused (one till per currency)", second.success === false && second.status < 500, `${second.status} ${second.message}`);
   }
+  // stock the USD till the way a bureau does: a client deposits dollars
+  if ((Number(await bal.cash(USDTILL)) || 0) < 1000)
+    await op("Client A deposits USD 1,500 cash (USD till)",
+      () => api("POST", "/api/transaction", T, txn(Txn.Credit, Acc.Client, A, Acc.Cash, USDTILL, 1500, USD, "USD deposit")),
+      [{ label: "client A USD", read: () => bal.client(A, USD), delta: 1500 }, { label: "USD till", read: () => bal.cash(USDTILL), delta: 1500 }]);
   const usdHeld = Number(await bal.cash(USDTILL)) || 0;
   const FUND = Math.min(500, Math.floor(usdHeld / 2));
   check("USD till holds enough to stock the float", FUND >= 1, `USD ${usdHeld}`);

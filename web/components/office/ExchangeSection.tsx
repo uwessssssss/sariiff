@@ -791,8 +791,8 @@ export function ExchangeSection() {
         {/* Float Balances */}
         <div className="rounded-xl bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-500 text-sm font-medium">{baseCode} Float</span>
-            <Wallet className="w-5 h-5 text-gray-500" />
+            <span className="text-gray-600 text-sm font-medium">{baseCode} Float</span>
+            <Wallet className="w-5 h-5 text-gray-600" />
           </div>
           <p className="text-2xl font-semibold text-gray-900 mb-1">
             {formatCurrency(exchangeFloat?.kesBalance || 0, base)}
@@ -818,16 +818,16 @@ export function ExchangeSection() {
           }}
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-500 text-sm font-medium">
+            <span className="text-gray-600 text-sm font-medium">
               {(exchangeFloat?.otherBalances || []).length > 0 ? "Foreign float" : "USD Float"}
             </span>
-            <DollarSign className="w-5 h-5 text-gray-500" />
+            <DollarSign className="w-5 h-5 text-gray-600" />
           </div>
           <p className="text-2xl font-semibold text-gray-900 mb-1">
             ${formatNumber(exchangeFloat?.usdBalance || 0)}
           </p>
           {usdPosition && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-600">
               Avg Cost: {usdPosition.averageCostPerUsd.toFixed(2)} {baseCode}
             </p>
           )}
@@ -839,7 +839,7 @@ export function ExchangeSection() {
                   key={b.currency}
                   className="flex items-baseline justify-between text-sm"
                 >
-                  <span className="text-gray-500">{b.currencyCode}</span>
+                  <span className="text-gray-600">{b.currencyCode}</span>
                   <span className="font-semibold text-gray-900 tabular-nums">
                     {formatNumber(b.balance)}
                   </span>
@@ -852,7 +852,7 @@ export function ExchangeSection() {
         {/* Today's Stats */}
         <div className="rounded-xl bg-white border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-500 text-sm font-medium">Today</span>
+            <span className="text-gray-600 text-sm font-medium">Today</span>
             <span
               className={`px-2 py-0.5 text-xs font-semibold rounded-full ${
                 todaySummary?.isClosed
@@ -872,7 +872,7 @@ export function ExchangeSection() {
           <p className="text-2xl font-semibold text-emerald-600 mb-1">
             {formatCurrency(todaySummary?.kesProfit || 0, base)}
           </p>
-          <p className="text-xs text-gray-500 mb-1">
+          <p className="text-xs text-gray-600 mb-1">
             {todaySummary?.exchangeCount || 0} exchanges | $
             {formatNumber(todaySummary?.usdProfit || 0)} USD profit
           </p>
@@ -897,7 +897,7 @@ export function ExchangeSection() {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">Fund Float</p>
-            <p className="text-xs text-gray-500">Add {baseCode} or foreign currency</p>
+            <p className="text-xs text-gray-600">Add {baseCode} or foreign currency</p>
           </div>
         </button>
 
@@ -910,7 +910,7 @@ export function ExchangeSection() {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">Withdraw</p>
-            <p className="text-xs text-gray-500">Transfer out</p>
+            <p className="text-xs text-gray-600">Transfer out</p>
           </div>
         </button>
 
@@ -923,7 +923,7 @@ export function ExchangeSection() {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">Settle Profit</p>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-600">
               {baseCode} {formatNumber(exchangeFloat?.kesProfit || 0)}
             </p>
           </div>
@@ -938,7 +938,7 @@ export function ExchangeSection() {
           </div>
           <div className="text-left">
             <p className="text-sm font-medium text-gray-900">USD Position</p>
-            <p className="text-xs text-gray-500">View P&L</p>
+            <p className="text-xs text-gray-600">View P&L</p>
           </div>
         </button>
       </div>
@@ -954,7 +954,7 @@ export function ExchangeSection() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                 <input
                   type="text"
                   placeholder="Search..."
@@ -979,7 +979,7 @@ export function ExchangeSection() {
                 onClick={loadTransactions}
                 className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
               >
-                <RefreshCw className="w-4 h-4 text-gray-500" />
+                <RefreshCw className="w-4 h-4 text-gray-600" />
               </button>
             </div>
           </div>
@@ -1024,7 +1024,7 @@ export function ExchangeSection() {
                 <tr>
                   <td
                     colSpan={9}
-                    className="px-4 py-12 text-center text-gray-500"
+                    className="px-4 py-12 text-center text-gray-600"
                   >
                     No transactions found
                   </td>
@@ -1045,7 +1045,7 @@ export function ExchangeSection() {
                         {txn.code}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                       {formatDateTime(txn.date)}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
@@ -1089,7 +1089,7 @@ export function ExchangeSection() {
                         }}
                         className="rounded-lg p-1 hover:bg-gray-200 transition-colors"
                       >
-                        <Eye className="w-4 h-4 text-gray-500" />
+                        <Eye className="w-4 h-4 text-gray-600" />
                       </button>
                     </td>
                   </tr>
@@ -1102,7 +1102,7 @@ export function ExchangeSection() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-600">
               Showing {(page - 1) * pageSize + 1} to{" "}
               {Math.min(page * pageSize, totalCount)} of {totalCount}{" "}
               transactions
@@ -1221,12 +1221,12 @@ export function ExchangeSection() {
                   onClick={() => setShowFloatHistory(false)}
                   className="rounded-lg p-1 hover:bg-gray-100"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
               <div className="p-4 max-h-96 overflow-y-auto">
                 {floatHistory.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">
+                  <p className="text-center text-gray-600 py-8">
                     No daily records this month. Start by recording an opening
                     float.
                   </p>
@@ -1311,7 +1311,7 @@ export function ExchangeSection() {
                       <tfoot>
                         <tr className="border-t border-gray-300 font-semibold bg-gray-50">
                           <td className="py-2 px-2 text-gray-700">Total</td>
-                          <td className="py-2 px-2 text-center text-gray-500 text-xs">
+                          <td className="py-2 px-2 text-center text-gray-600 text-xs">
                             {floatHistory.filter((d: any) => d.isClosed).length}
                             /{floatHistory.length} closed
                           </td>
@@ -1362,12 +1362,12 @@ export function ExchangeSection() {
                   onClick={() => setShowRateHistoryModal(false)}
                   className="rounded-lg p-1 hover:bg-gray-100"
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className="w-5 h-5 text-gray-600" />
                 </button>
               </div>
               <div className="p-4 max-h-96 overflow-y-auto">
                 {rateHistory.length === 0 ? (
-                  <p className="text-center text-gray-500 py-8">
+                  <p className="text-center text-gray-600 py-8">
                     No rate history available
                   </p>
                 ) : (
@@ -1532,7 +1532,7 @@ function SetRateModal({
             Set Exchange Rate
           </h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -1556,7 +1556,7 @@ function SetRateModal({
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               Each currency keeps its own independent rate.
             </p>
           </div>
@@ -1572,7 +1572,7 @@ function SetRateModal({
               className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="130.00"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               Rate when client sells {activeCode} to you
             </p>
           </div>
@@ -1588,7 +1588,7 @@ function SetRateModal({
               className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="140.00"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               Rate when client buys {activeCode} from you
             </p>
           </div>
@@ -1720,7 +1720,7 @@ function NewExchangeModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">New Exchange</h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -1771,7 +1771,7 @@ function NewExchangeModal({
                 <span className="text-red-600">*</span>
               )}
               {exchangeType === ExchangeType.Cash && (
-                <span className="text-gray-500 text-xs ml-1">(Optional)</span>
+                <span className="text-gray-600 text-xs ml-1">(Optional)</span>
               )}
             </label>
             <select
@@ -1810,7 +1810,7 @@ function NewExchangeModal({
                 className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter walk-in client name"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 Required for walk-in cash customers without an account
               </p>
             </div>
@@ -2023,7 +2023,7 @@ function FundFloatModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Fund Float</h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -2204,7 +2204,7 @@ function WithdrawFloatModal({
             Withdraw from Float
           </h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -2379,7 +2379,7 @@ function SettleProfitModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">Settle Profit</h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -2529,19 +2529,19 @@ function UsdPositionModal({
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">USD Position</h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-50 p-3">
-              <p className="text-xs text-gray-500 mb-1">USD Balance</p>
+              <p className="text-xs text-gray-600 mb-1">USD Balance</p>
               <p className="text-xl font-semibold text-gray-900">
                 ${formatNumber(position.usdBalance)}
               </p>
             </div>
             <div className="bg-gray-50 p-3">
-              <p className="text-xs text-gray-500 mb-1">Average Cost</p>
+              <p className="text-xs text-gray-600 mb-1">Average Cost</p>
               <p className="text-xl font-semibold text-gray-900">
                 {position.averageCostPerUsd.toFixed(2)} {baseCode}
               </p>
@@ -2661,7 +2661,7 @@ function CalculatorModal({
             Quick Calculator
           </h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -2809,7 +2809,7 @@ function DayCloseModal({
             Daily Float Verification
           </h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -2837,7 +2837,7 @@ function DayCloseModal({
             </button>
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-600">
             {mode === "opening"
               ? "Count physical cash at the start of the day to verify overnight integrity."
               : "Count physical cash at end of day and compare with system balances."}
@@ -2885,7 +2885,7 @@ function DayCloseModal({
                 className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder={`Count physical ${baseCode}`}
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 System: {baseCode} {formatNumber(expectedKes)}
               </p>
             </div>
@@ -2900,7 +2900,7 @@ function DayCloseModal({
                 className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Count physical USD"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 System: ${formatNumber(expectedUsd)}
               </p>
             </div>
@@ -2918,7 +2918,7 @@ function DayCloseModal({
                   className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder={`Count physical ${o.currencyCode}`}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-600 mt-1">
                   System: {o.currencyCode} {formatNumber(o.balance)}
                 </p>
               </div>
@@ -3059,7 +3059,7 @@ function TransactionDetailModal({
             {transaction.code}
           </h3>
           <button aria-label="Close" onClick={onClose} className="rounded-lg p-1 hover:bg-gray-100">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -3072,17 +3072,17 @@ function TransactionDetailModal({
 
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-500">Date</span>
+              <span className="text-gray-600">Date</span>
               <span className="font-medium">
                 {formatDateTime(transaction.date)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Client</span>
+              <span className="text-gray-600">Client</span>
               <span className="font-medium">{transaction.clientName}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Type</span>
+              <span className="text-gray-600">Type</span>
               <span
                 className={`px-2 py-0.5 text-xs font-medium ${
                   transaction.exchangeType === ExchangeType.Cash
@@ -3096,7 +3096,7 @@ function TransactionDetailModal({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Direction</span>
+              <span className="text-gray-600">Direction</span>
               <span className="font-medium">
                 {currencyCode(transaction.currencyGiven)} →{" "}
                 {currencyCode(transaction.currencyReceived)}
@@ -3106,7 +3106,7 @@ function TransactionDetailModal({
 
           <div className="border-t border-gray-200 pt-3 space-y-3">
             <div className="flex justify-between">
-              <span className="text-gray-500">Given</span>
+              <span className="text-gray-600">Given</span>
               <span className="font-medium text-emerald-700">
                 +
                 {formatCurrency(
@@ -3116,7 +3116,7 @@ function TransactionDetailModal({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Received</span>
+              <span className="text-gray-600">Received</span>
               <span className="font-medium text-red-600">
                 -
                 {formatCurrency(
@@ -3126,7 +3126,7 @@ function TransactionDetailModal({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Rate</span>
+              <span className="text-gray-600">Rate</span>
               <span className="font-medium">
                 {transaction.exchangeRate.toFixed(2)}
               </span>
@@ -3145,7 +3145,7 @@ function TransactionDetailModal({
 
           {transaction.notes && (
             <div className="border-t border-gray-200 pt-3">
-              <p className="text-sm text-gray-500">Notes</p>
+              <p className="text-sm text-gray-600">Notes</p>
               <p className="text-sm">{transaction.notes}</p>
             </div>
           )}
@@ -3194,7 +3194,7 @@ function TransactionDetailModal({
               className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
               title="Copy"
             >
-              <Copy className="w-4 h-4 text-gray-500" />
+              <Copy className="w-4 h-4 text-gray-600" />
             </button>
           </div>
           <div className="flex gap-2">

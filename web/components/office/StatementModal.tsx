@@ -619,7 +619,7 @@ export function StatementModal(props: StatementModalProps) {
                     <li
                       key={l.id}
                       onClick={onView ? () => onView(l.raw) : undefined}
-                      className={`px-4 py-3 ${l.reversed ? "opacity-60" : ""} ${onView ? "cursor-pointer active:bg-slate-50" : ""}`}
+                      className={`px-4 py-3 ${l.reversed ? "bg-slate-50 line-through decoration-slate-400" : ""} ${onView ? "cursor-pointer active:bg-slate-50" : ""}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -655,7 +655,7 @@ export function StatementModal(props: StatementModalProps) {
                     </thead>
                     <tbody className="tabular-nums">
                       {shown.map((l) => (
-                        <tr key={l.id} className={`${ui.row} align-top hover:bg-slate-50 ${l.reversed ? "opacity-60" : ""}`}>
+                        <tr key={l.id} className={`${ui.row} align-top hover:bg-slate-50 ${l.reversed ? "bg-slate-50 line-through decoration-slate-400" : ""}`}>
                           <td className={`${ui.td} whitespace-nowrap pl-5`}>
                             <span className="block font-medium text-slate-900">{longDate(l.date)}</span>
                             <span className="text-xs text-slate-500">

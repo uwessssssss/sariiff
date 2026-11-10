@@ -702,7 +702,7 @@ export function ClientUserDashboard({
             0: { cellWidth: 22 },
             1: { cellWidth: 26 },
             2: { cellWidth: 48 },
-            3: { cellWidth: 12, halign: "center" },
+            3: { cellWidth: 16, halign: "center" }, // "Type" used to wrap as "Typ / e"
             4: { cellWidth: 14, halign: "center" },
             5: { cellWidth: 26, halign: "right" },
             6: { cellWidth: 28, halign: "right" },
@@ -1057,7 +1057,7 @@ export function ClientUserDashboard({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center gap-2 bg-slate-50 text-sm text-slate-500">
+      <div className="flex min-h-screen items-center justify-center gap-2 bg-slate-50 text-sm text-slate-600">
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading your account…
       </div>
@@ -1164,7 +1164,7 @@ export function ClientUserDashboard({
   );
 
   const sectionHead = "flex items-baseline justify-between border-b border-slate-200 px-5 py-4";
-  const th = "px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap text-slate-500";
+  const th = "px-4 py-2.5 text-left text-sm font-medium whitespace-nowrap text-slate-600";
 
   // ============ RENDER ============
   return (
@@ -1220,11 +1220,11 @@ export function ClientUserDashboard({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Hello, {firstName}</h1>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-600">
                       Account {profile?.code}
                       {profile?.lastLoginAt && (
                         <>
-                          <span className="mx-2 text-slate-500">/</span>
+                          <span className="mx-2 text-slate-600">/</span>
                           Last signed in {formatDate(profile.lastLoginAt)}
                         </>
                       )}
@@ -1260,7 +1260,7 @@ export function ClientUserDashboard({
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className={sectionHead}>
                     <h2 className="text-base font-semibold text-slate-900">Your balances</h2>
-                    <span className="hidden text-sm text-slate-500 sm:inline">Totals since your account opened</span>
+                    <span className="hidden text-sm text-slate-600 sm:inline">Totals since your account opened</span>
                   </div>
                   {balanceRows.length === 0 ? (
                     <p className="px-5 py-6 text-sm text-slate-600">
@@ -1277,7 +1277,7 @@ export function ClientUserDashboard({
                                 {formatCurrency(b.balance, b.code)}
                               </span>
                             </div>
-                            <div className="mt-1 flex justify-between text-sm tabular-nums text-slate-500">
+                            <div className="mt-1 flex justify-between text-sm tabular-nums text-slate-600">
                               <span>In {formatCurrency(b.totalIn, b.code)}</span>
                               <span>Out {formatCurrency(b.totalOut, b.code)}</span>
                             </div>
@@ -1344,7 +1344,7 @@ export function ClientUserDashboard({
                               >
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate text-sm font-medium text-slate-900">{txn.description}</div>
-                                  <div className="mt-0.5 truncate text-sm text-slate-500">
+                                  <div className="mt-0.5 truncate text-sm text-slate-600">
                                     {formatDate(txn.date)}, {formatTime(txn.date)}
                                     {txn.reference && <span className="ml-3">{txn.reference}</span>}
                                   </div>
@@ -1354,7 +1354,7 @@ export function ClientUserDashboard({
                                     {isOut ? "−" : "+"}
                                     {formatCurrency(txn.amount, txn.currency)}
                                   </div>
-                                  <div className="mt-0.5 text-xs text-slate-500">
+                                  <div className="mt-0.5 text-xs text-slate-600">
                                     Balance {formatCurrency(txn.balanceAfter, txn.currency)}
                                   </div>
                                 </div>
@@ -1387,8 +1387,8 @@ export function ClientUserDashboard({
                               />
                               <div className="min-w-0">
                                 <div className={`text-sm ${alert.isRead ? "text-slate-700" : "font-semibold text-slate-900"}`}>{alert.title}</div>
-                                <div className="mt-0.5 line-clamp-2 text-sm text-slate-500">{alert.message}</div>
-                                <div className="mt-1 text-xs text-slate-500">{formatDate(alert.createdAt)}</div>
+                                <div className="mt-0.5 line-clamp-2 text-sm text-slate-600">{alert.message}</div>
+                                <div className="mt-1 text-xs text-slate-600">{formatDate(alert.createdAt)}</div>
                               </div>
                             </button>
                           </li>
@@ -1413,7 +1413,7 @@ export function ClientUserDashboard({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Statements</h1>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-600">
                       {totalCount === 1 ? "1 transaction" : `${totalCount.toLocaleString()} transactions`}
                       {filterPeriod === "month" ? " in the last month" : filterPeriod === "week" ? " in the last 7 days" : ""}
                     </p>
@@ -1452,7 +1452,7 @@ export function ClientUserDashboard({
                   return (
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                       <div className="relative lg:w-72">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
                         <input
                           type="search"
                           aria-label="Search transactions"
@@ -1508,14 +1508,14 @@ export function ClientUserDashboard({
                 {/* Transactions */}
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   {loadingTransactions ? (
-                    <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500">
+                    <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-600">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading transactions
                     </div>
                   ) : transactions.length === 0 ? (
                     <div className="py-16 text-center">
                       <p className="text-sm font-medium text-slate-900">No transactions</p>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1 text-sm text-slate-600">
                         {searchQuery || filterPeriod !== "all" || currencyFilter !== undefined || typeFilter !== undefined
                           ? "Nothing matches these filters."
                           : "Transactions on your account will appear here."}
@@ -1549,7 +1549,7 @@ export function ClientUserDashboard({
                               >
                                 <div className="min-w-0 flex-1">
                                   <div className="truncate text-sm font-medium text-slate-900">{txn.description}</div>
-                                  <div className="mt-0.5 truncate text-sm text-slate-500">
+                                  <div className="mt-0.5 truncate text-sm text-slate-600">
                                     {formatDate(txn.date)}, {formatTime(txn.date)} · {txn.code}
                                   </div>
                                 </div>
@@ -1558,7 +1558,7 @@ export function ClientUserDashboard({
                                     {isIn ? "+" : "−"}
                                     {formatCurrency(txn.amount, txn.currency)}
                                   </div>
-                                  <div className="mt-0.5 text-xs tabular-nums text-slate-500">
+                                  <div className="mt-0.5 text-xs tabular-nums text-slate-600">
                                     Bal {formatCurrency(txn.balanceAfter, txn.currency)}
                                   </div>
                                 </div>
@@ -1572,7 +1572,7 @@ export function ClientUserDashboard({
                       <div className="hidden overflow-x-auto lg:block">
                         <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-slate-200 text-left text-xs font-medium text-slate-500">
+                            <tr className="border-b border-slate-200 text-left text-xs font-medium text-slate-600">
                               <th scope="col" className="px-5 py-3 font-medium">Date</th>
                               <th scope="col" className="px-5 py-3 font-medium">Description</th>
                               <th scope="col" className="px-5 py-3 text-right font-medium">Money in</th>
@@ -1594,11 +1594,11 @@ export function ClientUserDashboard({
                                 >
                                   <td className="whitespace-nowrap px-5 py-3 align-top">
                                     <div className="text-slate-900">{formatDate(txn.date)}</div>
-                                    <div className="text-xs text-slate-500">{formatTime(txn.date)}</div>
+                                    <div className="text-xs text-slate-600">{formatTime(txn.date)}</div>
                                   </td>
                                   <td className="px-5 py-3 align-top">
                                     <div className="text-slate-900">{txn.description}</div>
-                                    <div className="text-xs text-slate-500">{txn.code}</div>
+                                    <div className="text-xs text-slate-600">{txn.code}</div>
                                   </td>
                                   <td className="whitespace-nowrap px-5 py-3 text-right align-top tabular-nums text-emerald-700">
                                     {isIn ? amount : ""}
@@ -1619,7 +1619,7 @@ export function ClientUserDashboard({
                       {/* Pagination */}
                       {totalPages > 1 && (
                         <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3">
-                          <p className="text-sm text-slate-500 tabular-nums">
+                          <p className="text-sm text-slate-600 tabular-nums">
                             {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalCount)} of {totalCount.toLocaleString()}
                           </p>
                           <div className="flex gap-2">
@@ -1692,7 +1692,7 @@ export function ClientUserDashboard({
                 {loadingAlerts ? (
                   <div className="p-12 text-center">
                     <Loader2 className="w-10 h-10 text-amber-600 animate-spin mx-auto mb-4" />
-                    <p className="text-slate-500">Loading alerts...</p>
+                    <p className="text-slate-600">Loading alerts...</p>
                   </div>
                 ) : alerts.length === 0 ? (
                   <div className="rounded-xl bg-white  border border-slate-200 p-12 text-center ">
@@ -1700,7 +1700,7 @@ export function ClientUserDashboard({
                     <h3 className="text-xl font-bold text-slate-700 mb-2">
                       No Alerts
                     </h3>
-                    <p className="text-slate-500">You're all caught up!</p>
+                    <p className="text-slate-600">You're all caught up!</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -1714,7 +1714,7 @@ export function ClientUserDashboard({
                           key={alert.id}
                           onClick={() => setSelectedAlert(alert)}
                           className={`rounded-lg w-full bg-white  border  p-6 transition-all text-left group relative overflow-hidden ${borderClass} ${
-                            alert.isRead ? "opacity-60" : ""
+                            alert.isRead ? "bg-slate-50" : ""
                           }`}
                         >
                           <div
@@ -1722,11 +1722,12 @@ export function ClientUserDashboard({
                           />
                           <div className="flex items-start gap-4 relative z-10">
                             <div
-                              className={`w-12 h-12 flex items-center justify-center   ${gradient}`}
+                              className={`w-12 h-12 shrink-0 flex items-center justify-center   ${gradient}`}
                             >
                               <AlertIcon className="w-6 h-6 text-white" />
                             </div>
-                            <div className="flex-1">
+                            {/* min-w-0 + break-words: a long unbroken word (a link, a reference) wraps instead of running off the card */}
+                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
                                 <h4 className="font-semibold text-slate-900 text-lg group-hover:text-blue-600 transition-colors">
                                   {alert.title}
@@ -1735,15 +1736,15 @@ export function ClientUserDashboard({
                                   <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                                 )}
                               </div>
-                              <p className="text-slate-600 mb-3 leading-relaxed">
+                              <p className="text-slate-600 mb-3 leading-relaxed break-words [overflow-wrap:anywhere]">
                                 {alert.message}
                               </p>
-                              <p className="text-sm text-slate-500 flex items-center gap-1.5">
+                              <p className="text-sm text-slate-600 flex items-center gap-1.5">
                                 <Clock className="w-4 h-4" />
                                 {formatDate(alert.createdAt)}
                               </p>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-blue-600  transition-all flex-shrink-0" />
+                            <ChevronRight className="w-5 h-5 text-slate-600 group-hover:text-blue-600  transition-all flex-shrink-0" />
                           </div>
                         </button>
                       );
@@ -1807,7 +1808,7 @@ export function ClientUserDashboard({
                           onClick={() => setAnalyticsCurrency(c.value)}
                           aria-pressed={analyticsCode === c.code}
                           className={`rounded-md px-3 py-1 text-sm font-semibold ${
-                            analyticsCode === c.code ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-800"
+                            analyticsCode === c.code ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-800"
                           }`}
                         >
                           {c.code}
@@ -1820,7 +1821,7 @@ export function ClientUserDashboard({
                 {loadingAnalytics ? (
                   <div className="p-12 text-center">
                     <Loader2 className="w-10 h-10 text-emerald-600 animate-spin mx-auto mb-4" />
-                    <p className="text-slate-500">Loading analytics...</p>
+                    <p className="text-slate-600">Loading analytics...</p>
                   </div>
                 ) : !analytics ? (
                   <div className="rounded-xl bg-white  border border-slate-200 p-12 text-center ">
@@ -1828,7 +1829,7 @@ export function ClientUserDashboard({
                     <h3 className="text-xl font-bold text-slate-700 mb-2">
                       No Analytics Data
                     </h3>
-                    <p className="text-slate-500">
+                    <p className="text-slate-600">
                       Start making transactions to see analytics
                     </p>
                   </div>
@@ -1846,7 +1847,7 @@ export function ClientUserDashboard({
                             {analytics.totals.growthPercentage.toFixed(1)}%
                           </span>
                         </div>
-                        <p className="text-xs font-bold text-slate-500   mb-2">
+                        <p className="text-xs font-bold text-slate-600   mb-2">
                           Growth
                         </p>
                         <p className="text-sm text-slate-600">
@@ -1863,7 +1864,7 @@ export function ClientUserDashboard({
                             Active
                           </span>
                         </div>
-                        <p className="text-xs font-bold text-slate-500   mb-2">
+                        <p className="text-xs font-bold text-slate-600   mb-2">
                           Total Transactions
                         </p>
                         <p className="text-2xl font-semibold     text-slate-900">
@@ -1877,7 +1878,7 @@ export function ClientUserDashboard({
                             <CircleDollarSign className="w-6 h-6 text-white" />
                           </div>
                         </div>
-                        <p className="text-xs font-bold text-slate-500   mb-2">
+                        <p className="text-xs font-bold text-slate-600   mb-2">
                           Net Income ({analyticsCode})
                         </p>
                         <p className="text-2xl font-semibold     text-slate-900">
@@ -1891,7 +1892,7 @@ export function ClientUserDashboard({
                             <Banknote className="w-6 h-6 text-white" />
                           </div>
                         </div>
-                        <p className="text-xs font-bold text-slate-500   mb-2">
+                        <p className="text-xs font-bold text-slate-600   mb-2">
                           Avg Transaction ({analyticsCode})
                         </p>
                         <p className="text-2xl font-semibold     text-slate-900">
@@ -2229,7 +2230,7 @@ export function ClientUserDashboard({
                     <div className="flex items-center gap-4 p-4  bg-slate-50  border border-slate-200 hover:border-blue-300 transition-all group">
                       <User className="w-6 h-6 text-blue-600  transition-transform" />
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-slate-500   mb-1">
+                        <p className="text-xs font-bold text-slate-600   mb-1">
                           Full Name
                         </p>
                         <p className="text-base font-bold text-slate-900">
@@ -2241,7 +2242,7 @@ export function ClientUserDashboard({
                     <div className="flex items-center gap-4 p-4  bg-slate-50  border border-slate-200 hover:border-blue-300 transition-all group">
                       <Receipt className="w-6 h-6 text-blue-600  transition-transform" />
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-slate-500   mb-1">
+                        <p className="text-xs font-bold text-slate-600   mb-1">
                           Client Code
                         </p>
                         <p className="text-base font-bold text-slate-900 font-mono">
@@ -2254,7 +2255,7 @@ export function ClientUserDashboard({
                       <div className="flex items-center gap-4 p-4  bg-slate-50  border border-slate-200 hover:border-emerald-300 transition-all group">
                         <Globe className="w-6 h-6 text-emerald-600  transition-transform" />
                         <div className="flex-1">
-                          <p className="text-xs font-bold text-slate-500   mb-1">
+                          <p className="text-xs font-bold text-slate-600   mb-1">
                             Email Address
                           </p>
                           <p className="text-base font-bold text-slate-900">
@@ -2270,7 +2271,7 @@ export function ClientUserDashboard({
                     <div className="flex items-center gap-4 p-4  bg-slate-50  border border-slate-200 hover:border-amber-300 transition-all group">
                       <MessageCircle className="w-6 h-6 text-amber-600  transition-transform" />
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-slate-500   mb-1">
+                        <p className="text-xs font-bold text-slate-600   mb-1">
                           WhatsApp Number
                         </p>
                         <p className="text-base font-bold text-slate-900">
@@ -2286,7 +2287,7 @@ export function ClientUserDashboard({
                       <div className="flex items-center gap-4 p-4  bg-slate-50  border border-slate-200 hover:border-pink-300 transition-all group">
                         <Shield className="w-6 h-6 text-pink-600  transition-transform" />
                         <div className="flex-1">
-                          <p className="text-xs font-bold text-slate-500   mb-1">
+                          <p className="text-xs font-bold text-slate-600   mb-1">
                             ID/Passport
                           </p>
                           <p className="text-base font-bold text-slate-900">
@@ -2299,7 +2300,7 @@ export function ClientUserDashboard({
                     <div className="flex items-center gap-4 p-4  bg-slate-50  border border-slate-200 hover:border-cyan-300 transition-all group">
                       <Calendar className="w-6 h-6 text-cyan-600  transition-transform" />
                       <div className="flex-1">
-                        <p className="text-xs font-bold text-slate-500   mb-1">
+                        <p className="text-xs font-bold text-slate-600   mb-1">
                           Member Since
                         </p>
                         <p className="text-base font-bold text-slate-900">
@@ -2333,7 +2334,7 @@ export function ClientUserDashboard({
                       <p className="text-2xl font-semibold     text-slate-900 tracking-tight">
                         {formatCurrency(profile?.balanceKES ?? 0, Currency.KES)}
                       </p>
-                      <p className="text-xs text-slate-500 mt-2">
+                      <p className="text-xs text-slate-600 mt-2">
                         Opening:{" "}
                         {formatCurrency(
                           profile?.openingBalanceKES ?? 0,
@@ -2379,7 +2380,7 @@ export function ClientUserDashboard({
                             <p className="text-xs font-bold text-blue-600">
                               {b.currencyCode}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-600">
                               In: {(b.totalIn ?? 0).toLocaleString()} · Out:{" "}
                               {(b.totalOut ?? 0).toLocaleString()}
                             </p>
@@ -2511,13 +2512,13 @@ export function ClientUserDashboard({
                 <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
                   <div className="min-w-0">
                     <h2 id="txn-title" className="truncate text-base font-semibold text-slate-900">{t.description}</h2>
-                    <p className="mt-0.5 text-sm text-slate-500">{t.code}</p>
+                    <p className="mt-0.5 text-sm text-slate-600">{t.code}</p>
                   </div>
                   <button
                     autoFocus
                     aria-label="Close"
                     onClick={() => setSelectedTransaction(null)}
-                    className="-mr-1.5 rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                    className="-mr-1.5 rounded-md p-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -2525,7 +2526,7 @@ export function ClientUserDashboard({
 
                 {/* Amount */}
                 <div className="px-5 pb-2 pt-5">
-                  <p className="text-sm text-slate-500">{isIn ? "Money in" : "Money out"}</p>
+                  <p className="text-sm text-slate-600">{isIn ? "Money in" : "Money out"}</p>
                   <p className={`mt-1 text-3xl font-semibold tracking-tight tabular-nums ${isIn ? "text-emerald-700" : "text-slate-900"}`}>
                     {isIn ? "+" : "−"}
                     {formatCurrency(t.amount, t.currency)}
@@ -2536,13 +2537,13 @@ export function ClientUserDashboard({
                 <dl className="divide-y divide-slate-100 px-5">
                   {rows.map(([label, value]) => (
                     <div key={label} className="flex items-baseline justify-between gap-6 py-2.5 text-sm">
-                      <dt className="shrink-0 text-slate-500">{label}</dt>
+                      <dt className="shrink-0 text-slate-600">{label}</dt>
                       <dd className="text-right tabular-nums text-slate-900">{value}</dd>
                     </div>
                   ))}
                   {t.reference && t.reference !== t.code && (
                     <div className="flex items-baseline justify-between gap-6 py-2.5 text-sm">
-                      <dt className="shrink-0 text-slate-500">Reference</dt>
+                      <dt className="shrink-0 text-slate-600">Reference</dt>
                       <dd className="flex min-w-0 items-center gap-2 text-slate-900">
                         <span className="truncate font-mono text-sm">{t.reference}</span>
                         <button
@@ -2551,7 +2552,7 @@ export function ClientUserDashboard({
                             navigator.clipboard.writeText(t.reference);
                             toast.success("Reference copied");
                           }}
-                          className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                          className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-700"
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </button>
@@ -2560,7 +2561,7 @@ export function ClientUserDashboard({
                   )}
                   {t.notes && (
                     <div className="py-2.5 text-sm">
-                      <dt className="text-slate-500">Notes</dt>
+                      <dt className="text-slate-600">Notes</dt>
                       <dd className="mt-1 whitespace-pre-line text-slate-900">{t.notes}</dd>
                     </div>
                   )}
@@ -2654,7 +2655,7 @@ export function ClientUserDashboard({
 
                       <div className="flex items-center justify-between p-4  bg-slate-50  border border-slate-200">
                         <div>
-                          <p className="text-xs font-bold text-slate-500   mb-1">
+                          <p className="text-xs font-bold text-slate-600   mb-1">
                             Alert Type
                           </p>
                           <span
@@ -2672,7 +2673,7 @@ export function ClientUserDashboard({
                           </span>
                         </div>
                         <div className="text-right">
-                          <p className="text-xs font-bold text-slate-500   mb-1">
+                          <p className="text-xs font-bold text-slate-600   mb-1">
                             Status
                           </p>
                           <span
@@ -2725,20 +2726,19 @@ export function ClientUserDashboard({
       {/* ============ PASSWORD CHANGE MODAL ============ */}
       <AnimatePresence>
         {showPasswordModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
-              onClick={() => setShowPasswordModal(false)}
-            />
+          // one layer holding the panel (like every other pop-up), so it is announced as a
+          // dialog, keeps focus inside, closes on Escape and can't run off a small screen
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={() => setShowPasswordModal(false)}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white shadow-2xl z-50"
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-md overflow-y-auto bg-white shadow-2xl"
             >
               {/* Header */}
               <div className=" bg-blue-600   p-6 border-b border-blue-400">
@@ -2844,7 +2844,7 @@ export function ClientUserDashboard({
                 </div>
               </div>
             </motion.div>
-          </>
+          </div>
         )}
       </AnimatePresence>
     </div>
