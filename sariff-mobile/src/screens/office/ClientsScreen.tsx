@@ -540,7 +540,7 @@ export default function ClientsScreen() {
       <ModalSheet visible={showCreate} onClose={() => setShowCreate(false)} title="New Client" icon="person-add-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
           <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
             <Input label="Full Name *" value={fullName} onChangeText={setFullName} icon="person-outline" placeholder="Client name" />
-            <Input label="WhatsApp Number *" value={phone} onChangeText={setPhone} icon="call-outline" placeholder="+254..." keyboardType="phone-pad" />
+            <Input label="WhatsApp Number *" value={phone} onChangeText={setPhone} icon="call-outline" placeholder={base === 2 ? "+256..." : "+254..."} keyboardType="phone-pad" />
             <Input label="Email" value={email} onChangeText={setEmail} icon="mail-outline" placeholder="email@example.com" keyboardType="email-address" />
             <Input label="ID/Passport" value={idPassport} onChangeText={setIdPassport} icon="card-outline" placeholder="ID number" />
             <Text style={styles.fieldLabel}>Client Type</Text>

@@ -774,7 +774,7 @@ export default function ExchangeScreen() {
       modal === "settleProfit"
         ? settleCurrency
         : modal === "fundFloat"
-          ? 0
+          ? base // the bureau's home currency (was hard-coded to KES: a Ugandan bureau saw no accounts)
           : floatCurrency;
     switch (type) {
       case AccountType.Cash:
