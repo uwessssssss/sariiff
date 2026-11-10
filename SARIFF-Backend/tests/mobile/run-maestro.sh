@@ -48,7 +48,9 @@ for flow in office.yaml office-screens.yaml client.yaml client-screens.yaml; do
 done
 true
 # Maestro writes takeScreenshot images next to the flows; keep them with the results.
-mkdir -p "$OUT/screens" && mv -f ./*.png "$OUT/screens/" 2>/dev/null
+# (with --test-output-dir they land in a folder under $OUT instead — collect from both)
+mkdir -p "$OUT/screens"
+find . "$OUT" -name '*.png' -not -path "$OUT/screens/*" -exec mv -f {} "$OUT/screens/" \; 2>/dev/null
 echo "screenshots: $(ls "$OUT/screens" 2>/dev/null | wc -l)"
 adb shell dumpsys meminfo com.sariff.mobile 2>/dev/null | grep -E "TOTAL PSS|TOTAL:" | head -2 | sed "s/^/memory: /"
 adb logcat -d > "$OUT/logcat.txt" 2>/dev/null
