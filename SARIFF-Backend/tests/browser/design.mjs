@@ -321,7 +321,7 @@ function watch(page, who) {
         for (const tab of ["Overview", "Bureaus", "Security", "Financial", "Analytics", "Audit log", "System"]) {
           const b = page.getByRole("button", { name: new RegExp(`^${tab}$`, "i") }).first();
           if (await b.count()) { await b.click().catch(() => {}); } else {
-            const menu = page.getByRole("button", { name: /menu/i }).first(); if (await menu.count()) { await menu.click().catch(() => {}); await sleep(300); await page.getByText(tab, { exact: true }).first().click().catch(() => {}); }
+            const menu = page.getByRole("button", { name: /menu/i }).first(); if (await menu.count()) { await menu.click().catch(() => {}); await sleep(300); await page.locator("aside:visible").getByText(tab, { exact: true }).first().click().catch(() => {}); await sleep(400); }
           }
           await screen(page, `${size} · Admin ${tab}`, null, { modals: true });
         }
