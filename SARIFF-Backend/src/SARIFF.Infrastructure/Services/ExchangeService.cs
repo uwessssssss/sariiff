@@ -860,6 +860,7 @@ public class ExchangeService : IExchangeService
         var exchanges = await query
             .OrderByDescending(e => e.TransactionDate)
             .ThenByDescending(e => e.CreatedAt)
+            .ThenByDescending(e => e.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

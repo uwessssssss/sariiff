@@ -186,6 +186,22 @@ async function paced(fn) {
   const bad = await fetch(BASE + "/api/transaction", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${UG}`, "Idempotency-Key": crypto.randomUUID() }, body: "{ not json" });
   const badText = await bad.text();
   check("Broken JSON → 400 without internal details", bad.status === 400 && !/at SARIFF\.|StackTrace|System\.Text\.Json\.JsonReaderException|\.cs:line/.test(badText), `${bad.status} ${badText.slice(0, 200)}`);
+
+  // ---------- paging can't be abused or broken (every paged list)
+  for (const path of ["/api/client", "/api/transaction", "/api/expense", "/api/invoice", "/api/reconciliation", "/api/exchange/transactions", "/api/report/transactions"]) {
+    const zero = await api("GET", `${path}?page=0&pageSize=10`, UG);
+    const neg = await api("GET", `${path}?page=-5&pageSize=-3`, UG);
+    const huge = await api("GET", `${path}?page=1&pageSize=1000000`, UG);
+    const far = await api("GET", `${path}?page=999999&pageSize=20`, UG);
+    const n = (r) => (Array.isArray(r.data) ? r.data : r.data?.items || []).length;
+    check(`Paging ${path}: page 0, negative and far-away pages answer without an error`, zero.status === 200 && neg.status === 200 && far.status === 200 && n(far) === 0, `page=0 → ${zero.status}, negative → ${neg.status}, page 999999 → ${far.status} (${n(far)} rows)`);
+    check(`Paging ${path}: pageSize 1,000,000 is capped at 1,000`, huge.status === 200 && n(huge) <= 1000 && (huge.data?.pageSize ?? 0) <= 1000, `${huge.status}, ${n(huge)} rows, pageSize ${huge.data?.pageSize}`);
+    // pages don't overlap and add up to the total
+    const p1 = await api("GET", `${path}?page=1&pageSize=3`, UG), p2 = await api("GET", `${path}?page=2&pageSize=3`, UG);
+    const ids1 = (p1.data?.items || []).map((x) => x.id), ids2 = (p2.data?.items || []).map((x) => x.id);
+    const total = p1.data?.totalCount ?? 0;
+    check(`Paging ${path}: page 2 continues after page 1 (no repeats), sizes match the total`, ids1.length === Math.min(3, total) && ids2.length === Math.max(0, Math.min(3, total - 3)) && !ids2.some((x) => ids1.includes(x)), `total ${total}, page1 ${ids1.length}, page2 ${ids2.length}, repeats ${ids2.filter((x) => ids1.includes(x)).length}`);
+  }
   const prof = await api("GET", "/api/portal/profile", CL);
   const pBefore = (await api("GET", `/api/client/${S.client.id}`, UG)).data;
   await api("PUT", "/api/portal/profile", CL, { ...(prof.data || {}), balanceKES: 99999999, balanceUSD: 99999999, companyId: sec.data.id, clientType: 0 });

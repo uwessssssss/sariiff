@@ -56,6 +56,7 @@ import {
   CreateInvoiceDto,
   Currency,
   ClientDto,
+  allPages,
 } from "@/lib/api";
 import { useBaseCurrency, useAllowedCurrencies, useCountrySamples } from "@/lib/useBaseCurrency";
 import { ui } from "./theme";
@@ -270,7 +271,7 @@ export default function InvoiceManagement() {
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getInvoices(1, 200);
+      const result = await allPages((p, n) => getInvoices(p, n));
       if (result.success && result.data) {
         const items = result.data.items || [];
         setInvoices(items.map(mapInvoice));

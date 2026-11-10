@@ -63,6 +63,7 @@ import {
   getStoredAuth,
   formatMoney,
   currencyCode,
+  allPages,
 } from "@/lib/api";
 import { useBaseCurrency, foreignCurrenciesFor, useAllowedCurrencies } from "@/lib/useBaseCurrency";
 import jsPDF from "jspdf";
@@ -570,9 +571,7 @@ export function Reports() {
     try {
       await ensureRates();
       // Use the correct report endpoint
-      const response = await apiRequest<any[]>(
-        "/api/report/transactions?page=1&pageSize=500",
-      );
+      const response = await allPages((p, n) => apiRequest<any>(`/api/report/transactions?page=${p}&pageSize=${n}`));
 
       if (response.success && response.data) {
         const txnData = Array.isArray(response.data)
@@ -627,7 +626,7 @@ export function Reports() {
   // Fetch client balances
   const fetchClientBalances = useCallback(async () => {
     try {
-      const response = await getClients(1, 200); // Get all clients with pagination
+      const response = await allPages((p, n) => getClients(p, n)); // every client, page by page
       if (response.success && response.data) {
         // Handle paginated response - data has .items array
         const clientList = response.data.items || response.data;
@@ -735,7 +734,7 @@ export function Reports() {
   const fetchExchangeSummary = useCallback(async () => {
     try {
       const [exchangeRes, rateRes, floatRes, summaryRes] = await Promise.all([
-        getExchangeTransactions(1, 100),
+        allPages((p, n) => getExchangeTransactions(p, n)),
         getCurrentExchangeRate(),
         getExchangeFloat(),
         getExchangeTodaySummary(),
@@ -832,17 +831,17 @@ export function Reports() {
       const excluded = new Set<string>();
       // Fetch all required data for P&L calculation
       const [exchangeRes, summaryRes, floatRes, txnRes] = await Promise.all([
-        getExchangeTransactions(1, 500),
+        allPages((p, n) => getExchangeTransactions(p, n)),
         getExchangeTodaySummary(),
         getExchangeFloat(),
         // This month only, and all of it: the endpoint's default page is 10 rows,
         // so the P&L used to be built from the last 10 transactions.
-        apiRequest<any[]>(
-          `/api/report/transactions?page=1&pageSize=1000&startDate=${(() => {
+        allPages((p, n) => apiRequest<any>(
+          `/api/report/transactions?page=${p}&pageSize=${n}&startDate=${(() => {
             const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0);
             return encodeURIComponent(d.toISOString());
           })()}`,
-        ),
+        )),
       ]);
 
       const exchangeTransactions =

@@ -401,6 +401,7 @@ public class TransactionService : ITransactionService
         var totalCount = await query.CountAsync();
         var transactions = await query
             .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

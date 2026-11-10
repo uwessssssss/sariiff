@@ -1007,6 +1007,7 @@ public class ExpenseService : IExpenseService
         var totalCount = await query.CountAsync();
         var expenses = await query
             .OrderByDescending(e => e.ExpenseDate)
+            .ThenByDescending(e => e.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

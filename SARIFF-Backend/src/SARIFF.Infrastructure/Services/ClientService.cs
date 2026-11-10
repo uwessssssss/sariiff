@@ -185,6 +185,7 @@ public class ClientService : IClientService
         var totalCount = await query.CountAsync();
         var clients = await query
             .OrderByDescending(u => u.CreatedAt)
+            .ThenByDescending(u => u.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

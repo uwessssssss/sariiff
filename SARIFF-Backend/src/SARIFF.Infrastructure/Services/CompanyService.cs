@@ -156,6 +156,7 @@ public class CompanyService : ICompanyService
         var totalCount = await query.CountAsync();
         var companies = await query
             .OrderByDescending(c => c.CreatedAt)
+            .ThenByDescending(c => c.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();  // FIX #22: Materialize first to avoid client-side evaluation

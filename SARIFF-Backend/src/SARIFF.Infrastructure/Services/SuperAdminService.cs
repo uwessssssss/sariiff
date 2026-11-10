@@ -357,6 +357,7 @@ public class SuperAdminService : ISuperAdminService
             var totalCount = await query.CountAsync();
             var companies = await query
                 .OrderByDescending(c => c.CreatedAt)
+                .ThenByDescending(c => c.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -856,6 +857,7 @@ public class SuperAdminService : ISuperAdminService
             var totalCount = await query.CountAsync();
             var alerts = await query
                 .OrderByDescending(a => a.CreatedAt)
+                .ThenByDescending(a => a.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(a => new SecurityAlertDto(
@@ -1105,6 +1107,7 @@ public class SuperAdminService : ISuperAdminService
             var totalCount = await query.CountAsync();
             var payments = await query
                 .OrderByDescending(p => p.CreatedAt)
+                .ThenByDescending(p => p.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -1269,6 +1272,7 @@ public class SuperAdminService : ISuperAdminService
             var totalCount = await query.CountAsync();
             var logs = await query
                 .OrderByDescending(l => l.CreatedAt)
+                .ThenByDescending(l => l.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

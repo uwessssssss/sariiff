@@ -42,7 +42,7 @@ Log.Information("SARIFF API - {Environment} MODE", builder.Environment.Environme
 Log.Information("========================================");
 
 // Add services
-builder.Services.AddControllers()
+builder.Services.AddControllers(o => o.Filters.Add<SARIFF.API.Middleware.PagingClampFilter>())
     // Times leave the API marked as UTC ("...Z"), so screens show the viewer's local time.
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new SARIFF.API.UtcDateTimeConverter()));
 builder.Services.AddEndpointsApiExplorer();

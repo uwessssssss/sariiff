@@ -52,6 +52,7 @@ import {
   BankAccountDto,
   MpesaAgentDto,
   formatMoney,
+  allPages,
 } from "@/lib/api";
 import { useBaseCurrency, useAllowedCurrencies } from "@/lib/useBaseCurrency";
 import jsPDF from "jspdf";
@@ -307,7 +308,7 @@ export function ExpensesAccount() {
 
   const fetchExpenses = useCallback(async () => {
     try {
-      const response = await getExpenses(1, 1000);
+      const response = await allPages((p, n) => getExpenses(p, n));
       if (response.success && response.data) {
         const expenses = response.data.items || response.data;
         if (Array.isArray(expenses)) {

@@ -157,7 +157,7 @@ public class InvoiceService : IInvoiceService
     {
         var query = _context.Invoices.Where(i => i.CompanyId == companyId);
         var totalCount = await query.CountAsync();
-        var invoices = await query.OrderByDescending(i => i.InvoiceDate).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var invoices = await query.OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         // All line items for the page in one query (it was one query per invoice).
         var invoiceIds = invoices.Select(i => i.Id).ToList();
@@ -375,6 +375,7 @@ public class ReconciliationService : IReconciliationService
 
         var transactions = await query
             .OrderByDescending(t => t.TransactionDate)
+            .ThenByDescending(t => t.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

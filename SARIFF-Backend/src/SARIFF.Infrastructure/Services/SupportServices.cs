@@ -295,7 +295,7 @@ public class AuditService : IAuditService
         if (companyId.HasValue) query = query.Where(l => l.CompanyId == companyId);
 
         var totalCount = await query.CountAsync();
-        var logs = await query.OrderByDescending(l => l.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var logs = await query.OrderByDescending(l => l.CreatedAt).ThenByDescending(l => l.Id).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         var companyNames = await CompanyNamesAsync(logs.Select(l => l.CompanyId));
         var userNames = await UserNamesAsync(logs.Select(l => l.UserId));
@@ -331,7 +331,7 @@ public class AuditService : IAuditService
         if (companyId.HasValue) query = query.Where(l => l.CompanyId == companyId);
 
         var totalCount = await query.CountAsync();
-        var logs = await query.OrderByDescending(l => l.LoginAt).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        var logs = await query.OrderByDescending(l => l.LoginAt).ThenByDescending(l => l.Id).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         var companyNames = await CompanyNamesAsync(logs.Select(l => l.CompanyId));
         var userNames = await UserNamesAsync(logs.Select(l => l.UserId));
@@ -535,6 +535,7 @@ public class SystemLogService : ISystemLogService
         var totalCount = await query.CountAsync();
         var logs = await query
             .OrderByDescending(l => l.CreatedAt)
+            .ThenByDescending(l => l.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();

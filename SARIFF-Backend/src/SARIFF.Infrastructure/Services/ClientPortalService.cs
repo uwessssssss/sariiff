@@ -518,6 +518,7 @@ public class ClientPortalService : IClientPortalService
 
         var alerts = await query
             .OrderByDescending(a => a.CreatedAt)
+            .ThenByDescending(a => a.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(a => new ClientAlertDto

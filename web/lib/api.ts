@@ -1748,6 +1748,33 @@ export async function getRecentTransactions(
 // Client API Functions
 // ==============================================
 
+/**
+ * Every row of a paged list, fetched page by page (200 at a time).
+ *
+ * Before (Nov 2026) screens asked for "page 1 of 200/500/1000" and treated it as everything:
+ * the client picker stopped at 200 clients and the month's profit was built from the first
+ * 1,000 transactions. Returns the same shape as one page, holding all rows.
+ */
+export async function allPages<T = any>(
+  fetchPage: (page: number, pageSize: number) => Promise<ApiResponse<any>>,
+  pageSize: number = 200,
+  maxRows: number = 50000,
+): Promise<ApiResponse<PagedResult<T>>> {
+  const items: T[] = [];
+  let total = 0;
+  for (let page = 1; items.length < maxRows; page++) {
+    const r = await fetchPage(page, pageSize);
+    if (!r.success || !r.data) return page === 1 ? (r as any) : { ...r, success: true, data: { items, totalCount: Math.max(total, items.length), page: 1, pageSize: items.length } as any };
+    const rows: T[] = Array.isArray(r.data) ? r.data : r.data.items || [];
+    total = Array.isArray(r.data) ? items.length + rows.length : r.data.totalCount ?? items.length + rows.length;
+    items.push(...rows);
+    if (rows.length < pageSize || items.length >= total) {
+      return { ...r, data: { items, totalCount: Math.max(total, items.length), page: 1, pageSize: items.length } as any };
+    }
+  }
+  return { success: true, message: "Success", data: { items, totalCount: total, page: 1, pageSize: items.length } as any } as any;
+}
+
 export async function getClients(
   page: number = 1,
   pageSize: number = 10,

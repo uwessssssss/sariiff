@@ -45,6 +45,7 @@ import {
   updateMyCompanySettings,
   ClientDto,
   ExpenseCategoryDto,
+  allPages,
 } from "@/lib/api";
 import { loadCompanyBranding, saveCompanyBranding, shrinkImage } from "@/lib/companyBranding";
 
@@ -137,7 +138,7 @@ export function OfficeSettings({
   const fetchClients = async () => {
     try {
       setLoading(true);
-      const result = await getClients(1, 200);
+      const result = await allPages((p, n) => getClients(p, n));
       if (result.success && result.data?.items) {
         setClients(result.data.items);
       }

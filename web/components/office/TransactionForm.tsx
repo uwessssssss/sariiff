@@ -45,6 +45,7 @@ import {
   withIdempotencyKey,
   submissionKey,
   newIdempotencyKey,
+  allPages,
 } from "@/lib/api";
 import { useBaseCurrency, isCurrencyAllowed } from "@/lib/useBaseCurrency";
 import { localDate } from "@/lib/dates";
@@ -190,7 +191,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
           getCashAccounts(),
           getBankAccounts(),
           getMpesaAgents(),
-          getClients(1, 200),
+          allPages((p, n) => getClients(p, n)),
         ]);
 
         if (cashRes.success && cashRes.data) {
