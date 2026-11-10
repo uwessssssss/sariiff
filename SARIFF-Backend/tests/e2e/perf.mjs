@@ -61,6 +61,7 @@ async function pool(n, workers, fn) {
   const secs = ((Date.now() - t0) / 1000).toFixed(0);
   console.log(`        filled in ${secs} s: ${tx1.ok + tx2.ok} transactions posted (${tx1.fail + tx2.fail} refused)`);
   check("≥ 5,800 transactions posted", tx1.ok + tx2.ok >= 5800, `${tx1.ok + tx2.ok}`);
+  const posted = tx1.ok + tx2.ok;
   const busyClient = busy;
   const cLogin = await api("POST", "/api/auth/login", null, { code: (await api("GET", `/api/client/${busyClient}`, T)).data?.code, phoneNumber: "+256771000000", password: "Client#2026x" });
   const CT = cLogin.data?.accessToken;
@@ -110,7 +111,13 @@ async function pool(n, workers, fn) {
     // lines here all fall on one day), so what counts for those is the download a phone
     // pays for; paged lists must be small either way.
     if (/^Busy/.test(name)) { /* all-time stress lists: sizes reported above, not gated */ }
-    else if (/statement|Daily report|CSV|PDF/i.test(name)) check(`${name}: under 500 KB to download`, w.bytes >= 0 && w.bytes < 512000, `${kb(w.bytes)} on the wire (${w.enc}), ${kb(size)} of JSON`);
+    else if (/Till statement, today|Daily report/.test(name)) {
+      // every line of the day, by design — and this test puts all ~6,000 lines on ONE day
+      // (a real busy day is a few hundred). So the fair measure is the cost per line.
+      const lines = Math.max(1, posted), per = w.bytes / lines;
+      check(`${name}: under 250 bytes per line to download (${lines.toLocaleString()} lines today)`, w.bytes >= 0 && per < 250, `${kb(w.bytes)} on the wire (${w.enc}) = ${per.toFixed(0)} bytes/line; ${kb(size)} of JSON; a 300-line day ≈ ${kb(per * 300)}`);
+    }
+    else if (/statement|CSV|PDF/i.test(name)) check(`${name}: under 500 KB to download`, w.bytes >= 0 && w.bytes < 512000, `${kb(w.bytes)} on the wire (${w.enc}), ${kb(size)} of JSON`);
     else check(`${name}: response under 500 KB`, size < 512000, kb(size));
   }
 

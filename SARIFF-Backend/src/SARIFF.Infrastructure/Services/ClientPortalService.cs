@@ -325,7 +325,10 @@ public class ClientPortalService : IClientPortalService
         // Bureau-local days as UTC bounds; the end day is included in full.
         var (fromUtcBound, toExclusiveBound) = BureauClock.Range(startDate, endDate);
         var periodStartLocal = startDate;   // shown on the statement as picked
-        startDate = fromUtcBound!.Value;
+        // A missing date means "no limit" (Range returns null for it): everything up to now.
+        var noStart = !fromUtcBound.HasValue;
+        if (!toExclusiveBound.HasValue) endDate = BureauClock.ToLocal(DateTime.UtcNow).Date;
+        startDate = fromUtcBound ?? DateTime.SpecifyKind(DateTime.MinValue, DateTimeKind.Utc);
 
         var client = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == clientId && u.CompanyId == companyId && 
@@ -336,7 +339,7 @@ public class ClientPortalService : IClientPortalService
 
         // One statement = one currency (home currency by default) — never a mix.
         var statementCurrency = currency ?? await _context.BaseCurrencyAsync(companyId);
-        var endExclusive = toExclusiveBound!.Value;
+        var endExclusive = toExclusiveBound ?? DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
 
         var query = GetClientTransactionsQuery(companyId, clientId)
             .Where(t => t.TransactionDate >= startDate && t.TransactionDate < endExclusive)
@@ -348,6 +351,8 @@ public class ClientPortalService : IClientPortalService
             .ThenBy(t => t.CreatedAt)
             .ToListAsync();
         var items = transactions.Select(t => MapToClientTransactionDto(t, clientId)).ToList();
+        // no start picked: the statement begins at the client's first entry (not year 0001)
+        if (noStart) periodStartLocal = transactions.Count > 0 ? BureauClock.ToLocal(transactions[0].TransactionDate).Date : endDate;
 
         // Opening balances for the statement currency. KES/USD live on the
         // client's columns; other currencies (UGX, EUR, ...) live in
