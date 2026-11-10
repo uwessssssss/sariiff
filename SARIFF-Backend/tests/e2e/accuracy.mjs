@@ -175,6 +175,12 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   await op(`Fund float USD ${FUND} from the USD till`,
     () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: FUND, sourceType: Acc.Cash, sourceAccountId: USDTILL, purchaseRate: null, notes: "USD stock" }),
     [{ label: "USD till", read: () => bal.cash(USDTILL), delta: -FUND }, { label: "float USD", read: () => bal.float(USD), delta: FUND }]);
+  await op("Buy float USD 10 with UGX from the till at 3,640 (till pays UGX 36,400)",
+    () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: 10, sourceType: Acc.Cash, sourceAccountId: TILL, purchaseRate: 3640, notes: "Bought USD" }),
+    [{ label: "till", read: () => bal.cash(TILL), delta: -36400 }, { label: "float USD", read: () => bal.float(USD), delta: 10 }]);
+  await refused("USD float from the UGX till with no purchase rate",
+    () => api("POST", "/api/exchange/float/fund", T, { currency: USD, amount: 10, sourceType: Acc.Cash, sourceAccountId: TILL, purchaseRate: null, notes: null }),
+    [() => bal.cash(TILL), () => bal.float(USD)]);
 
   const ex = (body) => api("POST", "/api/exchange/transaction", T, { clientId: null, customRate: null, clientIdNumber: null, notes: null, foreignCurrency: USD, ...body });
   const buy = await op("Bureau BUYS USD 100 cash at 3,650",

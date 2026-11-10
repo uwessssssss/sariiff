@@ -2001,21 +2001,22 @@ function FundFloatModal({
   const [purchaseRate, setPurchaseRate] = useState("");
   const [notes, setNotes] = useState("");
 
-  // Funding always pays in the home currency (foreign float is bought with it at the
-  // purchase rate), so the source account must hold the home currency.
-  const filteredAccounts = accounts.filter((a) => a.currency === base);
-  const selectedAccount = accounts.find((a) => a.id === sourceAccountId);
+  // Two ways to stock a foreign float: move money already held in that currency (a USD
+  // till / bank — no rate needed), or buy it with home-currency money at a purchase rate.
+  const filteredAccounts = accounts.filter((a) => a.currency === base || a.currency === currency);
+  const selectedAccount = filteredAccounts.find((a) => a.id === sourceAccountId);
+  const sameCurrency = !!selectedAccount && selectedAccount.currency === currency;
 
   const amountNum = parseFloat(amount) || 0;
   const deductAmount =
-    currency !== base && purchaseRate
+    currency !== base && !sameCurrency && purchaseRate
       ? amountNum * parseFloat(purchaseRate)
       : amountNum;
 
   const isValid =
     amountNum > 0 &&
     sourceAccountId &&
-    (currency === base || purchaseRate);
+    (currency === base || sameCurrency || purchaseRate);
 
   return (
     <ModalWrapper onClose={onClose}>
@@ -2062,7 +2063,7 @@ function FundFloatModal({
             />
           </div>
 
-          {currency !== base && (
+          {currency !== base && !sameCurrency && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Purchase Rate
@@ -2101,7 +2102,7 @@ function FundFloatModal({
               <div className="flex justify-between">
                 <span className="text-gray-600">Will deduct:</span>
                 <span className="font-medium">
-                  {baseCode} {formatNumber(deductAmount)}
+                  {sameCurrency ? currencyCode(currency) : baseCode} {formatNumber(deductAmount)}
                 </span>
               </div>
             </div>
@@ -2135,7 +2136,7 @@ function FundFloatModal({
                 sourceType: selectedAccount?.type,
                 sourceAccountId,
                 purchaseRate:
-                  currency !== base
+                  currency !== base && !sameCurrency
                     ? parseFloat(purchaseRate)
                     : undefined,
                 notes: notes || undefined,

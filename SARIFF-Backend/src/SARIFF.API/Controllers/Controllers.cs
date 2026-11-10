@@ -1826,9 +1826,9 @@ public class ExchangeController : BaseApiController
         if (dto.Amount <= 0)
             return BadRequest(new ApiResponse<object>(false, "Amount must be greater than 0", null));
 
-        if (dto.Currency == Currency.USD && (!dto.PurchaseRate.HasValue || dto.PurchaseRate <= 0))
-            return BadRequest(new ApiResponse<object>(false, "Purchase rate is required for USD funding", null));
-
+        // No blanket "USD needs a rate" rule here: dollars already held in a USD till/bank move
+        // into the float as they are. The service asks for a rate only when the float currency
+        // is being BOUGHT with home-currency money.
         var result = await _exchangeService.FundFloatAsync(CompanyId.Value, UserId.Value, dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }

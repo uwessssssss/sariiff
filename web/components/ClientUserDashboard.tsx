@@ -2121,7 +2121,7 @@ export function ClientUserDashboard({
                           <h3 className="text-xl font-semibold text-white mb-2">
                             Smart Insight
                           </h3>
-                          <p className="text-blue-50 leading-relaxed">
+                          <p className="text-white leading-relaxed">
                             {analytics.totals.growthPercentage > 0
                               ? `Your account is growing! ${analytics.totals.growthPercentage.toFixed(
                                   1,
@@ -2190,7 +2190,7 @@ export function ClientUserDashboard({
                       <h2 className="text-3xl font-semibold text-white mb-2">
                         {profile?.fullName || userName}
                       </h2>
-                      <p className="text-blue-50 font-semibold mb-4">
+                      <p className="text-white font-semibold mb-4">
                         {getClientTypeLabel(
                           profile?.clientType ?? ClientType.Temporary,
                         )}{" "}

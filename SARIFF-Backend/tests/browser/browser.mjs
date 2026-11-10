@@ -34,7 +34,8 @@ async function codeFor(phone, afterLen) {
 }
 
 const BAD = /\bNaN\b|\bundefined\b|Invalid Date|\[object Object\]|Something went wrong|Application error/;
-const IGNORE_CONSOLE = /favicon|Download the React DevTools|\[Fast Refresh\]|Failed to load resource/i; // failed requests are reported with their address below
+// "Failed to fetch RSC payload": Next.js cancels a link prefetch when the test moves on; it falls back by itself
+const IGNORE_CONSOLE = /Failed to fetch RSC payload|favicon|Download the React DevTools|\[Fast Refresh\]|Failed to load resource/i; // failed requests are reported with their address below
 const EXPECTED_HTTP = /favicon/;
 
 function watch(page) {
