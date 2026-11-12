@@ -168,6 +168,34 @@ name: Office every screen and pop-up
 - waitForAnimationToEnd
 - takeScreenshot: 28-more-reports
 - runFlow: broken.yaml
+# each report generated, so the screenshots show reports with data (not just the picker)
+- tapOn: "Generate Daily Report"
+- waitForAnimationToEnd
+- takeScreenshot: 32-report-daily
+- scroll
+- takeScreenshot: 33-report-daily-more
+- scrollUntilVisible:
+    element: "Accounts"
+    direction: UP
+- tapOn: "Accounts"
+- tapOn: "Generate Accounts Report"
+- waitForAnimationToEnd
+- takeScreenshot: 34-report-accounts
+- scrollUntilVisible:
+    element: "Clients"
+    direction: UP
+- tapOn: "Clients"
+- tapOn: "Generate Clients Report"
+- waitForAnimationToEnd
+- takeScreenshot: 35-report-clients
+- scrollUntilVisible:
+    element: "Transactions"
+    direction: UP
+- tapOn: "Transactions"
+- tapOn: "Generate Transactions Report"
+- waitForAnimationToEnd
+- takeScreenshot: 36-report-transactions
+- runFlow: broken.yaml
 - back
 - waitForAnimationToEnd
 - tapOn:

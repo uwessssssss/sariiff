@@ -934,6 +934,8 @@ export default function ExchangeScreen() {
             style={[styles.actionBtn, shadows.sm]}
             onPress={() => {
               setModal("fundFloat");
+              // open on USD (the float most bureaus stock), not KES
+              setFloatCurrency(Currency.USD);
               loadFloatAccounts();
             }}
           >
@@ -1318,7 +1320,7 @@ export default function ExchangeScreen() {
         onClose={() => setDetailTxn(null)}
         title="Exchange Details"
         icon="swap-horizontal-outline"
-        iconColor="#4F46E5"
+        iconColor={colors.primary}
         iconBg="rgba(91,156,255,0.12)"
       >
         {detailTxn && (
@@ -1412,7 +1414,7 @@ export default function ExchangeScreen() {
         onClose={() => setModal("none")}
         title="Set Exchange Rate"
         icon="trending-up-outline"
-        iconColor="#8B5CF6"
+        iconColor={colors.primary}
         iconBg="rgba(154,123,255,0.12)"
       >
         <FormSection label="Currency">
@@ -1470,7 +1472,7 @@ export default function ExchangeScreen() {
             <InfoRow
               label="Spread"
               value={fmtRate(rates[rateCurrency].sellRate - rates[rateCurrency].buyRate)}
-              valueColor="#8B5CF6"
+              valueColor={colors.gold}
             />
           </View>
         )}
@@ -1479,7 +1481,7 @@ export default function ExchangeScreen() {
           onPress={handleSetRate}
           loading={formLoading}
           icon="checkmark-circle-outline"
-          gradient={["#7C3AED", "#8B5CF6"]}
+          gradient={colors.gradients.blue as any}
         />
       </ModalSheet>
 
@@ -1489,7 +1491,7 @@ export default function ExchangeScreen() {
         onClose={() => setModal("none")}
         title="New Exchange"
         icon="swap-horizontal-outline"
-        iconColor="#4F46E5"
+        iconColor={colors.primary}
         iconBg="rgba(91,156,255,0.12)"
       >
         <FormSection label="Exchange Type">
@@ -1585,7 +1587,7 @@ export default function ExchangeScreen() {
           onPress={handleExchangeWithPin}
           loading={formLoading}
           icon="swap-horizontal-outline"
-          gradient={["#4F46E5", "#6366F1"]}
+          gradient={colors.gradients.blue as any}
         />
       </ModalSheet>
 
@@ -1825,7 +1827,7 @@ export default function ExchangeScreen() {
         onClose={() => setModal("none")}
         title="Rate History"
         icon="trending-up-outline"
-        iconColor="#8B5CF6"
+        iconColor={colors.primary}
         iconBg="rgba(154,123,255,0.12)"
       >
         {rateHistoryData.length === 0 ? (
@@ -2054,7 +2056,7 @@ export default function ExchangeScreen() {
               title="🌙 Closing"
               onPress={() => handleDailyFloat("closing")}
               loading={formLoading}
-              gradient={["#4F46E5", "#6366F1"]}
+              gradient={colors.gradients.blue as any}
             />
           </View>
         </View>
@@ -2294,7 +2296,7 @@ export default function ExchangeScreen() {
                 marginBottom: 12,
               }}
             >
-              <Ionicons name="lock-closed" size={28} color="#4F46E5" />
+              <Ionicons name="lock-closed" size={28} color={colors.primary} />
             </View>
             <Text
               style={{
@@ -2339,7 +2341,7 @@ export default function ExchangeScreen() {
                     borderColor: pinError
                       ? "#DC2626"
                       : d
-                        ? "#4F46E5"
+                        ? colors.primary
                         : "rgba(255,255,255,0.12)",
                     borderRadius: 14,
                     textAlign: "center",
@@ -2358,7 +2360,7 @@ export default function ExchangeScreen() {
             {pinVerifying && (
               <Text
                 style={{
-                  color: "#4F46E5",
+                  color: colors.primary,
                   fontSize: 13,
                   fontWeight: "600" as any,
                   marginBottom: 8,

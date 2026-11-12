@@ -15,6 +15,16 @@ name: Client every screen
 - waitForAnimationToEnd
 - takeScreenshot: 41-client-statements
 - runFlow: broken.yaml
+# a single statement line opens its details
+- runFlow:
+    when:
+      visible: "E2E deposit"
+    commands:
+      - tapOn: "E2E deposit"
+      - waitForAnimationToEnd
+      - takeScreenshot: 46-client-statement-line
+      - back
+      - waitForAnimationToEnd
 - tapOn:
     point: "50%,96%"
 - waitForAnimationToEnd

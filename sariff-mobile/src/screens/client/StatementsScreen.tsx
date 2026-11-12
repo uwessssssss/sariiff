@@ -24,6 +24,7 @@ import {
   formatDateTime,
   formatCurrency,
   currencyCode,
+  balanceRowsFrom,
 } from "../../types";
 import { EmptyState, InfoRow, Shimmer } from "../../components/ui";
 import {
@@ -259,6 +260,56 @@ export default function StatementsScreen() {
     },
     [currencyFilter, typeFilter],
   );
+
+  // ---- This month's statement summary (Nov 2026): a statement is opening balance, money in,
+  // money out and closing balance — the screen used to be a bare list of transactions.
+  const [mainCurrency, setMainCurrency] = useState<number | null>(null);
+  const [summary, setSummary] = useState<any>(null);
+  useEffect(() => {
+    api.getClientProfile().then((r: any) => {
+      const rows = balanceRowsFrom(r?.data).slice().sort((a, b) =>
+        (Math.abs(b.totalIn) + Math.abs(b.totalOut) + Math.abs(b.balance)) - (Math.abs(a.totalIn) + Math.abs(a.totalOut) + Math.abs(a.balance)));
+      setMainCurrency(rows[0]?.currency ?? Currency.KES);
+    }).catch(() => setMainCurrency(Currency.KES));
+  }, []);
+  const summaryCurrency = getCurrencyParam() ?? mainCurrency;
+  useEffect(() => {
+    if (summaryCurrency === null || summaryCurrency === undefined) return;
+    const now = new Date();
+    const first = localDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    api.getClientPortalStatement(first, localDate(), summaryCurrency)
+      .then((r: any) => setSummary(r?.success ? { ...r.data, currency: summaryCurrency } : null))
+      .catch(() => setSummary(null));
+  }, [summaryCurrency]);
+
+  const SummaryHeader = summary ? (
+    <View style={styles.sumCard} accessible accessibilityLabel={`This month in ${currencyCode(summary.currency)}: opening ${formatCurrency(summary.openingBalance, summary.currency)}, in ${formatCurrency(summary.totalCredits, summary.currency)}, out ${formatCurrency(summary.totalDebits, summary.currency)}, closing ${formatCurrency(summary.closingBalance, summary.currency)}`}>
+      <View style={styles.sumHead}>
+        <Text style={styles.sumEyebrow}>This month · {currencyCode(summary.currency)}</Text>
+        {currencyFilter === "all" && <Text style={styles.sumHint}>Pick a currency above to switch</Text>}
+      </View>
+      <View style={styles.sumRow}>
+        <View style={styles.sumCell}>
+          <Text style={styles.sumLabel}>Opening</Text>
+          <Text style={styles.sumValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{formatCurrency(summary.openingBalance, summary.currency)}</Text>
+        </View>
+        <View style={[styles.sumCell, styles.sumDivider]}>
+          <Text style={styles.sumLabel}>Closing</Text>
+          <Text style={[styles.sumValue, Number(summary.closingBalance) < 0 && { color: colors.danger }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{formatCurrency(summary.closingBalance, summary.currency)}</Text>
+        </View>
+      </View>
+      <View style={[styles.sumRow, styles.sumRowTop]}>
+        <View style={styles.sumCell}>
+          <Text style={styles.sumLabel}>Money in</Text>
+          <Text style={[styles.sumSmall, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>+{formatCurrency(summary.totalCredits, summary.currency)}</Text>
+        </View>
+        <View style={[styles.sumCell, styles.sumDivider]}>
+          <Text style={styles.sumLabel}>Money out</Text>
+          <Text style={[styles.sumSmall, { color: colors.danger }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>−{formatCurrency(summary.totalDebits, summary.currency)}</Text>
+        </View>
+      </View>
+    </View>
+  ) : null;
 
   useEffect(() => {
     (async () => {
@@ -563,6 +614,7 @@ export default function StatementsScreen() {
           data={transactions}
           keyExtractor={(item) => item.id}
           renderItem={renderTransaction}
+          ListHeaderComponent={SummaryHeader}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
@@ -797,6 +849,17 @@ export default function StatementsScreen() {
 }
 
 const styles = StyleSheet.create({
+  sumCard: { backgroundColor: "#121A2E", borderRadius: 20, borderWidth: 1, borderColor: "rgba(127,179,255,0.18)", padding: 16, marginBottom: spacing.md },
+  sumHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  sumEyebrow: { fontSize: 11, letterSpacing: 1, textTransform: "uppercase", color: "#AFC4E8", fontWeight: "600" },
+  sumHint: { fontSize: 11, color: colors.textTertiary },
+  sumRow: { flexDirection: "row" },
+  sumRowTop: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "rgba(255,255,255,0.08)" },
+  sumCell: { flex: 1, paddingRight: 8 },
+  sumDivider: { paddingLeft: 12, borderLeftWidth: 1, borderLeftColor: "rgba(255,255,255,0.08)" },
+  sumLabel: { fontSize: 11.5, color: colors.textSecondary, marginBottom: 3 },
+  sumValue: { fontSize: 19, fontWeight: "700", color: colors.text },
+  sumSmall: { fontSize: 15, fontWeight: "600" },
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   header: {

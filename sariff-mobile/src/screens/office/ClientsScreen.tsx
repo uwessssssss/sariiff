@@ -10,7 +10,7 @@ import * as api from '../../services/api';
 import { shareViaWhatsApp, buildCredentialMessage, buildPasswordResetMessage } from '../../utils/notifications';
 import { ClientDto, ClientType, formatCurrency, Currency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, ALL_CURRENCIES, allowedCurrenciesFor } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow, SummaryCard, SummaryGrid } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type ViewMode = 'list' | 'detail' | 'create';
@@ -349,30 +349,35 @@ export default function ClientsScreen() {
 
       {/* Client Detail Modal */}
       <ModalSheet visible={showDetail} onClose={() => { setShowDetail(false); setStatement(null); }}
-        title={selectedClient?.fullName || 'Client'} icon="person-outline" iconColor="#4F46E5" iconBg="rgba(91,156,255,0.12)">
+        title={selectedClient?.fullName || 'Client'} icon="person-outline" iconColor={colors.primary} iconBg="rgba(91,156,255,0.14)">
         {selectedClient && (<>
-          {/* Balance Cards */}
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
-            <View style={{ flex: 1, backgroundColor: (selectedClient.balanceKES || 0) < 0 ? 'rgba(255,107,129,0.12)' : 'rgba(57,217,176,0.12)', borderRadius: 14, padding: 16, alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, fontWeight: '600' as any, color: colors.textTertiary, letterSpacing: 0.5 }}>KES BALANCE</Text>
-              <Text style={{ fontSize: 22, fontWeight: '800' as any, marginTop: 4, color: (selectedClient.balanceKES || 0) < 0 ? '#FF6B81' : (selectedClient.balanceKES || 0) > 0 ? '#39D9B0' : '#9AA6BE' }}>{formatCurrency(selectedClient.balanceKES)}</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: (selectedClient.balanceUSD || 0) < 0 ? 'rgba(255,107,129,0.12)' : 'rgba(91,156,255,0.12)', borderRadius: 14, padding: 16, alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, fontWeight: '600' as any, color: colors.textTertiary, letterSpacing: 0.5 }}>USD BALANCE</Text>
-              <Text style={{ fontSize: 22, fontWeight: '800' as any, marginTop: 4, color: (selectedClient.balanceUSD || 0) < 0 ? '#FF6B81' : (selectedClient.balanceUSD || 0) > 0 ? '#7FB3FF' : '#9AA6BE' }}>{formatCurrency(selectedClient.balanceUSD, Currency.USD)}</Text>
-            </View>
-          </View>
-          {/* UGX / EUR / ... balances */}
-          {(selectedClient.otherBalances || []).filter((b) => b.balance).length > 0 && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-              {(selectedClient.otherBalances || []).filter((b) => b.balance).map((b) => (
-                <View key={b.currency} style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: b.balance < 0 ? 'rgba(255,107,129,0.12)' : 'rgba(255,255,255,0.06)', borderRadius: 14, padding: 16, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600' as any, color: colors.textTertiary, letterSpacing: 0.5 }}>{b.currencyCode} BALANCE</Text>
-                  <Text style={{ fontSize: 22, fontWeight: '800' as any, marginTop: 4, color: b.balance < 0 ? '#FF6B81' : CURRENCY_COLOR[b.currency] || colors.text }}>{formatCurrency(b.balance, b.currency)}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          {/* Balances (Nov 2026): the bureau's home currency first, then any other currency the
+              client holds; KES/USD at zero are left out in a Ugandan bureau. Same cards as home. */}
+          {(() => {
+            const all = [
+              { currency: Currency.KES, balance: selectedClient.balanceKES || 0 },
+              { currency: Currency.USD, balance: selectedClient.balanceUSD || 0 },
+              ...(selectedClient.otherBalances || []).map((b) => ({ currency: b.currency, balance: b.balance || 0 })),
+            ];
+            const rows = all
+              .filter((r) => r.currency === base || r.balance)
+              .sort((a, b) => (a.currency === base ? -1 : b.currency === base ? 1 : Math.abs(b.balance) - Math.abs(a.balance)));
+            return (
+              <SummaryGrid style={{ marginBottom: 16 }}>
+                {rows.map((r) => (
+                  <SummaryCard
+                    key={r.currency}
+                    tone={r.balance < 0 ? 'out' : r.balance > 0 ? 'in' : 'neutral'}
+                    icon={r.currency === Currency.USD ? 'logo-usd' : 'cash-outline'}
+                    label={`Balance · ${currencyCode(r.currency)}`}
+                    value={formatCurrency(r.balance, r.currency)}
+                    valueColor={r.balance < 0 ? colors.danger : undefined}
+                    caption={r.balance < 0 ? 'Owes the bureau' : r.balance > 0 ? 'Bureau holds for client' : 'Settled'}
+                  />
+                ))}
+              </SummaryGrid>
+            );
+          })()}
 
           {/* Client Info */}
           <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 14, padding: 16, marginBottom: 16 }}>
