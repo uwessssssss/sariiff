@@ -35,6 +35,8 @@ public class ExceptionMiddleware
             var kind = Classify(ex);
             if (kind == DbFailure.BadValue)
                 _logger.LogWarning("Rejected a value the database cannot store ({Path}): {Message}", context.Request.Path, Innermost(ex).Message);
+            else if (kind == DbFailure.Conflict)
+                _logger.LogWarning("Duplicate request lost a race, answered 409 ({Path}): {Message}", context.Request.Path, Innermost(ex).Message);
             else if (kind == DbFailure.Unavailable)
                 _logger.LogWarning("Database unavailable, answered 503 ({Path}): {Message}", context.Request.Path, Innermost(ex).Message);
             else
@@ -43,7 +45,7 @@ public class ExceptionMiddleware
         }
     }
 
-    private enum DbFailure { None, BadValue, Unavailable }
+    private enum DbFailure { None, BadValue, Unavailable, Conflict }
 
     private static Exception Innermost(Exception ex)
     {
@@ -63,6 +65,9 @@ public class ExceptionMiddleware
             if (e is Npgsql.PostgresException pg)
             {
                 if (pg.SqlState.StartsWith("22")) return DbFailure.BadValue;
+                // 23505: two requests raced to create the same record (a double tap, two tills closing
+                // the day at once). The unique index kept the data right; the loser is told so.
+                if (pg.SqlState == "23505") return DbFailure.Conflict;
                 // 08 connection lost, 57P0x server shutting down / not accepting connections, 53 out of resources
                 if (pg.SqlState.StartsWith("08") || pg.SqlState.StartsWith("57P") || pg.SqlState.StartsWith("53") || pg.IsTransient)
                     return DbFailure.Unavailable;
@@ -115,6 +120,7 @@ public class ExceptionMiddleware
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = kind == DbFailure.BadValue ? (int)HttpStatusCode.BadRequest
             : kind == DbFailure.Unavailable ? (int)HttpStatusCode.ServiceUnavailable
+            : kind == DbFailure.Conflict ? (int)HttpStatusCode.Conflict
             : exception switch
         {
             UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
@@ -126,6 +132,7 @@ public class ExceptionMiddleware
 
         var message = kind == DbFailure.BadValue ? "Some of the values sent are invalid (too large, too long, or containing characters that can't be stored)."
             : kind == DbFailure.Unavailable ? "The service is temporarily unavailable. Please try again in a moment."
+            : kind == DbFailure.Conflict ? "This was just recorded by another request. Refresh to see it."
             : GetUserFriendlyMessage(exception);
         var response = new ApiResponse<object>(false, message, null!);
         
