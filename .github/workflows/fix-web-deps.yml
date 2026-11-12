@@ -31,8 +31,8 @@ jobs:
         run: npm audit --omit=dev || true
       - name: Compatible fixes (same major versions)
         run: npm audit fix --omit=dev || true
-      - name: Next.js 15 + React 19 (the remaining Next.js advisories are fixed only in 15+)
-        run: npm install --no-fund next@15 react@19 react-dom@19 @types/react@19 @types/react-dom@19 eslint-config-next@15 lucide-react@latest
+      - name: Apply package.json overrides to the lock file
+        run: npm install --no-audit --no-fund
       - name: Advisories after
         run: npm audit --omit=dev || true
       - name: Types and build still pass
@@ -48,5 +48,5 @@ jobs:
           git add package.json package-lock.json
           git diff --cached --stat
           git diff --cached --quiet && { echo "Nothing to change"; exit 0; }
-          git commit -m "Web: Next.js 15 + React 19 (clears the remaining Next.js advisories)"
+          git commit -m "Web: security fixes; regenerate lock file"
           git push
