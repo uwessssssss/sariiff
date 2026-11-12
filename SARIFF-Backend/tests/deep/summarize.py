@@ -91,7 +91,7 @@ if mode == "cobertura":
         m = re.search(r"(SARIFF\.(?:API|Core|Infrastructure))", fn); k = m.group(1) if m else "other"
         c, t = proj.get(k, (0, 0)); proj[k] = (c + sum(v.values()), t + len(v))
     for k, (c, t) in sorted(proj.items()): print(f"  {k}: {pct(c, t):.1f}% ({c}/{t})")
-    money = re.compile(r"Services/(Transactions/|Exchange/|Clients/StatementHelper|Common/ValidationHelper|Reports/CurrencyRollup|Accounts/(Cash|Bank|MpesaAgent)AccountService|Accounts/ExpenseService|Accounts/MobileMoney)")
+    money = re.compile(r"Services/(Transactions/(?!InvoiceService)|Exchange/|Clients/StatementHelper|Common/ValidationHelper|Reports/CurrencyRollup|Accounts/)")
     rows = sorted(((short(fn), sum(v.values()), len(v)) for fn, v in files.items() if money.search(fn)), key=lambda x: x[0])
     if rows:
         mc = sum(r[1] for r in rows); mt = sum(r[2] for r in rows)
