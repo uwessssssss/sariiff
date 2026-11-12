@@ -7,7 +7,8 @@ TSC="$WEB/node_modules/.bin/tsc"
 [ -x "$TSC" ] || { echo "FAIL  web node_modules missing (run npm ci in $WEB first)"; exit 1; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/src/web" "$T/src/mob/types" "$T/src/mob/utils"
-cp "$WEB"/lib/{api,dates,moneyflow,useBaseCurrency,whatsapp,print}.ts "$T/src/web/"
+cp "$WEB"/lib/{dates,moneyflow,useBaseCurrency,whatsapp,print}.ts "$T/src/web/"
+cp -r "$WEB/lib/api" "$T/src/web/api"   # the API client is a folder (one file per area + index)
 cp "$MOB/src/types/index.ts" "$T/src/mob/types/index.ts"
 cp "$MOB"/src/utils/{dates,moneyflow}.ts "$T/src/mob/utils/"
 cat > "$T/tsconfig.json" <<'J'
@@ -16,7 +17,7 @@ cat > "$T/tsconfig.json" <<'J'
 J
 ( cd "$T" && "$TSC" -p tsconfig.json >/dev/null 2>&1 || true )   # type errors don't matter here, only the emitted JS
 mkdir -p "$T/out/node_modules/@/lib" "$T/out/node_modules/react"
-echo 'module.exports = require("../../../web/api.js");' > "$T/out/node_modules/@/lib/api.js"
+echo 'module.exports = require("../../../web/api");' > "$T/out/node_modules/@/lib/api.js"
 echo 'module.exports = { useState: v => [typeof v === "function" ? v() : v, () => {}], useEffect() {}, useMemo: f => f(), useCallback: f => f };' > "$T/out/node_modules/react/index.js"
 cp "$HERE/logic.test.js" "$HERE/dashboard.test.js" "$T/out/"
 cd "$T/out"

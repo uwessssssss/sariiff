@@ -6,7 +6,7 @@ global.Date = FakeDate;
 const store = {}; global.localStorage = { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = String(v), removeItem: k => delete store[k] };
 global.window = { localStorage: global.localStorage, location: { href: "" }, dispatchEvent() {} };
 
-const W = { api: require("./web/api.js"), dates: require("./web/dates.js"), flow: require("./web/moneyflow.js"),
+const W = { api: require("./web/api"), dates: require("./web/dates.js"), flow: require("./web/moneyflow.js"),
             base: require("./web/useBaseCurrency.js"), wa: require("./web/whatsapp.js"), print: require("./web/print.js") };
 const M = { types: require("./mob/types/index.js"), dates: require("./mob/utils/dates.js"), flow: require("./mob/utils/moneyflow.js") };
 const KES = 0, USD = 1, UGX = 2, EUR = 3;

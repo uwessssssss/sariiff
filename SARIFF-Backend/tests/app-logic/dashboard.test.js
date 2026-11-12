@@ -14,7 +14,7 @@ const t = (name, got, want) => {
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : `\n        got ${JSON.stringify(got)}  want ${JSON.stringify(want)}`}`);
 };
 
-const webDates = require("./web/dates.js"), mobDates = require("./mob/utils/dates.js"), api = require("./web/api.js");
+const webDates = require("./web/dates.js"), mobDates = require("./mob/utils/dates.js"), api = require("./web/api");
 const { Currency } = api;
 
 console.log("\n-- Dates at 01:30 in Nairobi (it is 9 Nov locally, still 8 Nov in UTC)");
