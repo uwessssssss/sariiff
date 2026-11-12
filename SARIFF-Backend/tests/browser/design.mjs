@@ -60,6 +60,17 @@ async function signIn(page, { code, phone, password }) {
 }
 
 async function axe(page, selector) {
+  // Measure the page at rest: a fade-in caught half-way reads as low contrast (a green
+  // figure at 4.23:1 mid-fade failed one run although it is 4.9:1 once shown).
+  await page.evaluate(async () => {
+    const until = Date.now() + 3000;
+    while (Date.now() < until) {
+      const running = document.getAnimations().filter((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
+      if (!running.length) break;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }).catch(() => {});
+  await page.waitForTimeout(250);
   await page.evaluate(AXE);
   return page.evaluate(async (sel) => {
     const ctx = sel ? document.querySelector(sel) : document;
