@@ -193,6 +193,20 @@ var app = builder.Build();
 // Must run first, before anything that reads the client IP.
 app.UseForwardedHeaders();
 
+// Standard security headers on every API response (Swagger in development included).
+app.Use(async (ctx, next) =>
+{
+    var h = ctx.Response.Headers;
+    h["X-Content-Type-Options"] = "nosniff";
+    h["X-Frame-Options"] = "DENY";
+    h["Referrer-Policy"] = "no-referrer";
+    h["Cache-Control"] = "no-store"; // balances and statements must not sit in shared caches
+    if (!app.Environment.IsDevelopment())
+        h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    await next();
+});
+
+
 // Swagger only in Development
 if (app.Environment.IsDevelopment())
 {
@@ -223,19 +237,6 @@ app.Use(async (ctx, next) =>
 });
 
 app.UseMiddleware<ExceptionMiddleware>();
-
-// Standard security headers on every API response.
-app.Use(async (ctx, next) =>
-{
-    var h = ctx.Response.Headers;
-    h["X-Content-Type-Options"] = "nosniff";
-    h["X-Frame-Options"] = "DENY";
-    h["Referrer-Policy"] = "no-referrer";
-    h["Cache-Control"] = "no-store"; // balances and statements must not sit in shared caches
-    if (!app.Environment.IsDevelopment())
-        h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-    await next();
-});
 
 // Compression for everything except sign-in: those responses carry tokens, and compressing
 // a secret next to input an attacker controls is what the BREACH attack measures.

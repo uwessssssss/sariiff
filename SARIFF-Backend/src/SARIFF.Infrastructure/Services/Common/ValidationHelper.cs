@@ -106,6 +106,10 @@ public static partial class ValidationHelper
         
         if (amount > 999_999_999.99m)
             return (false, $"{fieldName} exceeds maximum allowed value");
+
+        // money is kept to the cent: refuse 1.005 rather than silently rounding it
+        if (decimal.Round(amount, 2) != amount)
+            return (false, $"{fieldName} can have at most 2 decimal places");
         
         return (true, null);
     }

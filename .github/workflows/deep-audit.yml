@@ -13,6 +13,10 @@ concurrency:
   group: deep-${{ github.ref }}
   cancel-in-progress: false
 
+defaults:
+  run:
+    shell: bash   # bash -eo pipefail: a failing command before a pipe fails the step
+
 env:
   PG_CS: Host=localhost;Port=5432;Username=postgres;Password=test
   DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -64,7 +68,7 @@ jobs:
         working-directory: SARIFF-Backend
         run: |
           dotnet build SARIFF.sln -c Release 2>&1 | tee "$RUNNER_TEMP/build.txt" | tail -3
-          echo "WARNINGS (unique):"; grep -oE "warning [A-Z]+[0-9]+: [^[]*" "$RUNNER_TEMP/build.txt" | sort -u | head -60
+          echo "WARNINGS (unique):"; grep -oE "warning [A-Z]+[0-9]+: [^[]*" "$RUNNER_TEMP/build.txt" | sort -u | head -60 || true
           echo "COUNT: $(grep -oE 'warning [A-Z]+[0-9]+: [^[]*' "$RUNNER_TEMP/build.txt" | sort -u | wc -l) unique warning(s)"
           dotnet list SARIFF.sln package --deprecated
           dotnet list SARIFF.sln package --vulnerable --include-transitive | tee "$RUNNER_TEMP/vuln.txt"
@@ -184,16 +188,25 @@ jobs:
           PID=$(pgrep -f "SARIFF.API.dll" | head -1)
           node SARIFF-Backend/tests/deep/soak.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" 8 "$PID"
 
-      - name: API fuzzing — every endpoint with generated input must never answer 5xx (Schemathesis)
+      - name: API fuzzing — every endpoint with generated input must never answer 5xx (Schemathesis; office, client, admin)
         if: success() || failure()
         run: |
           python3 -m venv "$RUNNER_TEMP/st" && "$RUNNER_TEMP/st/bin/pip" -q install "schemathesis==3.39.16"
-          T=$(node SARIFF-Backend/tests/deep/token.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json")
-          "$RUNNER_TEMP/st/bin/st" run http://127.0.0.1:18080/swagger/v1/swagger.json \
-            --base-url http://127.0.0.1:18080 -H "Authorization: Bearer $T" \
-            --checks not_a_server_error --hypothesis-max-examples 25 --workers 4 \
-            --exclude-path-regex '/api/auth/(logout|revoke|change-password)' --show-trace --no-color \
-            2>&1 | tee "$RUNNER_TEMP/schemathesis.txt" | tail -150
+          rc=0
+          for role in office client admin; do
+            T=$(node SARIFF-Backend/tests/deep/token.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" $role)
+            echo "::group::Schemathesis as $role"
+            "$RUNNER_TEMP/st/bin/st" run http://127.0.0.1:18080/swagger/v1/swagger.json \
+              --base-url http://127.0.0.1:18080 -H "Authorization: Bearer $T" \
+              --checks not_a_server_error --hypothesis-max-examples 25 --workers 4 \
+              --exclude-path-regex '/api/auth/(logout|revoke|change-password)|/api/portal/change-password|/api/identity/sign-out-everywhere' \
+              --no-color > "$RUNNER_TEMP/schemathesis-$role.txt" 2>&1 || rc=1
+            echo "::endgroup::"
+            echo "== $role: $(grep -E 'not_a_server_error' "$RUNNER_TEMP/schemathesis-$role.txt" | head -1)"
+            # every failing request, with how to reproduce it
+            awk '/^FAILURES/,/^=+ SUMMARY/' "$RUNNER_TEMP/schemathesis-$role.txt" | grep -E "^_+ |\[5[0-9][0-9]\]|curl -X" | sed 's/Authorization: [^'"'"']*/Authorization: …/' | head -80 || true
+          done
+          exit $rc
 
       - name: Attack scan — OWASP ZAP baseline on the web app, active API scan on every endpoint
         if: success() || failure()
@@ -212,7 +225,9 @@ jobs:
 
       - name: Database outage — API reports it, fails cleanly, recovers by itself
         if: success() || failure()
-        run: bash SARIFF-Backend/tests/deep/resilience.sh http://127.0.0.1:18080
+        run: |
+          T=$(node SARIFF-Backend/tests/deep/token.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" office)
+          bash SARIFF-Backend/tests/deep/resilience.sh http://127.0.0.1:18080 "$T"
 
       - name: Backup + restore drill — every row and every balance comes back identical
         if: success() || failure()
@@ -232,7 +247,7 @@ jobs:
             ${{ runner.temp }}/web.log
             ${{ runner.temp }}/zap
             ${{ runner.temp }}/lh
-            ${{ runner.temp }}/schemathesis.txt
+            ${{ runner.temp }}/schemathesis-*.txt
             ${{ runner.temp }}/shots-firefox
             ${{ runner.temp }}/shots-webkit
           retention-days: 14

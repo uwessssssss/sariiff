@@ -42,7 +42,12 @@ const txn = (type, st, sid, dt, did, amount, currency, description) => ({
   check("…the refused ones were refused cleanly (no server errors)", errors5xx === 0, `${errors5xx} server errors / dropped`);
 
   // 2) money moving both ways at once between till and bank: the total must be conserved
-  const banks = list(await get("/api/bank")).filter((b) => b.currency === UGX);
+  let banks = list(await get("/api/bank")).filter((b) => b.currency === UGX);
+  if (!banks.length) {
+    const nb = await api("POST", "/api/bank", T, { bankName: "Race Bank", accountNumber: "9030099999999", accountName: "Race Bank", branchCode: "KLA99", currency: UGX, openingBalance: 100000 });
+    check("A UGX bank account can be opened for the transfer race", nb.success, nb.message);
+    banks = list(await get("/api/bank")).filter((b) => b.currency === UGX);
+  }
   if (banks.length) {
     const B = banks[0].id;
     const bank = async () => (await get(`/api/bank/${B}`))?.balance;
@@ -72,7 +77,8 @@ const txn = (type, st, sid, dt, did, amount, currency, description) => ({
     else check(`${name}: refused, nothing moved`, !r.success && r.status < 500 && after === before, `${r.status} ${r.message || ""} moved ${after - before}`);
   };
   await edge("Smallest amount UGX 0.01", 0.01, UGX, true);
-  await edge("Very large amount UGX 9,999,999,999.99", 9999999999.99, UGX, true);
+  await edge("Largest allowed amount UGX 999,999,999.99", 999999999.99, UGX, true);
+  await edge("Just over the largest amount UGX 1,000,000,000.00", 1000000000, UGX, false);
   await edge("Three decimals UGX 1.005", 1.005, UGX, false);
   await edge("Absurd amount 1e20", 1e20, UGX, false);
   const nan = await api("POST", "/api/transaction", T, { ...txn(Txn.Credit, Acc.Client, R, Acc.Cash, S.tillId, 1, UGX, "x"), amount: "abc" });

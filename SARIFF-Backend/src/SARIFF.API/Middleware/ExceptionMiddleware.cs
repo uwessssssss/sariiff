@@ -32,14 +32,44 @@ public class ExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
-            await HandleExceptionAsync(context, ex);
+            var kind = Classify(ex);
+            if (kind == DbFailure.BadValue)
+                _logger.LogWarning("Rejected a value the database cannot store ({Path}): {Message}", context.Request.Path, Innermost(ex).Message);
+            else
+                _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
+            await HandleExceptionAsync(context, ex, kind);
         }
     }
 
-    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private enum DbFailure { None, BadValue, Unavailable }
+
+    private static Exception Innermost(Exception ex)
     {
-        try
+        while (ex.InnerException != null) ex = ex.InnerException;
+        return ex;
+    }
+
+    /// <summary>
+    /// Database errors that are really the caller's input (a value too large, too long or holding a
+    /// character PostgreSQL can't store, SQLSTATE class 22) answer 400; a database that can't be
+    /// reached answers 503. Everything else stays a 500.
+    /// </summary>
+    private static DbFailure Classify(Exception ex)
+    {
+        for (var e = ex; e != null; e = e.InnerException)
+        {
+            if (e is Npgsql.PostgresException pg)
+                return pg.SqlState.StartsWith("22") ? DbFailure.BadValue : DbFailure.None;
+            if (e is Npgsql.NpgsqlException || e is System.Net.Sockets.SocketException || e is TimeoutException)
+                return DbFailure.Unavailable;
+        }
+        return DbFailure.None;
+    }
+
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception, DbFailure kind)
+    {
+        // nothing to record for bad input, and nowhere to record it while the database is down
+        if (kind == DbFailure.None) try
         {
             using var scope = _scopeFactory.CreateScope();
             var logService = scope.ServiceProvider.GetRequiredService<ISystemLogService>();
@@ -75,7 +105,9 @@ public class ExceptionMiddleware
         }
 
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = exception switch
+        context.Response.StatusCode = kind == DbFailure.BadValue ? (int)HttpStatusCode.BadRequest
+            : kind == DbFailure.Unavailable ? (int)HttpStatusCode.ServiceUnavailable
+            : exception switch
         {
             UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
             KeyNotFoundException => (int)HttpStatusCode.NotFound,
@@ -84,7 +116,10 @@ public class ExceptionMiddleware
             _ => (int)HttpStatusCode.InternalServerError
         };
 
-        var response = new ApiResponse<object>(false, GetUserFriendlyMessage(exception), null!);
+        var message = kind == DbFailure.BadValue ? "Some of the values sent are invalid (too large, too long, or containing characters that can't be stored)."
+            : kind == DbFailure.Unavailable ? "The service is temporarily unavailable. Please try again in a moment."
+            : GetUserFriendlyMessage(exception);
+        var response = new ApiResponse<object>(false, message, null!);
         
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         await context.Response.WriteAsync(JsonSerializer.Serialize(response, options));

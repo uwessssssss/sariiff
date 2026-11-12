@@ -46,7 +46,9 @@ const EXPECTED_HTTP = /favicon/;
 
 function watch(page) {
   const errs = [];
-  page.on("pageerror", (e) => errs.push(`page error: ${e.message}`));
+  // WebKit reports a Next.js prefetch cancelled by navigation as "...?_rsc=... due to access control
+  // checks"; Chromium reports the same thing as "Failed to fetch RSC payload" (ignored above).
+  page.on("pageerror", (e) => !/_rsc=.*access control checks/.test(e.message) && errs.push(`page error: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && !IGNORE_CONSOLE.test(m.text()) && errs.push(`console: ${m.text()}`));
   page.on("response", async (r) => {
     if (r.status() < 400 || EXPECTED_HTTP.test(r.url())) return;
