@@ -284,6 +284,20 @@ app.MapControllers();
 
 // Health check
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
+// Readiness: is the database reachable? (/health only says the process is up; point Render's
+// health check here so a server that lost its database stops getting traffic.)
+app.MapGet("/health/ready", async (SARIFF.Infrastructure.Data.AppDbContext db, CancellationToken ct) =>
+{
+    try
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+        return await db.Database.CanConnectAsync(cts.Token)
+            ? Results.Ok(new { Status = "Ready", Database = "up", Timestamp = DateTime.UtcNow })
+            : Results.Json(new { Status = "Unavailable", Database = "down" }, statusCode: 503);
+    }
+    catch { return Results.Json(new { Status = "Unavailable", Database = "down" }, statusCode: 503); }
+});
 
 // ========================================
 // DATABASE INITIALIZATION AND SEEDING

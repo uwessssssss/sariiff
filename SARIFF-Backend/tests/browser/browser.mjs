@@ -6,7 +6,13 @@
 import { readFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { chromium, devices } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
+const PW = require(process.env.PLAYWRIGHT_MODULE || "playwright");
+const { devices } = PW;
+// PW_BROWSER=firefox|webkit runs the same test in another engine (Firefox has no "mobile" mode,
+// so the phone size there is the screen size and touch only)
+const ENGINE = process.env.PW_BROWSER || "chromium";
+const chromium = PW[ENGINE];
+const dev = (d) => (ENGINE === "firefox" ? (({ isMobile, defaultBrowserType, ...rest }) => rest)(d) : d);
 
 const WEB = process.argv[2] || "http://127.0.0.1:3000";
 const LOG = process.argv[3];
@@ -264,7 +270,7 @@ async function currencyNear(page, name) {
 
   // ---------- On a phone (iPhone 13 size)
   {
-    const ctx = await browser.newContext({ ...devices["iPhone 13"], timezoneId: "Africa/Nairobi" });
+    const ctx = await browser.newContext({ ...dev(devices["iPhone 13"]), timezoneId: "Africa/Nairobi" });
     const page = await ctx.newPage(), errs = watch(page);
     await page.goto(`${WEB}/login`);
     await screen(page, errs, "Phone screen: login", { dump: false });
@@ -277,7 +283,7 @@ async function currencyNear(page, name) {
       }
     }
     await ctx.close();
-    const c2 = await browser.newContext({ ...devices["iPhone 13"], timezoneId: "Africa/Nairobi" });
+    const c2 = await browser.newContext({ ...dev(devices["iPhone 13"]), timezoneId: "Africa/Nairobi" });
     const p2 = await c2.newPage(), e2 = watch(p2);
     if (await signIn(p2, e2, S.client, "Phone screen: client")) {
       await screen(p2, e2, "Phone screen: client dashboard", { dump: false });

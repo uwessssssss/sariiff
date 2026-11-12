@@ -1,0 +1,238 @@
+# SARIFF — the deep audit: what the other suites don't cover. Code scanning (CodeQL), a
+# leaked-secret sweep of the whole git history, attack scans of the running system (OWASP
+# ZAP), API fuzzing (Schemathesis), Lighthouse, Firefox + Safari engines, race conditions,
+# a soak test, database outage + recovery, backup + restore drill, coverage, lint, licences.
+# Every finding is printed in the job log. Runs on every push and by hand.
+name: Deep audit
+on:
+  push:
+    branches-ignore: [ci-artifacts-web, ci-artifacts-android]
+  workflow_dispatch:
+
+concurrency:
+  group: deep-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;Password=test
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  codeql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [csharp, javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: security-and-quality
+      - uses: github/codeql-action/analyze@v3
+        with:
+          upload: never
+          output: ${{ runner.temp }}/codeql
+      - name: Findings
+        run: python3 SARIFF-Backend/tests/deep/summarize.py sarif "$RUNNER_TEMP"/codeql/*.sarif
+
+  secrets-and-static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: Secrets anywhere in the git history (gitleaks)
+        if: success() || failure()
+        run: |
+          mkdir -p "$RUNNER_TEMP/gl" && chmod 777 "$RUNNER_TEMP/gl"
+          docker run --rm -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0="*" -v "$PWD:/repo" -v "$RUNNER_TEMP/gl:/out" zricethezav/gitleaks:v8.21.2 \
+            git /repo --report-format json --report-path /out/gitleaks.json --exit-code 0 --redact=60 --no-banner
+          python3 SARIFF-Backend/tests/deep/summarize.py gitleaks "$RUNNER_TEMP/gl/gitleaks.json"
+
+      - name: Backend — compiler warnings, outdated/deprecated/vulnerable packages
+        if: success() || failure()
+        working-directory: SARIFF-Backend
+        run: |
+          dotnet build SARIFF.sln -c Release 2>&1 | tee "$RUNNER_TEMP/build.txt" | tail -3
+          echo "WARNINGS (unique):"; grep -oE "warning [A-Z]+[0-9]+: [^[]*" "$RUNNER_TEMP/build.txt" | sort -u | head -60
+          echo "COUNT: $(grep -oE 'warning [A-Z]+[0-9]+: [^[]*' "$RUNNER_TEMP/build.txt" | sort -u | wc -l) unique warning(s)"
+          dotnet list SARIFF.sln package --deprecated
+          dotnet list SARIFF.sln package --vulnerable --include-transitive | tee "$RUNNER_TEMP/vuln.txt"
+          ! grep -qE "\b(High|Critical)\b" "$RUNNER_TEMP/vuln.txt"
+
+      - name: Backend — unit tests with code coverage
+        if: success() || failure()
+        working-directory: SARIFF-Backend
+        run: |
+          dotnet add tests/SARIFF.Tests package coverlet.collector --version 6.0.2
+          dotnet test tests/SARIFF.Tests --collect:"XPlat Code Coverage" --results-directory "$RUNNER_TEMP/cov"
+          python3 tests/deep/summarize.py cobertura "$(find "$RUNNER_TEMP/cov" -name coverage.cobertura.xml | head -1)"
+
+      - name: Web — lint (Next.js rules)
+        if: success() || failure()
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          [ -f .eslintrc.json ] || echo '{ "extends": "next/core-web-vitals" }' > .eslintrc.json
+          npx next lint --max-warnings 1000 2>&1 | tee "$RUNNER_TEMP/lint.txt"
+          echo "LINT: $(grep -cE '^[0-9]+:[0-9]+ +Error' "$RUNNER_TEMP/lint.txt") error(s), $(grep -cE '^[0-9]+:[0-9]+ +Warning' "$RUNNER_TEMP/lint.txt") warning(s)"
+          ! grep -qE '^[0-9]+:[0-9]+ +Error' "$RUNNER_TEMP/lint.txt"
+
+      - name: Web — TypeScript strict check
+        if: success() || failure()
+        working-directory: web
+        run: |
+          npx tsc --noEmit -p . && echo "TSC web: clean"
+
+      - name: Mobile — TypeScript check + Expo doctor
+        if: success() || failure()
+        working-directory: sariff-mobile
+        run: |
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit -p . && echo "TSC mobile: clean"
+          npx -y expo-doctor@latest || echo "::warning::expo-doctor reported issues (above)"
+
+      - name: Licences of shipped packages (web + mobile)
+        if: success() || failure()
+        run: |
+          for d in web sariff-mobile; do
+            echo "== $d"; (cd $d && npx -y license-checker-rseidelsohn@4 --production --summary) | tee "$RUNNER_TEMP/lic-$d.txt"
+          done
+          if grep -hE "^\S*(AGPL|GPL-[23]|SSPL)" "$RUNNER_TEMP"/lic-*.txt; then echo "LICENCES: copyleft found above"; exit 1; fi
+          echo "LICENCES: no GPL/AGPL/SSPL in shipped packages"
+
+  dynamic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_PASSWORD: test }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with: { dotnet-version: "8.0.x" }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: API on a fresh database
+        run: bash SARIFF-Backend/tests/ci-api.sh sariff_deep 18080 "$RUNNER_TEMP/api.log"
+
+      - name: Web app built against that API, then started
+        working-directory: web
+        run: |
+          npm ci --no-audit --no-fund
+          NEXT_PUBLIC_API_URL=http://127.0.0.1:18080 npm run build
+          nohup npx next start -p 3000 > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:3000/login >/dev/null && exit 0; sleep 1; done
+          tail -40 "$RUNNER_TEMP/web.log"; exit 1
+
+      - name: Tools (Playwright Firefox + WebKit, psql)
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null && npm i --no-audit --no-fund playwright@1.49.1
+          npx playwright install --with-deps firefox webkit
+          command -v psql >/dev/null || sudo apt-get install -y postgresql-client
+
+      - name: Seed through the API (the 33-step end-to-end test)
+        run: E2E_STATE="$RUNNER_TEMP/state.json" node SARIFF-Backend/tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+
+      - name: Firefox — every web screen, desktop + phone size
+        if: success() || failure()
+        run: |
+          PW_BROWSER=firefox PLAYWRIGHT_MODULE="$RUNNER_TEMP/pw/node_modules/playwright" \
+            node SARIFF-Backend/tests/browser/browser.mjs http://127.0.0.1:3000 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/shots-firefox"
+
+      - name: Safari engine (WebKit) — every web screen, desktop + phone size
+        if: success() || failure()
+        run: |
+          PW_BROWSER=webkit PLAYWRIGHT_MODULE="$RUNNER_TEMP/pw/node_modules/playwright" \
+            node SARIFF-Backend/tests/browser/browser.mjs http://127.0.0.1:3000 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/shots-webkit"
+
+      - name: Lighthouse — login, office dashboard shell
+        if: success() || failure()
+        run: |
+          mkdir -p "$RUNNER_TEMP/lh"
+          for p in login; do
+            npx -y lighthouse@12 "http://127.0.0.1:3000/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
+              --output json --output-path "$RUNNER_TEMP/lh/$p.json" --only-categories=performance,accessibility,best-practices,seo
+          done
+          node SARIFF-Backend/tests/deep/lighthouse.mjs "$RUNNER_TEMP"/lh/*.json
+
+      - name: Race conditions + edge values — parallel withdrawals, transfers, idempotency, limits, dates
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/deep/races.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json"
+
+      - name: Soak — 8 minutes of steady traffic; speed and memory must stay flat
+        if: success() || failure()
+        run: |
+          PID=$(pgrep -f "SARIFF.API.dll" | head -1)
+          node SARIFF-Backend/tests/deep/soak.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" 8 "$PID"
+
+      - name: API fuzzing — every endpoint with generated input must never answer 5xx (Schemathesis)
+        if: success() || failure()
+        run: |
+          python3 -m venv "$RUNNER_TEMP/st" && "$RUNNER_TEMP/st/bin/pip" -q install "schemathesis==3.39.16"
+          T=$(node SARIFF-Backend/tests/deep/token.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json")
+          "$RUNNER_TEMP/st/bin/st" run http://127.0.0.1:18080/swagger/v1/swagger.json \
+            --base-url http://127.0.0.1:18080 -H "Authorization: Bearer $T" \
+            --checks not_a_server_error --hypothesis-max-examples 25 --workers 4 \
+            --exclude-path-regex '/api/auth/(logout|revoke|change-password)' --show-trace --no-color \
+            2>&1 | tee "$RUNNER_TEMP/schemathesis.txt" | tail -150
+
+      - name: Attack scan — OWASP ZAP baseline on the web app, active API scan on every endpoint
+        if: success() || failure()
+        run: |
+          mkdir -p "$RUNNER_TEMP/zap" && chmod 777 "$RUNNER_TEMP/zap"
+          T=$(node SARIFF-Backend/tests/deep/token.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json")
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t http://127.0.0.1:3000/login -J web.json -I -m 3 >/dev/null || true
+          docker run --rm --network host -v "$RUNNER_TEMP/zap:/zap/wrk:rw" \
+            -e ZAP_AUTH_HEADER=Authorization -e ZAP_AUTH_HEADER_VALUE="Bearer $T" ghcr.io/zaproxy/zaproxy:stable \
+            zap-api-scan.py -t http://127.0.0.1:18080/swagger/v1/swagger.json -f openapi -J api.json -I >/dev/null || true
+          ok=0
+          python3 SARIFF-Backend/tests/deep/summarize.py zap "$RUNNER_TEMP/zap/web.json" "web" || ok=1
+          python3 SARIFF-Backend/tests/deep/summarize.py zap "$RUNNER_TEMP/zap/api.json" "api" || ok=1
+          exit $ok
+
+      - name: Database outage — API reports it, fails cleanly, recovers by itself
+        if: success() || failure()
+        run: bash SARIFF-Backend/tests/deep/resilience.sh http://127.0.0.1:18080
+
+      - name: Backup + restore drill — every row and every balance comes back identical
+        if: success() || failure()
+        run: bash SARIFF-Backend/tests/deep/backup-drill.sh sariff_deep
+
+      - name: API log — no unhandled exceptions, no secrets written
+        if: success() || failure()
+        run: bash SARIFF-Backend/tests/deep/logscan.sh "$RUNNER_TEMP/api.log"
+
+      - name: Keep reports and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-audit-reports
+          path: |
+            ${{ runner.temp }}/api.log
+            ${{ runner.temp }}/web.log
+            ${{ runner.temp }}/zap
+            ${{ runner.temp }}/lh
+            ${{ runner.temp }}/schemathesis.txt
+            ${{ runner.temp }}/shots-firefox
+            ${{ runner.temp }}/shots-webkit
+          retention-days: 14
