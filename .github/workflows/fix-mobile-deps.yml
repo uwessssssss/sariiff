@@ -28,6 +28,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Security fixes that keep the same major versions
         run: npm audit fix --omit=dev || true
+      - name: Reinstall (audit fix can leave a package declared but not installed)
+        run: npm install --no-audit --no-fund
       - name: Align every package with the Expo SDK (undoes any fix Expo can't run with)
         run: npx expo install --fix
       - name: Advisories left (most are build tools that never ship in the app)
