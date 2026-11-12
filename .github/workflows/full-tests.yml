@@ -106,7 +106,7 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - name: API on a fresh database
-        run: bash SARIFF-Backend/tests/ci-api.sh sariff_audit 18080 "$RUNNER_TEMP/api.log"
+        run: COVERAGE_OUT="$RUNNER_TEMP/coverage-audit.xml" bash SARIFF-Backend/tests/ci-api.sh sariff_audit 18080 "$RUNNER_TEMP/api.log"
       - name: Web app built against that API, then started
         working-directory: web
         run: |
@@ -143,6 +143,12 @@ jobs:
           PLAYWRIGHT_MODULE: ${{ runner.temp }}/pw/node_modules/playwright
           AXE_MODULE: ${{ runner.temp }}/pw/node_modules/axe-core/axe.min.js
         run: node SARIFF-Backend/tests/browser/design.mjs http://127.0.0.1:3000 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" "$RUNNER_TEMP/design"
+      - name: Code coverage while seed, accuracy, documents, requirements, security and design drove the API
+        if: success() || failure()
+        run: |
+          bash SARIFF-Backend/tests/stop-api.sh "$RUNNER_TEMP/coverage-audit.xml"
+          python3 SARIFF-Backend/tests/deep/summarize.py cobertura "$RUNNER_TEMP/coverage-audit.xml" "COVERAGE DURING THE AUDIT SUITES"
+
       - name: Known vulnerabilities in dependencies (report)
         if: success() || failure()
         run: |

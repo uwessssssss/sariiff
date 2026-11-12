@@ -80,7 +80,7 @@ jobs:
         run: |
           dotnet add tests/SARIFF.Tests package coverlet.collector --version 6.0.2
           dotnet test tests/SARIFF.Tests --collect:"XPlat Code Coverage" --results-directory "$RUNNER_TEMP/cov"
-          python3 tests/deep/summarize.py cobertura "$(find "$RUNNER_TEMP/cov" -name coverage.cobertura.xml | head -1)"
+          python3 tests/deep/summarize.py cobertura "$(find "$RUNNER_TEMP/cov" -name coverage.cobertura.xml | head -1)" "UNIT TEST COVERAGE"
 
       - name: Web — lint (Next.js rules)
         if: success() || failure()
@@ -134,8 +134,8 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      - name: API on a fresh database
-        run: bash SARIFF-Backend/tests/ci-api.sh sariff_deep 18080 "$RUNNER_TEMP/api.log"
+      - name: API on a fresh database (under dotnet-coverage, so every test below counts toward coverage)
+        run: COVERAGE_OUT="$RUNNER_TEMP/coverage-deep.xml" bash SARIFF-Backend/tests/ci-api.sh sariff_deep 18080 "$RUNNER_TEMP/api.log"
 
       - name: Web app built against that API, then started
         working-directory: web
@@ -189,7 +189,7 @@ jobs:
       - name: Soak — 8 minutes of steady traffic; speed and memory must stay flat
         if: success() || failure()
         run: |
-          PID=$(pgrep -f "SARIFF.API.dll" | head -1)
+          PID=$(pgrep -f "^dotnet bin/Release/net8.0/SARIFF.API.dll" | head -1)
           node SARIFF-Backend/tests/deep/soak.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log" "$RUNNER_TEMP/state.json" 8 "$PID"
 
       - name: API fuzzing — every endpoint with generated input must never answer 5xx (Schemathesis; office, client, admin)
@@ -237,6 +237,12 @@ jobs:
         if: success() || failure()
         run: bash SARIFF-Backend/tests/deep/backup-drill.sh sariff_deep
 
+      - name: Code coverage while every test above drove the API
+        if: success() || failure()
+        run: |
+          bash SARIFF-Backend/tests/stop-api.sh "$RUNNER_TEMP/coverage-deep.xml"
+          python3 SARIFF-Backend/tests/deep/summarize.py cobertura "$RUNNER_TEMP/coverage-deep.xml" "COVERAGE DURING THE DEEP-AUDIT SUITES"
+
       - name: API log — no unhandled exceptions, no secrets written
         if: success() || failure()
         run: bash SARIFF-Backend/tests/deep/logscan.sh "$RUNNER_TEMP/api.log"
@@ -252,6 +258,7 @@ jobs:
             ${{ runner.temp }}/zap
             ${{ runner.temp }}/lh
             ${{ runner.temp }}/schemathesis-*.txt
+            ${{ runner.temp }}/coverage-deep.xml
             ${{ runner.temp }}/shots-firefox
             ${{ runner.temp }}/shots-webkit
           retention-days: 14

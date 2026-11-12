@@ -14,8 +14,17 @@ if ! ls src/SARIFF.Infrastructure/Migrations/*_*.cs >/dev/null 2>&1; then
   dotnet ef migrations add CiTemporarySnapshot -p src/SARIFF.Infrastructure -s src/SARIFF.API
   dotnet build SARIFF.sln --no-restore -c Release
 fi
+# COVERAGE_OUT=<file.xml>: run the API under dotnet-coverage, so every test that drives it
+# counts toward code coverage. Stop it with tests/stop-api.sh to write the report.
+if [ -n "${COVERAGE_OUT:-}" ]; then
+  command -v dotnet-coverage >/dev/null || { dotnet tool install -g dotnet-coverage >/dev/null; export PATH="$PATH:$HOME/.dotnet/tools"; }
+  ( cd src/SARIFF.API && PORT="$PORT" ASPNETCORE_ENVIRONMENT=Development \
+      ConnectionStrings__DefaultConnection="$PG_CS;Database=$DBNAME" \
+      nohup dotnet-coverage collect --nologo -f cobertura -o "$COVERAGE_OUT" "dotnet bin/Release/net8.0/SARIFF.API.dll" >"$LOG" 2>&1 & )
+else
 ( cd src/SARIFF.API && PORT="$PORT" ASPNETCORE_ENVIRONMENT=Development \
     ConnectionStrings__DefaultConnection="$PG_CS;Database=$DBNAME" \
     nohup dotnet bin/Release/net8.0/SARIFF.API.dll >"$LOG" 2>&1 & )
+fi
 for i in $(seq 1 120); do curl -sf "http://127.0.0.1:$PORT/health" >/dev/null && { echo "API up on $PORT"; exit 0; }; sleep 1; done
 echo "API did not start"; tail -60 "$LOG"; exit 1

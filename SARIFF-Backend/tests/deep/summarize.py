@@ -56,8 +56,45 @@ if mode == "gitleaks":
     print(f"\nSECRETS IN GIT HISTORY: {len(d)} finding(s)")
     sys.exit(1 if d else 0)
 if mode == "cobertura":
+    # summarize.py cobertura <coverage.xml> [title]
+    # Totals for our own code (SARIFF.* only), per project, and per money-critical file.
+    import re
     r = ET.parse(args[0]).getroot()
-    print(f"\nCOVERAGE: lines {float(r.get('line-rate', 0))*100:.1f}%, branches {float(r.get('branch-rate', 0))*100:.1f}%")
-    for p in r.iter("package"):
-        print(f"  {p.get('name')}: lines {float(p.get('line-rate', 0))*100:.1f}%")
+    title = args[1] if len(args) > 1 else "COVERAGE"
+    files = {}   # path -> {line: hit}
+    branches = {}  # path -> {line: (covered, total)}
+    for pkg in r.iter("package"):
+        name = pkg.get("name") or ""
+        for cls in pkg.iter("class"):
+            fn = (cls.get("filename") or "").replace("\\", "/")
+            if "SARIFF" not in fn and not name.startswith("SARIFF"): continue
+            if "/Migrations/" in fn or fn.endswith(".Designer.cs") or "/obj/" in fn: continue
+            d = files.setdefault(fn, {}); b = branches.setdefault(fn, {})
+            for ln in cls.iter("line"):
+                n = int(ln.get("number")); hit = int(ln.get("hits", "0")) > 0
+                d[n] = d.get(n, False) or hit
+                cc = ln.get("condition-coverage")
+                if cc:
+                    m = re.search(r"\((\d+)/(\d+)\)", cc)
+                    if m:
+                        c, t = int(m.group(1)), int(m.group(2))
+                        pc, pt = b.get(n, (0, 0)); b[n] = (max(pc, c), max(pt, t))
+    def pct(c, t): return (100.0 * c / t) if t else 0.0
+    def short(fn):
+        i = fn.find("SARIFF.")
+        return fn[i:] if i >= 0 else fn
+    tot_c = sum(sum(v.values()) for v in files.values()); tot_t = sum(len(v) for v in files.values())
+    bc = sum(c for v in branches.values() for c, t in v.values()); bt = sum(t for v in branches.values() for c, t in v.values())
+    print(f"\n{title}: lines {pct(tot_c, tot_t):.1f}% ({tot_c}/{tot_t}), branches {pct(bc, bt):.1f}% ({bc}/{bt}) — our code only")
+    proj = {}
+    for fn, v in files.items():
+        m = re.search(r"(SARIFF\.(?:API|Core|Infrastructure))", fn); k = m.group(1) if m else "other"
+        c, t = proj.get(k, (0, 0)); proj[k] = (c + sum(v.values()), t + len(v))
+    for k, (c, t) in sorted(proj.items()): print(f"  {k}: {pct(c, t):.1f}% ({c}/{t})")
+    money = re.compile(r"Services/(Transactions/|Exchange/|Clients/StatementHelper|Common/ValidationHelper|Reports/CurrencyRollup|Accounts/(Cash|Bank|MpesaAgent)AccountService|Accounts/ExpenseService|Accounts/MobileMoney)")
+    rows = sorted(((short(fn), sum(v.values()), len(v)) for fn, v in files.items() if money.search(fn)), key=lambda x: x[0])
+    if rows:
+        mc = sum(r[1] for r in rows); mt = sum(r[2] for r in rows)
+        print(f"\n  MONEY CODE: {pct(mc, mt):.1f}% ({mc}/{mt} lines)")
+        for f, c, t in rows: print(f"    {pct(c, t):5.1f}%  {c:4}/{t:<4} {f}")
     sys.exit(0)
