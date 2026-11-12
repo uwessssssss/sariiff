@@ -1,6 +1,6 @@
 # Aligns the mobile app's packages with its Expo SDK and regenerates package-lock.json,
 # then commits the result to the same branch. Runs on GitHub (it needs the npm registry).
-# Trigger: a push whose commit message contains [fix-deps], or "Run workflow" in Actions.
+# Trigger: a push whose commit message contains [fix-mobile-deps] (or the older [fix-deps]), or "Run workflow" in Actions.
 name: Fix mobile dependencies
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   fix:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[fix-deps]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[fix-deps]') || contains(github.event.head_commit.message, '[fix-mobile-deps]')
     runs-on: ubuntu-24.04
     defaults:
       run:
