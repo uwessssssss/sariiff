@@ -973,10 +973,10 @@ export default function ExchangeScreen() {
             <View
               style={[
                 styles.actIconChip,
-                { backgroundColor: "rgba(139,92,246,0.16)" },
+                { backgroundColor: "rgba(91,156,255,0.14)" },
               ]}
             >
-              <Ionicons name="stats-chart" size={18} color="#A78BFA" />
+              <Ionicons name="stats-chart" size={18} color={colors.primary} />
             </View>
             <Text style={styles.actionBtnText}>Rate History</Text>
           </TouchableOpacity>
@@ -987,10 +987,10 @@ export default function ExchangeScreen() {
             <View
               style={[
                 styles.actIconChip,
-                { backgroundColor: "rgba(245,158,11,0.16)" },
+                { backgroundColor: "rgba(91,156,255,0.14)" },
               ]}
             >
-              <Ionicons name="sunny" size={18} color="#FBBF24" />
+              <Ionicons name="sunny" size={18} color={colors.primary} />
             </View>
             <Text style={styles.actionBtnText}>Day Open/Close</Text>
           </TouchableOpacity>
@@ -1031,10 +1031,10 @@ export default function ExchangeScreen() {
             <View
               style={[
                 styles.actIconChip,
-                { backgroundColor: "rgba(99,102,241,0.16)" },
+                { backgroundColor: "rgba(91,156,255,0.14)" },
               ]}
             >
-              <Ionicons name="time" size={18} color="#818CF8" />
+              <Ionicons name="time" size={18} color={colors.primary} />
             </View>
             <Text style={styles.actionBtnText}>Float History</Text>
           </TouchableOpacity>
@@ -1629,7 +1629,7 @@ export default function ExchangeScreen() {
               onChangeText={setFloatPurchaseRate}
               keyboardType="numeric"
               icon="calculator-outline"
-              placeholder={base === Currency.UGX ? "e.g. 3640" : "e.g. 128.50"}
+              placeholder={`e.g. ${({ 0: { 2: "28" }, 1: { 0: "128.50", 2: "3640" }, 2: { 0: "0.035" }, 3: { 0: "140", 2: "4000" } } as any)[floatCurrency]?.[base] ?? ""}`}
             />
             {floatAmount && floatPurchaseRate && (
               <Text style={{ fontSize: 13, color: "#39D9B0", marginTop: 4 }}>
