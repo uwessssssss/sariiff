@@ -26,19 +26,17 @@ jobs:
           node-version: 20
       - name: Install current packages
         run: npm install --no-audit --no-fund
-      - name: Security fixes that keep the same major versions
-        run: npm audit fix --omit=dev || true
-      - name: Reinstall (audit fix can leave a package declared but not installed)
-        run: npm install --no-audit --no-fund
+      # No `npm audit fix`: it ignores Expo's version pins (Nov 2026 it nested Expo 57 inside
+      # Expo 54, two copies of eight native modules). Security pins go in package.json
+      # "overrides"; the install above applies them.
       - name: Align every package with the Expo SDK (undoes any fix Expo can't run with)
         run: npx expo install --fix
       - name: Advisories left (most are build tools that never ship in the app)
         run: npm audit --omit=dev || true
       - name: Add packages the app needs but the lock file lacks
         run: npx expo install react-native-worklets expo-print expo-local-authentication
-      - name: Expo project health after the fix
+      - name: Expo project health after the fix (a failing check stops the commit)
         run: npx expo-doctor
-        continue-on-error: true
       - name: Commit package.json + package-lock.json
         run: |
           git config user.name "github-actions[bot]"

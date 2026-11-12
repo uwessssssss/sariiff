@@ -17,8 +17,12 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
       await loadKesRates();
       const excluded = new Set<string>();
       // Fetch all required data for P&L calculation
+      // This month's trades only (the P&L below is for this month); it used to download every
+      // trade the bureau ever made and throw most of them away.
+      const now = new Date();
+      const monthFirst = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
       const [exchangeRes, summaryRes, txnRes] = await Promise.all([
-        allPages((p, n) => getExchangeTransactions(p, n)),
+        allPages((p, n) => getExchangeTransactions(p, n, undefined, undefined, monthFirst)),
         getExchangeTodaySummary(),
         // This month only, and all of it: the endpoint's default page is 10 rows,
         // so the P&L used to be built from the last 10 transactions.
