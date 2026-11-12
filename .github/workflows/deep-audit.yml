@@ -204,7 +204,7 @@ jobs:
             echo "::endgroup::"
             echo "== $role: $(grep -E 'not_a_server_error' "$RUNNER_TEMP/schemathesis-$role.txt" | head -1)"
             # every failing request, with how to reproduce it
-            awk '/^FAILURES/,/^=+ SUMMARY/' "$RUNNER_TEMP/schemathesis-$role.txt" | grep -E "^_+ |\[5[0-9][0-9]\]|curl -X" | sed 's/Authorization: [^'"'"']*/Authorization: …/' | head -80 || true
+            awk '/FAILURES/,/SUMMARY/' "$RUNNER_TEMP/schemathesis-$role.txt" | grep -E "^_+ |\[5[0-9][0-9]\]|curl -X" | sed 's/Authorization: [^'"'"']*/Authorization: …/' | head -80 || true
           done
           exit $rc
 

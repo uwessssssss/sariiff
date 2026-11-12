@@ -59,7 +59,13 @@ public class ExceptionMiddleware
         for (var e = ex; e != null; e = e.InnerException)
         {
             if (e is Npgsql.PostgresException pg)
-                return pg.SqlState.StartsWith("22") ? DbFailure.BadValue : DbFailure.None;
+            {
+                if (pg.SqlState.StartsWith("22")) return DbFailure.BadValue;
+                // 08 connection lost, 57P0x server shutting down / not accepting connections, 53 out of resources
+                if (pg.SqlState.StartsWith("08") || pg.SqlState.StartsWith("57P") || pg.SqlState.StartsWith("53") || pg.IsTransient)
+                    return DbFailure.Unavailable;
+                return DbFailure.None;
+            }
             if (e is Npgsql.NpgsqlException || e is System.Net.Sockets.SocketException || e is TimeoutException)
                 return DbFailure.Unavailable;
         }

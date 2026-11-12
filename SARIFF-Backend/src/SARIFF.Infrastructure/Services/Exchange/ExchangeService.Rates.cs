@@ -106,6 +106,7 @@ public partial class ExchangeService
 
     public async Task<ApiResponse<List<ExchangeRateResponseDto>>> GetRateHistoryAsync(Guid companyId, int days = 30)
     {
+        days = Math.Clamp(days, 1, 3650); // up to ten years back; huge values would overflow the date
         var cutoff = DateTime.UtcNow.AddDays(-days);
         var rates = await _context.ExchangeRates
             .Where(r => r.CompanyId == companyId && r.EffectiveFrom >= cutoff)

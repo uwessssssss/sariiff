@@ -16,6 +16,7 @@ public partial class ClientPortalService
 
     public async Task<ApiResponse<ClientAnalyticsDto>> GetAnalyticsAsync(Guid companyId, Guid clientId, int months)
     {
+        months = Math.Clamp(months, 1, 120); // up to ten years; huge values would overflow the date
         // Ensure UTC for PostgreSQL
         var startDate = BureauClock.MonthStartUtc(BureauClock.TodayLocal.AddMonths(-months));
         
