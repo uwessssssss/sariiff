@@ -173,8 +173,12 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/lh"
           for p in login; do
-            npx -y lighthouse@12 "http://127.0.0.1:3000/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
-              --output json --output-path "$RUNNER_TEMP/lh/$p.json" --only-categories=performance,accessibility,best-practices,seo
+            for try in 1 2 3; do   # Lighthouse sometimes fails to record its trace (NO_NAVSTART); try again
+              npx -y lighthouse@12 "http://127.0.0.1:3000/$p" --quiet --chrome-flags="--headless=new --no-sandbox" \
+                --output json --output-path "$RUNNER_TEMP/lh/$p.json" --only-categories=performance,accessibility,best-practices,seo \
+                && ! grep -q '"runtimeError"' "$RUNNER_TEMP/lh/$p.json" && break
+              echo "Lighthouse attempt $try failed; retrying"
+            done
           done
           node SARIFF-Backend/tests/deep/lighthouse.mjs "$RUNNER_TEMP"/lh/*.json
 

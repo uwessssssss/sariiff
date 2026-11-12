@@ -35,6 +35,8 @@ public class ExceptionMiddleware
             var kind = Classify(ex);
             if (kind == DbFailure.BadValue)
                 _logger.LogWarning("Rejected a value the database cannot store ({Path}): {Message}", context.Request.Path, Innermost(ex).Message);
+            else if (kind == DbFailure.Unavailable)
+                _logger.LogWarning("Database unavailable, answered 503 ({Path}): {Message}", context.Request.Path, Innermost(ex).Message);
             else
                 _logger.LogError(ex, "Unhandled exception: {Message}", ex.Message);
             await HandleExceptionAsync(context, ex, kind);

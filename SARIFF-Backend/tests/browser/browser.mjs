@@ -46,9 +46,11 @@ const EXPECTED_HTTP = /favicon/;
 
 function watch(page) {
   const errs = [];
-  // WebKit reports a Next.js prefetch cancelled by navigation as "...?_rsc=... due to access control
-  // checks"; Chromium reports the same thing as "Failed to fetch RSC payload" (ignored above).
-  page.on("pageerror", (e) => !/_rsc=.*access control checks/.test(e.message) && errs.push(`page error: ${e.message}`));
+  // WebKit reports a request cut off by leaving the page (a Next.js prefetch, or an API call still
+  // in flight when the test moves on) as "<url> due to access control checks". Chromium and Firefox
+  // say nothing for these. The screen's content is checked separately, so a real CORS failure would
+  // still fail the test (its data would be missing).
+  page.on("pageerror", (e) => !(ENGINE === "webkit" && /due to access control checks\.?$/.test(e.message)) && errs.push(`page error: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && !IGNORE_CONSOLE.test(m.text()) && errs.push(`console: ${m.text()}`));
   page.on("response", async (r) => {
     if (r.status() < 400 || EXPECTED_HTTP.test(r.url())) return;
