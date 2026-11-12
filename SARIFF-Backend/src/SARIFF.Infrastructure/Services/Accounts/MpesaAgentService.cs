@@ -216,7 +216,7 @@ public class MpesaAgentService : IMpesaAgentService
     {
         var (totalDebit, totalCredit) = await _statementHelper.TotalsForAccountAsync(companyId, AccountType.Mpesa, agent.Id);
 
-        // ✅ FIXED: NetMovement = OpeningBalance + Credits - Debits
+        // NetMovement = OpeningBalance + debits (money in) − credits (money out): this is an asset
         return new MpesaAgentResponseDto(
             agent.Id, agent.Code, agent.AgentName, agent.PhoneNumber, agent.AgentNumber, agent.StoreNumber,
             agent.AgentType, agent.Balance, agent.OpeningBalance,

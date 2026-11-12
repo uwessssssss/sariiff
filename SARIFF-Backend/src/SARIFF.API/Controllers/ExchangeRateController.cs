@@ -50,11 +50,13 @@ public class ExchangeRateController : BaseApiController
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    /// <summary>
+    /// Retired (Nov 2026). It booked both till legs the wrong way round (the shilling till went
+    /// DOWN when a client paid shillings in) and no app called it. Exchanges are recorded with
+    /// POST /api/exchange, which keeps the float, average cost and profit.
+    /// </summary>
     [HttpPost("transaction")]
-    public async Task<IActionResult> CreateExchangeTransaction([FromBody] ExchangeTransactionDto dto)
-    {
-        if (!CompanyId.HasValue || !UserId.HasValue) return Unauthorized();
-        var result = await _exchangeService.CreateExchangeTransactionAsync(CompanyId.Value, UserId.Value, dto);
-        return result.Success ? Ok(result) : BadRequest(result);
-    }
+    public IActionResult CreateExchangeTransaction() =>
+        StatusCode(StatusCodes.Status410Gone, new ApiResponse<object>(false,
+            "This endpoint was retired. Record exchanges with POST /api/exchange.", null!));
 }

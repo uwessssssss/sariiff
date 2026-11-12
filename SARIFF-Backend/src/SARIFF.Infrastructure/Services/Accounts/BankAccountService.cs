@@ -175,7 +175,7 @@ public class BankAccountService : IBankAccountService
                 p.Value.Opening + p.Value.Debit - p.Value.Credit))
             .ToList();
 
-        // ✅ FIXED: NetMovement = OpeningBalance + Credits - Debits
+        // NetMovement = OpeningBalance + debits (money in) − credits (money out): this is an asset
         var stats = new BankAccountStatsDto(
             TotalAccounts: accounts.Count,
             TotalBalanceKES: accounts.Where(a => a.Currency == Currency.KES).Sum(a => a.Balance),
@@ -212,7 +212,7 @@ public class BankAccountService : IBankAccountService
     {
         var (totalDebit, totalCredit) = await _statementHelper.TotalsForAccountAsync(companyId, AccountType.Bank, account.Id);
 
-        // ✅ FIXED: NetMovement = OpeningBalance + Credits - Debits
+        // NetMovement = OpeningBalance + debits (money in) − credits (money out): this is an asset
         return new BankAccountResponseDto(
             account.Id, account.Code, account.BankName, account.AccountNumber, account.AccountName, account.BranchCode,
             account.Currency, account.Balance, account.OpeningBalance,

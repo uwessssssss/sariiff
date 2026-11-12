@@ -232,9 +232,12 @@ public class ReconciliationService : IReconciliationService
         foreach (var t in reconciledTransactions)
         {
             bool isSource = t.SourceAccountType == accountType && t.SourceAccountId == accountId;
-            var sign = isSource 
-                ? (t.TransactionType == TransactionType.Debit ? -1 : 1)
-                : (t.TransactionType == TransactionType.Debit ? 1 : -1);
+            // The source leg takes the transaction's type, the destination leg the opposite one.
+            // On a till (cash, bank, mobile money — an asset) a debit adds and a credit takes
+            // away; on a client account (a liability) it is the other way round. This used to
+            // be inverted for tills, so money paid into a bank showed as a minus.
+            var debitOnThisLeg = isSource == (t.TransactionType == TransactionType.Debit);
+            var sign = (debitOnThisLeg ? 1 : -1) * (accountType == AccountType.Client ? -1 : 1);
             
             expectedBalance += t.Amount * sign;
             if (t.ActualAmount.HasValue)
@@ -414,7 +417,10 @@ public class ReconciliationService : IReconciliationService
         {
             AccountType.Cash => await _context.CashAccounts.Where(c => c.CompanyId == companyId && c.Id == accountId).Select(c => c.Currency).FirstOrDefaultAsync(),
             AccountType.Bank => await _context.BankAccounts.Where(b => b.CompanyId == companyId && b.Id == accountId).Select(b => b.Currency).FirstOrDefaultAsync(),
-            // Mobile money (and anything else) is in the company's home currency
+            // A mobile money wallet holds its network's currency (M-Pesa = KES even in a Ugandan
+            // bureau), the same rule the account list uses; older wallets hold the home currency.
+            AccountType.Mpesa => await _context.MpesaAgents.Where(m => m.CompanyId == companyId && m.Id == accountId).Select(m => m.Currency).FirstOrDefaultAsync()
+                                 ?? await _context.BaseCurrencyAsync(companyId),
             _ => await _context.BaseCurrencyAsync(companyId)
         };
     }

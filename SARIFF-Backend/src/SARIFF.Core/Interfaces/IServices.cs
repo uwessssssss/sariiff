@@ -131,7 +131,6 @@ public interface IExchangeRateService
     Task<ApiResponse<ExchangeRateResponseDto>> GetCurrentRateAsync(Guid companyId, Currency foreignCurrency = Currency.USD);
     Task<ApiResponse<List<ExchangeRateResponseDto>>> GetHistoryAsync(Guid companyId);
     Task<ApiResponse<CurrencyConvertResultDto>> ConvertAsync(Guid companyId, CurrencyConvertDto dto);
-    Task<ApiResponse<TransactionResponseDto>> CreateExchangeTransactionAsync(Guid companyId, Guid userId, ExchangeTransactionDto dto);
 }
 /// <summary>
 
