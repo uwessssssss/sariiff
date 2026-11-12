@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/providers/AuthProvider";
-import { OfficeUserDashboard } from "@/components/OfficeUserDashboard";
+import { OfficeUserDashboard } from "@/components/office-shell/OfficeUserDashboard";
 
 export default function OfficeSettingsPage() {
   const { user, logout } = useAuth();
