@@ -27,13 +27,7 @@ public partial class ClientPortalService
         var profile = await BuildProfileAsync(companyId, client);
 
         // Recent transactions (last 10)
-        var recentTxns = await GetClientTransactionsQuery(companyId, clientId)
-            .OrderByDescending(t => t.TransactionDate)
-            .ThenByDescending(t => t.CreatedAt)
-            .Take(10)
-            .ToListAsync();
-
-        var recentTransactions = recentTxns.Select(t => MapToClientTransactionDto(t, clientId)).ToList();
+        var recentTransactions = (await LedgerAsync(companyId, clientId)).TakeLast(10).Reverse().ToList();
 
         // Recent alerts (last 5)
         var recentAlerts = await _context.Set<ClientAlert>()
@@ -69,16 +63,7 @@ public partial class ClientPortalService
             ThisMonthOutKES = outKES,
             ThisMonthInUSD = inUSD,
             ThisMonthOutUSD = outUSD,
-            ThisMonthOtherCurrencies = monthTxns
-                .Where(t => t.Currency != Currency.KES && t.Currency != Currency.USD)
-                .GroupBy(t => t.Currency)
-                .OrderBy(g => g.Key)
-                .Select(g =>
-                {
-                    var (cin, cout, _, _) = CalculateInOutForCurrency(g.ToList(), clientId, g.Key);
-                    return new CurrencyFlowDto { Currency = g.Key, CurrencyCode = g.Key.ToString(), Income = cin, Expenses = cout };
-                })
-                .ToList(),
+            ThisMonthOtherCurrencies = OtherCurrencyFlows(monthTxns, clientId),
             TransactionCount = await GetClientTransactionsQuery(companyId, clientId).CountAsync(),
             UnreadAlerts = unreadCount
         };

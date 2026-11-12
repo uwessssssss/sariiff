@@ -48,6 +48,13 @@ public class BalanceAlertService : IBalanceAlertService
 
     public async Task<ApiResponse<BalanceAlertRuleDto>> CreateRuleAsync(Guid companyId, Guid userId, CreateBalanceAlertDto dto)
     {
+        // The currency and direction arrive as numbers: refuse ones that mean nothing. (An
+        // unknown currency read as a zero balance, so a "below" rule on it fired for every client.)
+        if (!Enum.IsDefined(typeof(Currency), dto.Currency))
+            return new ApiResponse<BalanceAlertRuleDto>(false, "Unknown currency", null);
+        if (!Enum.IsDefined(typeof(BalanceAlertDirection), dto.Direction))
+            return new ApiResponse<BalanceAlertRuleDto>(false, "Direction must be below (0) or above (1)", null);
+
         string? clientName = null;
         if (dto.ClientId is { } ruleClientId)
         {

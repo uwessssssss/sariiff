@@ -51,9 +51,18 @@ public class InvoiceService : IInvoiceService
         if (dto.DueDate.Date < BureauClock.TodayLocal)
             return new ApiResponse<InvoiceResponseDto>(false, "Due date cannot be in the past", null);
 
-        var subtotal = dto.Items.Sum(i => i.Quantity * i.UnitPrice);
-        var taxAmount = subtotal * (dto.TaxRate / 100);
+        // Money is kept to 2 decimal places, so round each figure once, here, and build the
+        // next from the rounded one: lines add up to the subtotal, and subtotal + tax −
+        // discount is exactly the total. (Unrounded, 1.5 × 33.33 twice gave lines of 50.00 +
+        // 50.00 under a subtotal of 99.99, and the first response showed 4-decimal totals.)
+        static decimal Money(decimal v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
+        var subtotal = dto.Items.Sum(i => Money(i.Quantity * i.UnitPrice));
+        var taxAmount = Money(subtotal * (dto.TaxRate / 100));
         var total = subtotal + taxAmount - dto.DiscountAmount;
+        if (Money(dto.DiscountAmount) != dto.DiscountAmount)
+            return new ApiResponse<InvoiceResponseDto>(false, "Discount amount can have at most 2 decimal places", null);
+        if (total < 0)
+            return new ApiResponse<InvoiceResponseDto>(false, "Discount cannot be more than the invoice total", null);
 
         const int maxRetries = 3;
         for (int attempt = 0; attempt < maxRetries; attempt++)
@@ -93,7 +102,7 @@ public class InvoiceService : IInvoiceService
                     Description = item.Description,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    Amount = item.Quantity * item.UnitPrice,
+                    Amount = Money(item.Quantity * item.UnitPrice),
                     SortOrder = sortOrder++
                 };
                 items.Add(invoiceItem);

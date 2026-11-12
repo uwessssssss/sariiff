@@ -17,95 +17,49 @@ public partial class ClientPortalService
     public async Task<ApiResponse<PagedResult<ClientTransactionDto>>> GetTransactionsAsync(
         Guid companyId, Guid clientId, int page, int pageSize, TransactionFilters filters)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 1000);
+
+        // The whole account, oldest first, each line carrying its real balance. Filters are
+        // applied AFTER the balances are worked out, on the client's own side of each posting
+        // (their currency, and money in / money out as they see it). Before Nov 2026 the
+        // balances were recomputed over the filtered rows only (a search for "rent" showed
+        // balances that ignored everything else), the currency and type filters looked at
+        // the posting's first side, and page 1 held the OLDEST rows.
+        IEnumerable<ClientTransactionDto> lines = await LedgerAsync(companyId, clientId);
+
         // Dates picked in the app are bureau-local days; the end day is included in full.
         var (fromUtc, toExclusive) = BureauClock.Range(filters.StartDate, filters.EndDate);
-
-        var query = GetClientTransactionsQuery(companyId, clientId);
-
-        // Apply filters
-        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
-        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
-        if (filters.Currency.HasValue) { var v = filters.Currency.Value; query = query.Where(t => t.Currency == v); }  // FIX #12: Only match primary currency
-
-        if (filters.Type.HasValue) { var v = filters.Type.Value; query = query.Where(t => t.TransactionType == v); }
+        if (fromUtc.HasValue) { var v = fromUtc.Value; lines = lines.Where(t => t.Date >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; lines = lines.Where(t => t.Date < v); }
+        if (filters.Currency.HasValue) { var v = filters.Currency.Value; lines = lines.Where(t => t.Currency == v); }
+        if (filters.Type.HasValue) { var v = filters.Type.Value.ToString(); lines = lines.Where(t => t.Type == v); }
         if (!string.IsNullOrWhiteSpace(filters.Search))
         {
-            var search = filters.Search.ToLower();
-            query = query.Where(t =>
-                t.Description.ToLower().Contains(search) ||
-                t.Reference.ToLower().Contains(search) ||
-                t.Code.ToLower().Contains(search));
+            var search = filters.Search.Trim();
+            lines = lines.Where(t =>
+                (t.Description ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (t.Reference ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (t.Code ?? "").Contains(search, StringComparison.OrdinalIgnoreCase));
         }
 
-        var totalCount = await query.CountAsync();
-
-        // FIX: Compute running balances dynamically
-        // Get all matching transactions up to end of current page (chronological order)
-        var allUpToPage = await query
-            .OrderBy(t => t.TransactionDate)
-            .ThenBy(t => t.CreatedAt)
-            .Take(page * pageSize)  // Only need up to end of current page
-            .ToListAsync();
-
-        var allMapped = allUpToPage.Select(t => MapToClientTransactionDto(t, clientId)).ToList();
-
-        // Running balance PER CURRENCY. KES/USD openings live on the client;
-        // UGX/EUR/... openings live in ClientCurrencyBalances. (Previously every
-        // non-KES line was added to the USD balance.)
-        var client = await _context.Users.FindAsync(clientId);
-        var running = new Dictionary<Currency, decimal>
-        {
-            [Currency.KES] = client?.OpeningBalanceKES ?? 0,
-            [Currency.USD] = client?.OpeningBalanceUSD ?? 0
-        };
-        var otherOpenings = await _context.ClientCurrencyBalances
-            .Where(b => b.ClientId == clientId && b.CompanyId == companyId && !b.IsDeleted)
-            .Select(b => new { b.Currency, b.OpeningBalance })
-            .ToListAsync();
-        foreach (var o in otherOpenings) running[o.Currency] = o.OpeningBalance;
-
-        // If there are filters, account for transactions BEFORE the filtered period
-        if (fromUtc.HasValue)
-        {
-            var priorTo = fromUtc.Value;
-            var prior = await GetClientTransactionsQuery(companyId, clientId)
-                .Where(t => t.TransactionDate < priorTo)
-                .ToListAsync();
-            foreach (var t in prior)
-            {
-                var dto = MapToClientTransactionDto(t, clientId);
-                running.TryGetValue(dto.Currency, out var bal);
-                running[dto.Currency] = bal + (dto.Type == "Credit" ? dto.Amount : -dto.Amount);
-            }
-        }
-
-        // Compute running balances through all items up to current page
-        foreach (var item in allMapped)
-        {
-            running.TryGetValue(item.Currency, out var bal);
-            item.BalanceBefore = bal;
-            bal += item.Type == "Credit" ? item.Amount : -item.Amount;
-            running[item.Currency] = bal;
-            item.BalanceAfter = bal;
-        }
-
-        // Extract only current page items, reversed for newest-first display
-        var skipCount = (page - 1) * pageSize;
-        var pageItems = allMapped.Skip(skipCount).Take(pageSize).Reverse().ToList();
+        var matched = lines.ToList();
+        matched.Reverse();   // newest first: page 1 is the latest activity
+        var pageItems = matched.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
         return new ApiResponse<PagedResult<ClientTransactionDto>>(true, "Success",
-            new PagedResult<ClientTransactionDto>(pageItems, totalCount, page, pageSize));
+            new PagedResult<ClientTransactionDto>(pageItems, matched.Count, page, pageSize));
     }
 
     public async Task<ApiResponse<ClientTransactionDto>> GetTransactionByIdAsync(Guid companyId, Guid clientId, Guid transactionId)
     {
-        var transaction = await GetClientTransactionsQuery(companyId, clientId)
-            .FirstOrDefaultAsync(t => t.Id == transactionId);
+        // From the ledger, so the balances match the list and the statement.
+        var line = (await LedgerAsync(companyId, clientId)).FirstOrDefault(t => t.Id == transactionId);
 
-        if (transaction == null)
+        if (line == null)
             return new ApiResponse<ClientTransactionDto>(false, "Transaction not found", null);
 
-        return new ApiResponse<ClientTransactionDto>(true, "Success", MapToClientTransactionDto(transaction, clientId));
+        return new ApiResponse<ClientTransactionDto>(true, "Success", line);
     }
 
     public async Task<byte[]> GenerateTransactionReceiptAsync(Guid companyId, Guid clientId, Guid transactionId)
@@ -117,7 +71,7 @@ public partial class ClientPortalService
             throw new Exception("Transaction not found");
 
         var client = await _context.Users.FindAsync(clientId);
-        var dto = MapToClientTransactionDto(transaction, clientId);
+        var dto = (await LedgerAsync(companyId, clientId)).First(t => t.Id == transactionId);
 
         var sb = new StringBuilder();
         sb.AppendLine("=====================================");

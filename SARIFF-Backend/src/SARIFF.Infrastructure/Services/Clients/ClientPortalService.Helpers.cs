@@ -82,6 +82,63 @@ public partial class ClientPortalService
         };
     }
 
+    /// <summary>The currency of the CLIENT's side of a posting (the counter currency when the
+    /// client is the second side of a cross-currency posting).</summary>
+    private static Currency LegCurrency(Transaction txn, Guid clientId) =>
+        txn.SourceAccountType == AccountType.Client && txn.SourceAccountId == clientId
+            ? txn.Currency
+            : txn.CounterCurrency ?? txn.Currency;
+
+    /// <summary>
+    /// Every posting on the client's account, oldest first, as the client sees it, with a
+    /// running balance per currency that starts from the account's opening balances. The last
+    /// line of each currency ends on the client's current balance in that currency.
+    /// </summary>
+    private async Task<List<ClientTransactionDto>> LedgerAsync(Guid companyId, Guid clientId)
+    {
+        var client = await _context.Users.FirstOrDefaultAsync(u => u.Id == clientId && u.CompanyId == companyId);
+        var running = new Dictionary<Currency, decimal>
+        {
+            [Currency.KES] = client?.OpeningBalanceKES ?? 0,
+            [Currency.USD] = client?.OpeningBalanceUSD ?? 0
+        };
+        // UGX, EUR, ... openings live in ClientCurrencyBalances.
+        foreach (var o in await _context.ClientCurrencyBalances
+                     .Where(b => b.ClientId == clientId && b.CompanyId == companyId && !b.IsDeleted)
+                     .Select(b => new { b.Currency, b.OpeningBalance }).ToListAsync())
+            running[o.Currency] = o.OpeningBalance;
+
+        var transactions = await GetClientTransactionsQuery(companyId, clientId)
+            .OrderBy(t => t.TransactionDate).ThenBy(t => t.CreatedAt)
+            .ToListAsync();
+
+        var lines = new List<ClientTransactionDto>(transactions.Count);
+        foreach (var txn in transactions)
+        {
+            var line = MapToClientTransactionDto(txn, clientId);
+            running.TryGetValue(line.Currency, out var balance);
+            line.BalanceBefore = balance;
+            balance += line.Type == "Credit" ? line.Amount : -line.Amount;
+            line.BalanceAfter = balance;
+            running[line.Currency] = balance;
+            lines.Add(line);
+        }
+        return lines;
+    }
+
+    /// <summary>Money in / out per currency beyond KES and USD, on the client's own side.</summary>
+    private List<CurrencyFlowDto> OtherCurrencyFlows(List<Transaction> transactions, Guid clientId) =>
+        transactions
+            .GroupBy(t => LegCurrency(t, clientId))
+            .Where(g => g.Key != Currency.KES && g.Key != Currency.USD)
+            .OrderBy(g => (int)g.Key)
+            .Select(g =>
+            {
+                var (cin, cout, _, _) = CalculateInOutForCurrency(g.ToList(), clientId, g.Key);
+                return new CurrencyFlowDto { Currency = g.Key, CurrencyCode = g.Key.ToString(), Income = cin, Expenses = cout };
+            })
+            .ToList();
+
     private async Task<ClientProfileDto> BuildProfileAsync(Guid companyId, User client)
     {
         var transactions = await GetClientTransactionsQuery(companyId, client.Id).ToListAsync();

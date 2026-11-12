@@ -36,23 +36,18 @@ public partial class ClientPortalService
         var statementCurrency = currency ?? await _context.BaseCurrencyAsync(companyId);
         var endExclusive = toExclusiveBound ?? DateTime.SpecifyKind(DateTime.MaxValue, DateTimeKind.Utc);
 
-        var query = GetClientTransactionsQuery(companyId, clientId)
-            .Where(t => t.TransactionDate >= startDate && t.TransactionDate < endExclusive)
-            .Where(t => t.Currency == statementCurrency);  // FIX #12: Only match primary currency
-
-        // Sort chronologically (oldest first) for running balance computation
-        var transactions = await query
-            .OrderBy(t => t.TransactionDate)
-            .ThenBy(t => t.CreatedAt)
-            .ToListAsync();
-        var items = transactions.Select(t => MapToClientTransactionDto(t, clientId)).ToList();
+        // The client's side of every posting in the statement currency, oldest first, with
+        // real running balances. (Before Nov 2026 the statement picked rows by the posting's
+        // FIRST currency: money the client received on the second side of a cross-currency
+        // posting was missing from its own statement, and the closing balance was short.)
+        var ledger = (await LedgerAsync(companyId, clientId)).Where(l => l.Currency == statementCurrency).ToList();
+        var items = ledger.Where(l => l.Date >= startDate && l.Date < endExclusive).ToList();
         // no start picked: the statement begins at the client's first entry (not year 0001)
-        if (noStart) periodStartLocal = transactions.Count > 0 ? BureauClock.ToLocal(transactions[0].TransactionDate).Date : endDate;
+        if (noStart) periodStartLocal = items.Count > 0 ? BureauClock.ToLocal(items[0].Date).Date : endDate;
 
-        // Opening balances for the statement currency. KES/USD live on the
-        // client's columns; other currencies (UGX, EUR, ...) live in
-        // ClientCurrencyBalances. Everything is tracked per-currency so any
-        // currency produces a correct running balance and totals.
+        // Opening balance of the period: where the last line before it ended, or the
+        // account's opening balance in this currency when nothing came before. KES/USD
+        // openings live on the client's columns; other currencies in ClientCurrencyBalances.
         decimal baseOpening;
         if (statementCurrency == Currency.KES)
             baseOpening = client.OpeningBalanceKES;
@@ -65,36 +60,12 @@ public partial class ClientPortalService
                                           && b.Currency == statementCurrency && !b.IsDeleted);
             baseOpening = ccb?.OpeningBalance ?? 0m;
         }
+        var lastBefore = ledger.LastOrDefault(l => l.Date < startDate);
+        var periodOpeningBalance = lastBefore?.BalanceAfter ?? baseOpening;
 
-        // Sum transactions BEFORE the start date to get the period opening balance
-        // for the statement currency only.
-        var priorTransactions = await GetClientTransactionsQuery(companyId, clientId)
-            .Where(t => t.TransactionDate < startDate && t.Currency == statementCurrency)
-            .ToListAsync();
-        var priorItems = priorTransactions.Select(t => MapToClientTransactionDto(t, clientId)).ToList();
-        var periodOpeningBalance = baseOpening;
-        foreach (var item in priorItems)
-            periodOpeningBalance += item.Type == "Credit" ? item.Amount : -item.Amount;
-
-        // Running balance + totals for the statement currency.
-        decimal totalCredits = 0, totalDebits = 0;
-        var running = periodOpeningBalance;
-        foreach (var item in items)
-        {
-            if (item.Currency != statementCurrency) continue;
-            item.BalanceBefore = running;
-            if (item.Type == "Credit")
-            {
-                running += item.Amount;
-                totalCredits += item.Amount;
-            }
-            else
-            {
-                running -= item.Amount;
-                totalDebits += item.Amount;
-            }
-            item.BalanceAfter = running;
-        }
+        var totalCredits = items.Where(l => l.Type == "Credit").Sum(l => l.Amount);
+        var totalDebits = items.Where(l => l.Type != "Credit").Sum(l => l.Amount);
+        var running = items.Count > 0 ? items[^1].BalanceAfter : periodOpeningBalance;
 
         var closingBalance = running;
 
@@ -169,22 +140,18 @@ public partial class ClientPortalService
     {
         var (fromUtc, toExclusive) = BureauClock.Range(startDate, endDate);
 
-        var query = GetClientTransactionsQuery(companyId, clientId);
-
-        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
-        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
-        if (currency.HasValue) { var v = currency.Value; query = query.Where(t => t.Currency == v); }  // FIX #12: Only match primary currency
-
-        var transactions = await query
-            .OrderByDescending(t => t.TransactionDate)
-            .ToListAsync();
+        // The client's own side of each posting, with real running balances (see GetTransactionsAsync).
+        IEnumerable<ClientTransactionDto> lines = await LedgerAsync(companyId, clientId);
+        if (fromUtc.HasValue) { var v = fromUtc.Value; lines = lines.Where(t => t.Date >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; lines = lines.Where(t => t.Date < v); }
+        if (currency.HasValue) { var v = currency.Value; lines = lines.Where(t => t.Currency == v); }
+        var rows = lines.Reverse().ToList();   // newest first
 
         var sb = new StringBuilder();
         sb.AppendLine("Code,Date,Time,Type,Description,Amount,Currency,Balance Before,Balance After,Reference,Status");
 
-        foreach (var txn in transactions)
+        foreach (var dto in rows)
         {
-            var dto = MapToClientTransactionDto(txn, clientId);
             sb.AppendLine(string.Join(",",
                 CsvText.Cell(dto.Code), CsvText.Cell(BureauClock.ToLocal(dto.Date).ToString("yyyy-MM-dd")), CsvText.Cell(dto.Time), CsvText.Cell(dto.Type),
                 CsvText.Cell(dto.Description), dto.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture), dto.Currency,

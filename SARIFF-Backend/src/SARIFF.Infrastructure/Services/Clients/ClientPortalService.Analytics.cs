@@ -18,7 +18,9 @@ public partial class ClientPortalService
     {
         months = Math.Clamp(months, 1, 120); // up to ten years; huge values would overflow the date
         // Ensure UTC for PostgreSQL
-        var startDate = BureauClock.MonthStartUtc(BureauClock.TodayLocal.AddMonths(-months));
+        // "N months" = this month and the N-1 before it: exactly the months charted below.
+        // (It used to reach one month further back, so the totals included a month the chart didn't show.)
+        var startDate = BureauClock.MonthStartUtc(BureauClock.TodayLocal.AddMonths(-(months - 1)));
         
         var transactions = await GetClientTransactionsQuery(companyId, clientId)
             .Where(t => t.TransactionDate >= startDate)
@@ -41,22 +43,7 @@ public partial class ClientPortalService
             var (inKES, outKES, inUSD, outUSD) = CalculateInOut(monthTxns, clientId);
 
             // Per-currency breakdown for currencies beyond KES/USD (UGX, EUR, ...).
-            var otherMonthly = monthTxns
-                .Where(t => t.Currency != Currency.KES && t.Currency != Currency.USD)
-                .GroupBy(t => t.Currency)
-                .Select(g =>
-                {
-                    var (cin, cout, _, _) = CalculateInOutForCurrency(g.ToList(), clientId, g.Key);
-                    return new CurrencyFlowDto
-                    {
-                        Currency = g.Key,
-                        CurrencyCode = g.Key.ToString(),
-                        Income = cin,
-                        Expenses = cout
-                    };
-                })
-                .OrderBy(c => (int)c.Currency)
-                .ToList();
+            var otherMonthly = OtherCurrencyFlows(monthTxns, clientId);
 
             monthlyData.Add(new MonthlyDataDto
             {
@@ -72,15 +59,17 @@ public partial class ClientPortalService
         }
 
         // Category breakdown by TransactionType
-        var categoryGroups = transactions
-            .GroupBy(t => t.TransactionType)
+        // Amounts and currencies on the client's own side of each posting.
+        var legs = transactions.Select(t => MapToClientTransactionDto(t, clientId)).ToList();
+        var categoryGroups = legs
+            .GroupBy(t => t.Type)   // "Credit" = money in, "Debit" = money out, as the client sees it
             .Select(g => new CategoryBreakdownDto
             {
-                Category = g.Key.ToString(),
+                Category = g.Key,
                 Count = g.Count(),
                 TotalKES = g.Where(t => t.Currency == Currency.KES).Sum(t => t.Amount),
                 TotalUSD = g.Where(t => t.Currency == Currency.USD).Sum(t => t.Amount),
-                Percentage = transactions.Count > 0 ? (decimal)g.Count() / transactions.Count * 100 : 0,
+                Percentage = legs.Count > 0 ? (decimal)g.Count() / legs.Count * 100 : 0,
                 OtherCurrencies = g.Where(t => t.Currency != Currency.KES && t.Currency != Currency.USD)
                     .GroupBy(t => t.Currency).OrderBy(x => x.Key)
                     .Select(x => new CurrencyFlowDto
@@ -112,22 +101,7 @@ public partial class ClientPortalService
         var (totalInKES, totalOutKES, totalInUSD, totalOutUSD) = CalculateInOut(transactions, clientId);
 
         // Net income per currency beyond KES/USD (UGX, EUR, ...).
-        var otherTotals = transactions
-            .Where(t => t.Currency != Currency.KES && t.Currency != Currency.USD)
-            .GroupBy(t => t.Currency)
-            .Select(g =>
-            {
-                var (cin, cout, _, _) = CalculateInOutForCurrency(g.ToList(), clientId, g.Key);
-                return new CurrencyFlowDto
-                {
-                    Currency = g.Key,
-                    CurrencyCode = g.Key.ToString(),
-                    Income = cin,
-                    Expenses = cout
-                };
-            })
-            .OrderBy(c => (int)c.Currency)
-            .ToList();
+        var otherTotals = OtherCurrencyFlows(transactions, clientId);
 
         // Growth calculation
         var thisMonth = BureauClock.TodayLocal;
@@ -147,8 +121,8 @@ public partial class ClientPortalService
             ? ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100
             : 0;
 
-        var kesTxns = transactions.Where(t => t.Currency == Currency.KES).ToList();
-        var usdTxns = transactions.Where(t => t.Currency == Currency.USD).ToList();
+        var kesTxns = legs.Where(t => t.Currency == Currency.KES).ToList();
+        var usdTxns = legs.Where(t => t.Currency == Currency.USD).ToList();
 
         return new ApiResponse<ClientAnalyticsDto>(true, "Success", new ClientAnalyticsDto
         {
