@@ -37,6 +37,35 @@ public class ReportService : IReportService
         .ToListAsync();
     var homeCur = await _context.BaseCurrencyAsync(companyId);
 
+    // Balances AS OF the chosen day. The accounts only store today's balance, so walk it
+    // back: closing = balance now − everything posted after the day; opening = closing −
+    // the day's own movement. (Before Nov 2026 every date showed the accounts' ORIGINAL
+    // opening balances as "opening" and TODAY's balances as "closing".)
+    var afterDay = await NetMovementAsync(companyId, endOfDay, null);
+    var onDay = await NetMovementAsync(companyId, startOfDay, endOfDay);
+    decimal Net(Dictionary<(AccountType, Guid, Currency), decimal> net, AccountType type, Guid id, Currency cur) =>
+        type == AccountType.Cash
+            ? net.Where(k => k.Key.Item1 == AccountType.Cash && k.Key.Item3 == cur).Sum(k => k.Value)   // one till per currency
+            : net.Where(k => k.Key.Item1 == type && k.Key.Item2 == id).Sum(k => k.Value);
+    // Copies carrying the day's figures (Balance = closing, OpeningBalance = opening); the
+    // tracked accounts themselves are not touched.
+    cashAccounts = cashAccounts.Select(c =>
+    {
+        var close = c.Balance - Net(afterDay, AccountType.Cash, c.Id, c.Currency);
+        return new CashAccount { Id = c.Id, CompanyId = c.CompanyId, Currency = c.Currency, Balance = close, OpeningBalance = close - Net(onDay, AccountType.Cash, c.Id, c.Currency) };
+    }).ToList();
+    bankAccounts = bankAccounts.Select(b =>
+    {
+        var close = b.Balance - Net(afterDay, AccountType.Bank, b.Id, b.Currency);
+        return new BankAccount { Id = b.Id, CompanyId = b.CompanyId, Currency = b.Currency, Balance = close, OpeningBalance = close - Net(onDay, AccountType.Bank, b.Id, b.Currency) };
+    }).ToList();
+    mpesaAgents = mpesaAgents.Select(m =>
+    {
+        var cur = MobileMoney.CurrencyOf(m, homeCur);
+        var close = m.Balance - Net(afterDay, AccountType.Mpesa, m.Id, cur);
+        return new MpesaAgent { Id = m.Id, CompanyId = m.CompanyId, Currency = m.Currency, Provider = m.Provider, Balance = close, OpeningBalance = close - Net(onDay, AccountType.Mpesa, m.Id, cur) };
+    }).ToList();
+
     // FIX: Use >= startOfDay AND < endOfDay instead of .Date == date.Date
     var transactions = await _context.Transactions.AsNoTracking()
         .Where(t => t.CompanyId == companyId && 
@@ -86,6 +115,36 @@ public class ReportService : IReportService
     return new ApiResponse<DailyReportDto>(true, "Success", 
         new DailyReportDto(DateTime.SpecifyKind(date.Date, DateTimeKind.Utc), opening, summary, closing, txnDtos)); // the day as picked
 }
+
+    /// <summary>
+    /// How much each till, bank account and wallet moved between two instants, keyed by
+    /// (account type, account id, currency). Same side rule as the account statements: on
+    /// the first side a Debit adds to the account; on the second side a Credit does, in the
+    /// counter amount and currency. Summed by the database, so a long history costs little.
+    /// </summary>
+    private async Task<Dictionary<(AccountType, Guid, Currency), decimal>> NetMovementAsync(Guid companyId, DateTime fromUtc, DateTime? toExclusiveUtc)
+    {
+        var q = _context.Transactions.AsNoTracking()
+            .Where(t => t.CompanyId == companyId && !t.IsDeleted && t.TransactionDate >= fromUtc);
+        if (toExclusiveUtc.HasValue) { var to = toExclusiveUtc.Value; q = q.Where(t => t.TransactionDate < to); }
+
+        var first = await q.Where(t => t.SourceAccountType != AccountType.Client)
+            .GroupBy(t => new { Type = t.SourceAccountType, Id = t.SourceAccountId, t.Currency, t.TransactionType })
+            .Select(g => new { g.Key.Type, g.Key.Id, g.Key.Currency, g.Key.TransactionType, Sum = g.Sum(t => t.Amount) })
+            .ToListAsync();
+        // A posting whose two sides are the same account (float funding) counts once, above.
+        var second = await q.Where(t => t.DestAccountType != AccountType.Client
+                                        && !(t.DestAccountType == t.SourceAccountType && t.DestAccountId == t.SourceAccountId))
+            .GroupBy(t => new { Type = t.DestAccountType, Id = t.DestAccountId, Currency = t.CounterCurrency ?? t.Currency, t.TransactionType })
+            .Select(g => new { g.Key.Type, g.Key.Id, g.Key.Currency, g.Key.TransactionType, Sum = g.Sum(t => t.CounterAmount ?? t.Amount) })
+            .ToListAsync();
+
+        var net = new Dictionary<(AccountType, Guid, Currency), decimal>();
+        void Add(AccountType type, Guid id, Currency cur, decimal v) { net.TryGetValue((type, id, cur), out var n); net[(type, id, cur)] = n + v; }
+        foreach (var r in first) Add(r.Type, r.Id, r.Currency, r.TransactionType == TransactionType.Debit ? r.Sum : -r.Sum);
+        foreach (var r in second) Add(r.Type, r.Id, r.Currency, r.TransactionType == TransactionType.Debit ? -r.Sum : r.Sum);
+        return net;
+    }
 
     public async Task<ApiResponse<PagedResult<TransactionResponseDto>>> GetTransactionReportAsync(Guid companyId, ReportFilterDto filter, int page, int pageSize)
     {
