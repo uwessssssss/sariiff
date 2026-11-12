@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/toastConfig';
 import * as api from '../../services/api';
-import { TransactionDto, TransactionType, AccountType, Currency, formatCurrency, formatDateTime, getAccountTypeLabel, getCurrencyLabel, currencyCode, ALL_CURRENCIES, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
+import { TransactionDto, TransactionType, AccountType, Currency, formatCurrency, formatDateTime, getAccountTypeLabel, getCurrencyLabel, currencyCode, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
 
 // Any currency pair. With the home currency (KES in Kenya, UGX in Uganda) on one
@@ -25,7 +25,7 @@ function rateLabel(base: number, from?: number, to?: number): string {
   return `1 ${currencyCode(from)} = ? ${currencyCode(to)}`;
 }
 import { shareViaWhatsApp, buildTransactionMessage } from '../../utils/notifications';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type FilterType = 'all' | 'credit' | 'debit';
@@ -50,7 +50,6 @@ export default function TransactionsScreen() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinDigits, setPinDigits] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState('');
-  const [pinForgotMode, setPinForgotMode] = useState(false);
   const [pinVerifying, setPinVerifying] = useState(false);
   const pinRefs = [useRef<any>(null), useRef<any>(null), useRef<any>(null), useRef<any>(null)];
   // Create form
@@ -127,7 +126,7 @@ export default function TransactionsScreen() {
     try {
       const status = await api.getTransactionPinStatus();
       if (status.success && status.data?.isEnabled && status.data?.hasPin) {
-        setPinDigits(['', '', '', '']); setPinError(''); setPinForgotMode(false); setPinVerifying(false);
+        setPinDigits(['', '', '', '']); setPinError(''); setPinVerifying(false);
         setShowPinModal(true);
         setTimeout(() => pinRefs[0].current?.focus(), 200);
       } else {
@@ -260,7 +259,6 @@ export default function TransactionsScreen() {
   };
 
   const filters: { key: FilterType; label: string }[] = [{ key: 'all', label: 'All' }, { key: 'credit', label: 'Credits' }, { key: 'debit', label: 'Debits' }];
-  const filtered = txns.filter(t => filter === 'credit' ? t.transactionType === TransactionType.Credit : filter === 'debit' ? t.transactionType === TransactionType.Debit : true);
 
   const AccTypeSel = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
     <View style={{ marginBottom: spacing.xs }}><Text style={s.fieldLabel}>{label} *</Text>
@@ -323,7 +321,6 @@ export default function TransactionsScreen() {
     );
   };
 
-  const DR = ({ l, v, c }: { l: string; v: string; c?: string }) => (<View style={s.dRow}><Text style={s.dLabel}>{l}</Text><Text style={[s.dVal, c ? { color: c } : {}]} numberOfLines={2}>{v}</Text></View>);
 
   if (loading) return <LoadingScreen message="Loading transactions..." />;
 

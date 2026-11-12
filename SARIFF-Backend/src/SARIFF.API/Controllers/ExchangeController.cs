@@ -141,10 +141,10 @@ public class ExchangeController : BaseApiController
     /// Get float movement history
     /// </summary>
     [HttpGet("float/movements")]
-    public async Task<IActionResult> GetFloatMovements([FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetFloatMovements([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
         if (!CompanyId.HasValue) return Unauthorized();
-        var result = await _exchangeService.GetFloatMovementsAsync(CompanyId.Value, from, to);
+        var result = await _exchangeService.GetFloatMovementsAsync(CompanyId.Value, from, to, page, pageSize);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

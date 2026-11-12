@@ -3,5 +3,6 @@
   "cs/user-controlled-bypass": "False positive: the sign-in code only chooses which sign-in flow runs (super admin / client / office); every flow still checks the password and the SMS code.",
   "js/insecure-randomness": "Idempotency keys, not secrets: the server scopes every key to the signed-in user, and the web app uses crypto.randomUUID where it exists (Math.random is only the fallback).",
   "js/clear-text-storage-of-sensitive-data": "The signed-in user's own profile (incl. their phone number) cached in that browser's storage, next to the session token that browser already holds.",
-  "cs/cleartext-storage-of-sensitive-information": "SmsService writes an SMS's text (which can carry a sign-in code or a new client's starting password) to the log ONLY when ASPNETCORE_ENVIRONMENT=Development, with SMS sending off; that is how the test suites read codes. Anywhere else the text is never logged, only the masked phone number."
+  "cs/cleartext-storage-of-sensitive-information": "SmsService writes an SMS's text (which can carry a sign-in code or a new client's starting password) to the log ONLY when ASPNETCORE_ENVIRONMENT=Development, with SMS sending off; that is how the test suites read codes. Anywhere else the text is never logged, only the masked phone number.",
+  "cs/useless-upcast": "False positive: `data = (object?)null` in anonymous response objects; C# cannot infer a member type from a bare null, so the cast is required."
 }

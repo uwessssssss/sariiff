@@ -149,15 +149,13 @@ jobs:
           bash SARIFF-Backend/tests/stop-api.sh "$RUNNER_TEMP/coverage-audit.xml"
           python3 SARIFF-Backend/tests/deep/summarize.py cobertura "$RUNNER_TEMP/coverage-audit.xml" "COVERAGE DURING THE AUDIT SUITES"
 
-      - name: Known vulnerabilities in dependencies (report)
+      - name: Known vulnerabilities in dependencies (high/critical must be fixed or reviewed)
         if: success() || failure()
         run: |
-          for d in web sariff-mobile; do
-            echo "== $d (production dependencies)"
-            (cd $d && npm audit --omit=dev --json 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const j=JSON.parse(s);const v=j.metadata?.vulnerabilities||{};console.log("vulnerabilities:",JSON.stringify(v));for(const [n,x] of Object.entries(j.vulnerabilities||{})) if(["high","critical"].includes(x.severity)) console.log("  ",x.severity,n,(x.via||[]).map(v=>v.title||v).join("; ").slice(0,160))}catch(e){console.log("no audit data",e.message)}})') || true
-          done
+          node SARIFF-Backend/tests/deep/advisories.mjs web sariff-mobile
           echo "== backend (NuGet)"
-          (cd SARIFF-Backend && dotnet list SARIFF.sln package --vulnerable --include-transitive 2>&1 | grep -E "has the following vulnerable|>|Critical|High|Moderate|no vulnerable" | head -40) || true
+          (cd SARIFF-Backend && dotnet list SARIFF.sln package --vulnerable --include-transitive 2>&1 | tee "$RUNNER_TEMP/nuget.txt" | grep -E "has the following vulnerable|>|Critical|High|Moderate|no vulnerable" | head -40) || true
+          if grep -q "has the following vulnerable" "$RUNNER_TEMP/nuget.txt"; then echo "::error::A backend package has a known vulnerability"; exit 1; fi
           echo "== web bundle (First Load JS per page)"
           grep -E "^(┌|├|└|○|ƒ|λ|●).*kB|First Load JS shared" "$RUNNER_TEMP/web-build.log" | head -40 || true
 

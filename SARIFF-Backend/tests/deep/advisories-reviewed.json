@@ -1,0 +1,3 @@
+{
+  "sariff-mobile:image-size": "Used only by Metro, the bundler, to read the app's own image files while building; no user-supplied image ever reaches it, and it is not in the installed app. The fix exists only in image-size 2.x, which changed its API; Metro requires ^1.0.2, so forcing 2.x breaks the Android build. Revisit when Expo ships a Metro that uses image-size 2."
+}

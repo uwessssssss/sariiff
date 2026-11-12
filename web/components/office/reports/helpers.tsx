@@ -293,7 +293,7 @@ export interface ProfitLossData {
 }
 /** Opening or closing balances: cash & bank for every currency, plus mobile money (home currency). */
 export function DailyBalanceList({ report, side }: { report: DailyReportData; side: "opening" | "closing" }) {
-  const { base, baseCode } = useBaseCurrency();
+  const { base } = useBaseCurrency();
   const lines: { label: string; value: number; currency: number }[] = [];
   for (const r of report.byCurrency) {
     const cash = side === "opening" ? r.openingCash : r.closingCash;

@@ -2,7 +2,7 @@
 
 import { Activity, ArrowLeftRight, BarChart3, Building2, TrendingUp, Users, Wallet } from "lucide-react";
 import { CURRENCY_CODES, loadKesRates, toKes } from "../helpers";
-import { allPages, apiRequest, getExchangeFloat, getExchangeTodaySummary, getExchangeTransactions } from "@/lib/api";
+import { allPages, apiRequest, getExchangeTodaySummary, getExchangeTransactions } from "@/lib/api";
 import { bureauFlow } from "@/lib/moneyflow";
 import { toast } from "sonner";
 import { useCallback, useState } from "react";
@@ -17,10 +17,9 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
       await loadKesRates();
       const excluded = new Set<string>();
       // Fetch all required data for P&L calculation
-      const [exchangeRes, summaryRes, floatRes, txnRes] = await Promise.all([
+      const [exchangeRes, summaryRes, txnRes] = await Promise.all([
         allPages((p, n) => getExchangeTransactions(p, n)),
         getExchangeTodaySummary(),
-        getExchangeFloat(),
         // This month only, and all of it: the endpoint's default page is 10 rows,
         // so the P&L used to be built from the last 10 transactions.
         allPages((p, n) => apiRequest<any>(
@@ -37,8 +36,6 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
           : [];
       const todaySummary =
         summaryRes.success && summaryRes.data ? summaryRes.data : null;
-      const floatData =
-        floatRes.success && floatRes.data ? floatRes.data : null;
       const allTransactions =
         txnRes.success && txnRes.data
           ? Array.isArray(txnRes.data)

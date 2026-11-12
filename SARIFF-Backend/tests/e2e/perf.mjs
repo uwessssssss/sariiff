@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import { createRequire } from "node:module";
-import { client, reporter, Cur, Acc, Txn, list, sleep } from "../lib/sarif.mjs";
+import { client, reporter, Cur, Acc, Txn, sleep } from "../lib/sarif.mjs";
 
 const BASE = process.argv[2], LOG = process.argv[3], S = JSON.parse(readFileSync(process.argv[4], "utf8")), WEB = process.argv[5];
 const { api, login } = client(BASE, LOG);

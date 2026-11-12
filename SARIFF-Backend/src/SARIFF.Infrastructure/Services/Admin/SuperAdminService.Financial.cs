@@ -21,7 +21,6 @@ public partial class SuperAdminService
         {
             var now = DateTime.UtcNow;
             var startOfMonth = BureauClock.MonthStartUtc(BureauClock.TodayLocal);
-            var startOfYear = BureauClock.DayStartUtc(new DateTime(BureauClock.TodayLocal.Year, 1, 1));
 
             var companies = await _context.Companies.ToListAsync(); // Small table
 
@@ -110,9 +109,7 @@ public partial class SuperAdminService
         try
         {
             var query = _context.Set<SubscriptionPayment>().Where(p => !p.IsDeleted);
-            if (companyId.HasValue)
-                query = query.Where(p => p.CompanyId == companyId.Value);
-
+            if (companyId.HasValue) { var v = companyId.Value; query = query.Where(p => p.CompanyId == v); }
             var totalCount = await query.CountAsync();
             var payments = await query
                 .OrderByDescending(p => p.CreatedAt)

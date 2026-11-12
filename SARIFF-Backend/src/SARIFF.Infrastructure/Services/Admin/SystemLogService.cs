@@ -148,10 +148,10 @@ public class SystemLogService : ISystemLogService
     // ==================== API LOGGING ====================
 
     public async Task LogApiErrorAsync(string endpoint, string method, string errorMessage, 
-        string? stackTrace = null, string? ipAddress = null, Guid? companyId = null)
+        string? stackTrace = null, string? ipAddress = null, Guid? companyId = null, Guid? userId = null)
     {
         var message = $"[{method}] {endpoint}: {errorMessage}";
-        await LogAsync("Error", "API", message, stackTrace, companyId, null, ipAddress, endpoint);
+        await LogAsync("Error", "API", message, stackTrace, companyId, userId, ipAddress, endpoint);
         _logger.LogError("[API] {Message}", message);
     }
 

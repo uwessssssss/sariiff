@@ -241,6 +241,24 @@ public class ExchangeFloatTests
         Assert.Empty((await fx.GetFloatMovementsAsync(b.Co, new DateTime(2020, 1, 1), new DateTime(2020, 1, 31))).Data!);
         Assert.Equal(1_000m - 300m + 100m, b.Cash.Balance);
     }
+
+    [Fact]
+    public async Task Float_history_comes_a_page_at_a_time_newest_first()
+    {
+        var b = await CreateAsync();
+        b.Cash.Balance = 1_000; await b.Db.SaveChangesAsync();
+        var fx = b.Exchange();
+        for (var i = 1; i <= 5; i++)
+            await fx.FundFloatAsync(b.Co, b.UserId, Fund(Currency.KES, 10m * i, AccountType.Cash, b.Cash.Id));
+
+        var first = (await fx.GetFloatMovementsAsync(b.Co, null, null, page: 1, pageSize: 2)).Data!;
+        var third = (await fx.GetFloatMovementsAsync(b.Co, null, null, page: 3, pageSize: 2)).Data!;
+        Assert.Equal(2, first.Count);
+        Assert.Single(third);
+        // Page sizes are kept within 1..500, whatever the caller asks for.
+        Assert.Equal(5, (await fx.GetFloatMovementsAsync(b.Co, null, null, page: 0, pageSize: 100_000)).Data!.Count);
+        Assert.Single((await fx.GetFloatMovementsAsync(b.Co, null, null, page: 1, pageSize: 0)).Data!);
+    }
 }
 
 public class ExchangeTradeTests

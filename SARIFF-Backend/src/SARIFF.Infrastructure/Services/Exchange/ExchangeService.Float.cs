@@ -323,20 +323,22 @@ public partial class ExchangeService
     /// <summary>
     /// Get float movement history — all fund, withdraw, exchange, and settlement movements.
     /// </summary>
-    public async Task<ApiResponse<List<FloatMovementDto>>> GetFloatMovementsAsync(Guid companyId, DateTime? from, DateTime? to)
+    public async Task<ApiResponse<List<FloatMovementDto>>> GetFloatMovementsAsync(Guid companyId, DateTime? from, DateTime? to, int page = 1, int pageSize = 100)
     {
+        // Every trade adds two movements, so the history only grows: newest first, one page at a time.
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 500);
         var query = _context.FloatMovements
             .Where(m => m.CompanyId == companyId && !m.IsDeleted);
 
         var (fromUtc, toExclusive) = BureauClock.Range(from, to);
-        if (fromUtc.HasValue)
-            query = query.Where(m => m.MovementDate >= fromUtc.Value);
-        if (toExclusive.HasValue)
-            query = query.Where(m => m.MovementDate < toExclusive.Value);
-
+        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(m => m.MovementDate >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(m => m.MovementDate < v); }
         var movements = await query
             .OrderByDescending(m => m.MovementDate)
             .ThenByDescending(m => m.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var dtos = movements.Select(m => new FloatMovementDto(

@@ -7,8 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import * as api from '../../services/api';
 import { formatCurrency, Currency, currencyCode, CURRENCY_COLOR } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { EmptyState, SectionHeader, InfoRow } from '../../components/ui';
-import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
+import { EmptyState, InfoRow } from '../../components/ui';
+import { colors, spacing, borderRadius, fontSize, fontWeight } from '../../theme';
 import { bureauFlow } from '../../utils/moneyflow';
 import { localDate } from '../../utils/dates';
 

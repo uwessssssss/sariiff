@@ -178,17 +178,6 @@ public class NotificationService : INotificationService
     }
 
     /// <summary>
-    /// Notify permanent client that a transaction was processed
-    /// </summary>
-    public async Task<bool> SendClientTransactionProcessedAsync(Guid companyId, Guid clientId, string phoneNumber, string clientName, string companyName, string transactionCode, string transactionType, decimal amount, string currency, decimal balanceKES, decimal balanceUSD)
-    {
-        var emoji = transactionType == "Debit" ? "📤" : "📥";
-        var message = $"{companyName}: {transactionType} of {currency} {amount:N2} processed (Ref {transactionCode}). " +
-                      $"New balance - KES {balanceKES:N2}, USD {balanceUSD:N2}.";
-        return await SendMessageAsync(companyId, clientId, phoneNumber, message, NotificationType.Transaction);
-    }
-
-    /// <summary>
     /// Notify permanent client that a transaction has been reversed
     /// </summary>
     public async Task<bool> SendReversalNotificationAsync(Guid companyId, Guid clientId, string phoneNumber, string clientName, string companyName, string originalCode, string reversalCode, decimal amount, string currency, string reason)

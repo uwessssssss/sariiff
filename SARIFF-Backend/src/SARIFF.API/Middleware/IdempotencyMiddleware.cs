@@ -104,7 +104,8 @@ public class IdempotencyMiddleware
             await _next(context);
 
             buffer.Position = 0;
-            var body = await new StreamReader(buffer).ReadToEndAsync();
+            string body;
+            using (var reader = new StreamReader(buffer, leaveOpen: true)) body = await reader.ReadToEndAsync();
             buffer.Position = 0;
             await buffer.CopyToAsync(originalBody);
 

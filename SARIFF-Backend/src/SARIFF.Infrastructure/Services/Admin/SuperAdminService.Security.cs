@@ -68,9 +68,7 @@ public partial class SuperAdminService
         try
         {
             var query = _context.Set<SecurityAlert>().Where(a => !a.IsDeleted);
-            if (resolved.HasValue)
-                query = query.Where(a => a.IsResolved == resolved.Value);
-
+            if (resolved.HasValue) { var v = resolved.Value; query = query.Where(a => a.IsResolved == v); }
             var totalCount = await query.CountAsync();
             var alerts = await query
                 .OrderByDescending(a => a.CreatedAt)

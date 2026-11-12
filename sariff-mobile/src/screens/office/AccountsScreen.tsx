@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Animated, Modal, Alert, FlatList, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +8,7 @@ import Toast from 'react-native-toast-message';
 import * as api from '../../services/api';
 import { BankAccountDto, MpesaAgentDto, CashAccountDto, Currency, formatCurrency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, providerLabel, MOBILE_MONEY_PROVIDERS, currencyChips, allowedCurrenciesFor, walletCurrency } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { Button, Input, EmptyState, LoadingScreen, GradientCard, SectionHeader, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Button, Input, EmptyState, LoadingScreen, SectionHeader, ModalSheet, FormSection, ChipGroup, ActionBtn } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type ModalType = 'none' | 'createBank' | 'createMpesa' | 'editBank' | 'editMpesa' | 'statement';
@@ -46,7 +46,7 @@ export default function AccountsScreen() {
   const [accName, setAccName] = useState('');
   const [branchCode, setBranchCode] = useState('');
   // Home currency (KES in Kenya, UGX in Uganda): default for new banks (wallets hold their network's currency)
-  const { base, baseCode } = useBaseCurrency();
+  const { base } = useBaseCurrency();
   const [bankCurrency, setBankCurrency] = useState<number>(Currency.KES);
   useEffect(() => setBankCurrency(base), [base]);
   const [openingBal, setOpeningBal] = useState('');

@@ -22,7 +22,7 @@ export function DayCloseModal({
   onClosing: (kesCount: number, usdCount: number, notes?: string, otherCounts?: CurrencyCountDto[]) => void;
   loading: boolean;
 }) {
-  const { base, baseCode } = useBaseCurrency();
+  const { baseCode } = useBaseCurrency();
   const [mode, setMode] = useState<"opening" | "closing">("opening");
   const [kesCount, setKesCount] = useState("");
   const [usdCount, setUsdCount] = useState("");

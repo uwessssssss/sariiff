@@ -171,14 +171,9 @@ public partial class ClientPortalService
 
         var query = GetClientTransactionsQuery(companyId, clientId);
 
-        if (fromUtc.HasValue)
-            query = query.Where(t => t.TransactionDate >= fromUtc.Value);
-
-        if (toExclusive.HasValue)
-            query = query.Where(t => t.TransactionDate < toExclusive.Value);
-
-        if (currency.HasValue)
-            query = query.Where(t => t.Currency == currency.Value);  // FIX #12: Only match primary currency
+        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
+        if (currency.HasValue) { var v = currency.Value; query = query.Where(t => t.Currency == v); }  // FIX #12: Only match primary currency
 
         var transactions = await query
             .OrderByDescending(t => t.TransactionDate)

@@ -100,7 +100,7 @@ public class SmsService : ISmsService
 
             var content = new FormUrlEncodedContent(formData);
 
-            var request = new HttpRequestMessage(HttpMethod.Post, baseUrl);
+            using var request = new HttpRequestMessage(HttpMethod.Post, baseUrl);
             request.Content = content;
             request.Headers.Add("apiKey", _apiKey);
             request.Headers.Add("Accept", "application/json");

@@ -39,7 +39,6 @@ export function NewExchangeModal({
   const [clientIdNumber, setClientIdNumber] = useState("");
   const [notes, setNotes] = useState("");
 
-  const selectedClient = clients.find((c) => c.id === clientId);
   const rate =
     direction === ExchangeDirection.UsdToKes
       ? currentRate?.buyRate

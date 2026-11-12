@@ -73,7 +73,7 @@ export function NewExchangeSheet({ vm }: { vm: ExchangeScreenVM }) {
             {fmtRate(effectiveRate)}{" "}
             → Client receives:{" "}
             {formatCurrency(
-              parseFloat(exchAmount || "0") *
+              parseFloat(exchAmount) *
                 (direction === 0 ? effectiveRate : effectiveRate > 0 ? 1 / effectiveRate : 0),
               direction === 0 ? base : fxCurrency,
             )}

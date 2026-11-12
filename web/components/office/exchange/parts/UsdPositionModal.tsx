@@ -13,7 +13,7 @@ export function UsdPositionModal({
   position: UsdPositionDto;
   onClose: () => void;
 }) {
-  const { base, baseCode } = useBaseCurrency();
+  const { baseCode } = useBaseCurrency();
   const isProfitable = position.unrealizedPnL >= 0;
 
   return (

@@ -48,8 +48,6 @@ export function useExpensesAccountExport(prev: ReturnType<typeof useExpensesAcco
 
       // Safe category data access
       const categoryName = selectedCategory.name || "Unknown Category";
-      const kesTotal = selectedCategory.kesTotal ?? 0;
-      const usdTotal = selectedCategory.usdTotal ?? 0;
       const transactionCount = selectedCategory.transactionCount ?? 0;
       const isActive = selectedCategory.isActive !== false;
 

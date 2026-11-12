@@ -17,6 +17,8 @@ const nextConfig = {
           // Other sites can't keep a handle on our windows or embed our files.
           { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
           { key: "Cross-Origin-Resource-Policy", value: "same-origin" },
+          // Nothing cross-origin is embedded (logos are data: URLs; the API is called with CORS).
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
         ],
       },
     ];

@@ -59,7 +59,6 @@ public partial class SuperAdminService
                 .Take(pageSize)
                 .ToListAsync();
 
-            var now = DateTime.UtcNow;
             var startOfMonth = BureauClock.MonthStartUtc(BureauClock.TodayLocal);
             var companyIds = companies.Select(c => c.Id).ToList();
 
@@ -150,7 +149,6 @@ public partial class SuperAdminService
             if (company == null)
                 return new ApiResponse<CompanyDetailDto>(false, "Company not found", null!);
 
-            var now = DateTime.UtcNow;
             var startOfMonth = BureauClock.MonthStartUtc(BureauClock.TodayLocal);
 
             var users = await _context.Users.AsNoTracking().Where(u => u.CompanyId == companyId).ToListAsync();

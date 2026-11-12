@@ -35,9 +35,7 @@ public class BalanceAlertService : IBalanceAlertService
         var query = _context.BalanceAlertRules
             .Where(r => r.CompanyId == companyId && !r.IsDeleted);
 
-        if (clientId.HasValue)
-            query = query.Where(r => r.ClientId == clientId.Value || r.ClientId == null);
-        
+        if (clientId.HasValue) { var v = clientId.Value; query = query.Where(r => r.ClientId == v || r.ClientId == null); }
         var rules = await query.OrderByDescending(r => r.CreatedAt)
             .Select(r => new BalanceAlertRuleDto(
                 r.Id, r.CompanyId, r.ClientId, r.ClientName,
@@ -51,11 +49,11 @@ public class BalanceAlertService : IBalanceAlertService
     public async Task<ApiResponse<BalanceAlertRuleDto>> CreateRuleAsync(Guid companyId, Guid userId, CreateBalanceAlertDto dto)
     {
         string? clientName = null;
-        if (dto.ClientId.HasValue)
+        if (dto.ClientId is { } ruleClientId)
         {
             // Only this bureau's own clients — never read a name across tenants.
             var client = await _context.Users.FirstOrDefaultAsync(u =>
-                u.Id == dto.ClientId.Value && u.CompanyId == companyId && u.Role == UserRole.Client && !u.IsDeleted);
+                u.Id == ruleClientId && u.CompanyId == companyId && u.Role == UserRole.Client && !u.IsDeleted);
             if (client == null)
                 return new ApiResponse<BalanceAlertRuleDto>(false, "Client not found", null);
             clientName = client.FullName;

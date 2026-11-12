@@ -319,7 +319,7 @@ export function useSuperAdminDashboardState(prev: { userName: NonNullable<SuperA
       toast.success("Company updated");
       closeModal("editCompany");
       fetchCompanies();
-      if (selectedCompanyId) viewCompanyDetails(selectedCompanyId);
+      viewCompanyDetails(selectedCompanyId);
     } else {
       toast.error(res.message);
     }

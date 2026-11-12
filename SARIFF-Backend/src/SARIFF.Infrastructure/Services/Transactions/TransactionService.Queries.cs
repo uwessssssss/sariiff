@@ -27,14 +27,10 @@ public partial class TransactionService
         {
             // Dates picked in the app are bureau-local days; the end day is included in full.
             var (fromUtc, toExclusive) = BureauClock.Range(filter.StartDate, filter.EndDate);
-            if (fromUtc.HasValue)
-                query = query.Where(t => t.TransactionDate >= fromUtc.Value);
-            if (toExclusive.HasValue)
-                query = query.Where(t => t.TransactionDate < toExclusive.Value);
-            if (filter.TransactionType.HasValue)
-                query = query.Where(t => t.TransactionType == filter.TransactionType.Value);
-            if (filter.Currency.HasValue)
-                query = query.Where(t => t.Currency == filter.Currency.Value);
+            if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
+            if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
+            if (filter.TransactionType.HasValue) { var v = filter.TransactionType.Value; query = query.Where(t => t.TransactionType == v); }
+            if (filter.Currency.HasValue) { var v = filter.Currency.Value; query = query.Where(t => t.Currency == v); }
         }
 
         var totalCount = await query.CountAsync();

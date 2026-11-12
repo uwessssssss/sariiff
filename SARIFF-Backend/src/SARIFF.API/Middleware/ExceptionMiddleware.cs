@@ -109,7 +109,8 @@ public class ExceptionMiddleware
                 exception.Message,
                 exception.StackTrace,
                 ipAddress,
-                companyId
+                companyId,
+                userId
             );
         }
         catch (Exception logEx)

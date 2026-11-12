@@ -345,14 +345,10 @@ public partial class ExchangeService
         var query = _context.ExchangeTransactions
             .Where(e => e.CompanyId == companyId && !e.IsDeleted && e.Status != "Voided");
 
-        if (type.HasValue)
-            query = query.Where(e => e.ExchangeType == type.Value);
+        if (type.HasValue) { var v = type.Value; query = query.Where(e => e.ExchangeType == v); }
         var (fromUtc, toExclusive) = BureauClock.Range(from, to);
-        if (fromUtc.HasValue)
-            query = query.Where(e => e.TransactionDate >= fromUtc.Value);
-        if (toExclusive.HasValue)
-            query = query.Where(e => e.TransactionDate < toExclusive.Value);
-
+        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(e => e.TransactionDate >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(e => e.TransactionDate < v); }
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.ToLower();

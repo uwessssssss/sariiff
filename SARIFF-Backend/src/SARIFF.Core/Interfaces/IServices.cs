@@ -149,7 +149,7 @@ public interface IExchangeService
     Task<ApiResponse<ExchangeFloatDto>> FundFloatAsync(Guid companyId, Guid userId, FundFloatDto dto);
     Task<ApiResponse<ExchangeFloatDto>> WithdrawFloatAsync(Guid companyId, Guid userId, WithdrawFloatDto dto);
     Task<ApiResponse<ExchangeFloatDto>> SettleProfitAsync(Guid companyId, Guid userId, SettleProfitDto dto);
-    Task<ApiResponse<List<FloatMovementDto>>> GetFloatMovementsAsync(Guid companyId, DateTime? from, DateTime? to);
+    Task<ApiResponse<List<FloatMovementDto>>> GetFloatMovementsAsync(Guid companyId, DateTime? from, DateTime? to, int page = 1, int pageSize = 100);
     
     // Exchange Transactions
     Task<ApiResponse<ExchangeResponseDto>> CreateExchangeAsync(Guid companyId, Guid userId, CreateExchangeDto dto);
@@ -243,7 +243,6 @@ public interface INotificationService
     Task<bool> SendClientCredentialsAsync(Guid companyId, Guid clientId, string phoneNumber, string fullName, string code, string password, string companyName, string websiteUrl);
     
     // NEW: Send transaction processed notification to permanent client
-    Task<bool> SendClientTransactionProcessedAsync(Guid companyId, Guid clientId, string phoneNumber, string clientName, string companyName, string transactionCode, string transactionType, decimal amount, string currency, decimal balanceKES, decimal balanceUSD);
     
     // NEW: Send reversal notification to permanent client  
     Task<bool> SendReversalNotificationAsync(Guid companyId, Guid clientId, string phoneNumber, string clientName, string companyName, string originalCode, string reversalCode, decimal amount, string currency, string reason);
@@ -297,7 +296,7 @@ public interface ISystemLogService
     
     // API logging
     Task LogApiErrorAsync(string endpoint, string method, string errorMessage, 
-        string? stackTrace = null, string? ipAddress = null, Guid? companyId = null);
+        string? stackTrace = null, string? ipAddress = null, Guid? companyId = null, Guid? userId = null);
     
     // Query methods
     Task<ApiResponse<PagedResult<SystemLogResponseDto>>> GetLogsAsync(int page, int pageSize, string? level = null, bool includeResolved = false);

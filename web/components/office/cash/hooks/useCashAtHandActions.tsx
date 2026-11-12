@@ -22,7 +22,6 @@ export function useCashAtHandActions(prev: ReturnType<typeof useCashAtHandData>)
       // Get company info from auth
       const auth = getStoredAuth();
       const companyName = auth?.user?.companyName || "Money Exchange";
-      const companyPhone = auth?.user?.whatsAppNumber || "";
 
       // ========== CORPORATE HEADER ==========
       doc.setFillColor(37, 99, 235);

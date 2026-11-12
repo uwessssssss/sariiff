@@ -54,7 +54,7 @@ public class ReconciliationService : IReconciliationService
     public async Task<ApiResponse<List<ReconciliationResponseDto>>> GetAllAsync(Guid companyId, AccountType? accountType = null)
     {
         var query = _context.Reconciliations.Where(r => r.CompanyId == companyId);
-        if (accountType.HasValue) query = query.Where(r => r.AccountType == accountType.Value);
+        if (accountType.HasValue) { var v = accountType.Value; query = query.Where(r => r.AccountType == v); }
 
         var recs = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
         var items = new List<ReconciliationResponseDto>();
@@ -152,14 +152,11 @@ public class ReconciliationService : IReconciliationService
                          (t.DestAccountType == accountType && t.DestAccountId == accountId)));
 
         // Apply filters
-        if (filter?.Status.HasValue == true)
-            query = query.Where(t => t.ReconciliationStatus == filter.Status.Value);
+        if (filter?.Status is { } status)
+            query = query.Where(t => t.ReconciliationStatus == status);
         var (fromUtc, toExclusive) = BureauClock.Range(filter?.StartDate, filter?.EndDate);
-        if (fromUtc.HasValue)
-            query = query.Where(t => t.TransactionDate >= fromUtc.Value);
-        if (toExclusive.HasValue)
-            query = query.Where(t => t.TransactionDate < toExclusive.Value);
-
+        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
         var totalCount = await query.CountAsync();
 
         var transactions = await query

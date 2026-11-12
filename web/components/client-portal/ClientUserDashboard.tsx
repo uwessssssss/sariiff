@@ -11,10 +11,13 @@ import { buildClientUserDashboardView } from "./buildClientUserDashboardView";
 import { DashboardView } from "./sections/DashboardView";
 import { StatementsView } from "./sections/StatementsView";
 import { AlertsView } from "./sections/AlertsView";
-import { AnalyticsView } from "./sections/AnalyticsView";
+import dynamic from "next/dynamic";
 import { TransactionDetailModal } from "./sections/TransactionDetailModal";
 import { AlertDetailModal } from "./sections/AlertDetailModal";
 import { PasswordModal } from "./sections/PasswordModal";
+
+// Charts (recharts) load when the Analytics tab is first opened, not with the dashboard.
+const AnalyticsView = dynamic(() => import("./sections/AnalyticsView").then((m) => m.AnalyticsView), { ssr: false });
 
 // ============ MAIN COMPONENT ============
 
@@ -109,7 +112,7 @@ export function ClientUserDashboard({
             <AlertsView vm={vm} />
 
             {/* ============ ANALYTICS VIEW ============ */}
-            <AnalyticsView vm={vm} />
+            {activeView === "analytics" && <AnalyticsView vm={vm} />}
             {/* ============ PROFILE VIEW ============ */}
             {activeView === "profile" && (
               <motion.div

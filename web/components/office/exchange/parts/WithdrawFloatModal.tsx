@@ -21,7 +21,7 @@ export function WithdrawFloatModal({
   onSubmit: (data: any) => void;
   loading: boolean;
 }) {
-  const { base, baseCode } = useBaseCurrency();
+  const { base } = useBaseCurrency();
   const [currency, setCurrency] = useState<Currency>(base);
   const [amount, setAmount] = useState("");
   const [destinationAccountId, setDestinationAccountId] = useState("");

@@ -7,8 +7,7 @@ import {
   RefreshControl,
   Animated,
   TouchableOpacity,
-  Platform,
-} from "react-native";
+  } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";

@@ -23,18 +23,11 @@ public partial class ClientPortalService
         var query = GetClientTransactionsQuery(companyId, clientId);
 
         // Apply filters
-        if (fromUtc.HasValue)
-            query = query.Where(t => t.TransactionDate >= fromUtc.Value);
+        if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
+        if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
+        if (filters.Currency.HasValue) { var v = filters.Currency.Value; query = query.Where(t => t.Currency == v); }  // FIX #12: Only match primary currency
 
-        if (toExclusive.HasValue)
-            query = query.Where(t => t.TransactionDate < toExclusive.Value);
-
-        if (filters.Currency.HasValue)
-            query = query.Where(t => t.Currency == filters.Currency.Value);  // FIX #12: Only match primary currency
-
-        if (filters.Type.HasValue)
-            query = query.Where(t => t.TransactionType == filters.Type.Value);
-
+        if (filters.Type.HasValue) { var v = filters.Type.Value; query = query.Where(t => t.TransactionType == v); }
         if (!string.IsNullOrWhiteSpace(filters.Search))
         {
             var search = filters.Search.ToLower();
@@ -74,8 +67,9 @@ public partial class ClientPortalService
         // If there are filters, account for transactions BEFORE the filtered period
         if (fromUtc.HasValue)
         {
+            var priorTo = fromUtc.Value;
             var prior = await GetClientTransactionsQuery(companyId, clientId)
-                .Where(t => t.TransactionDate < fromUtc.Value)
+                .Where(t => t.TransactionDate < priorTo)
                 .ToListAsync();
             foreach (var t in prior)
             {

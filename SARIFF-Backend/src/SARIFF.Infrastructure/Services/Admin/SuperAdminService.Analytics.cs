@@ -19,7 +19,6 @@ public partial class SuperAdminService
     {
         try
         {
-            var now = DateTime.UtcNow;
             var today = BureauClock.TodayStartUtc; // the bureaus' day (EAT) as a UTC instant
             var weekAgo = today.AddDays(-7);
             var monthAgo = today.AddDays(-30);
@@ -88,10 +87,8 @@ public partial class SuperAdminService
                 if (!string.IsNullOrWhiteSpace(filter.EntityType))
                     query = query.Where(l => l.EntityType == filter.EntityType);
                 var (fromUtc, toExclusive) = BureauClock.Range(filter.StartDate, filter.EndDate);
-                if (fromUtc.HasValue)
-                    query = query.Where(l => l.CreatedAt >= fromUtc.Value);
-                if (toExclusive.HasValue)
-                    query = query.Where(l => l.CreatedAt < toExclusive.Value);
+                if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(l => l.CreatedAt >= v); }
+                if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(l => l.CreatedAt < v); }
             }
 
             var totalCount = await query.CountAsync();

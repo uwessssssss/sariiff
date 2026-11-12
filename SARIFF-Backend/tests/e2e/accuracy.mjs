@@ -211,6 +211,83 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   await refused("Exchange with the home currency as the 'foreign' side",
     () => ex({ exchangeType: 0, direction: 0, amount: 1000, clientName: "Walk In Customer", foreignCurrency: UGX }), [() => bal.float(UGX)]);
 
+  // ---------- the calculator quotes exactly what a trade would pay
+  const q1 = await api("POST", "/api/exchange/calculate", T, { amount: 100, direction: 0, foreignCurrency: USD });
+  check("Calculator: customer selling USD 100 gets UGX 365,000 at 3,650", eq(q1.data?.outputAmount, 365000) && eq(q1.data?.rate, 3650), JSON.stringify(q1.data));
+  const q2 = await api("POST", "/api/exchange/calculate", T, { amount: 37000, direction: 1, foreignCurrency: USD });
+  check("Calculator: customer paying UGX 37,000 gets USD 10 at 3,700", eq(q2.data?.outputAmount, 10) && eq(q2.data?.rate, 3700), JSON.stringify(q2.data));
+
+  // ---------- money out of the float, and its history
+  await op("Withdraw UGX 200,000 from the float back to the bank",
+    () => api("POST", "/api/exchange/float/withdraw", T, { currency: UGX, amount: 200000, destinationType: Acc.Bank, destinationAccountId: BANK, notes: "Excess float" }),
+    [{ label: "float UGX", read: () => bal.float(UGX), delta: -200000 }, { label: "bank", read: () => bal.bank(BANK), delta: 200000 }]);
+  await op("Withdraw USD 5 from the float to the USD till",
+    () => api("POST", "/api/exchange/float/withdraw", T, { currency: USD, amount: 5, destinationType: Acc.Cash, destinationAccountId: USDTILL, notes: null }),
+    [{ label: "float USD", read: () => bal.float(USD), delta: -5 }, { label: "USD till", read: () => bal.cash(USDTILL), delta: 5 }]);
+  const fUgx = await bal.float(UGX);
+  await refused("Withdrawing more than the float holds",
+    () => api("POST", "/api/exchange/float/withdraw", T, { currency: UGX, amount: round2(fUgx + 1), destinationType: Acc.Bank, destinationAccountId: BANK, notes: null }),
+    [() => bal.float(UGX), () => bal.bank(BANK)]);
+  await refused("Withdrawing UGX into the USD till (wrong currency)",
+    () => api("POST", "/api/exchange/float/withdraw", T, { currency: UGX, amount: 1000, destinationType: Acc.Cash, destinationAccountId: USDTILL, notes: null }),
+    [() => bal.float(UGX), () => bal.cash(USDTILL)]);
+  const moves = list(await get("/api/exchange/float/movements?page=1&pageSize=50"));
+  const w = moves.find((m) => m.type === "Withdraw" && m.currency === UGX && eq(Math.abs(m.amount), 200000));
+  check("Float history shows the UGX 200,000 withdrawal", !!w, JSON.stringify(moves.slice(0, 4)));
+  if (w) check("…and its balance after = balance before − 200,000", eq(w.balanceAfter, round2(w.balanceBefore - 200000)), JSON.stringify(w));
+  // Newest first: within one currency, each movement must start where the one before it (in time) ended.
+  let chained = true, broke = "";
+  for (const cur of new Set(moves.map((m) => m.currency))) {
+    const ms = moves.filter((m) => m.currency === cur);
+    for (let i = 0; i + 1 < ms.length; i++)
+      if (!eq(ms[i].balanceBefore, ms[i + 1].balanceAfter)) { chained = false; broke = JSON.stringify([ms[i], ms[i + 1]]); break; }
+  }
+  check("Float history: each movement starts where the previous one of its currency ended", chained, broke);
+  check("Float history pages: pageSize=2 returns 2", list(await get("/api/exchange/float/movements?page=1&pageSize=2")).length === 2);
+
+  // ---------- profit: only what the trades earned can be paid out, and exactly that moves
+  const profitNow = async () => (await get("/api/exchange/float"))?.kesProfit;
+  const earned = await profitNow();
+  check("The USD sale earned a profit", earned > 0, `profit ${fmt(earned)}`);
+  const pay = Math.min(1000, round2(earned));
+  if (pay > 0)
+    await op(`Pay UGX ${fmt(pay)} of exchange profit to the till`,
+      () => api("POST", "/api/exchange/float/settle-profit", T, { currency: UGX, amount: pay, destinationType: Acc.Cash, destinationAccountId: TILL, notes: "Profit to till" }),
+      [{ label: "float UGX", read: () => bal.float(UGX), delta: -pay }, { label: "till", read: () => bal.cash(TILL), delta: pay }, { label: "profit", read: profitNow, delta: -pay }]);
+  const left = await profitNow();
+  await refused("Paying out more profit than was earned",
+    () => api("POST", "/api/exchange/float/settle-profit", T, { currency: UGX, amount: round2(left + 1), destinationType: Acc.Cash, destinationAccountId: TILL, notes: null }),
+    [() => bal.float(UGX), () => bal.cash(TILL), profitNow]);
+
+  // ---------- low-float alerts follow the thresholds set
+  const fNow = await bal.float(UGX);
+  const th = await api("PUT", "/api/exchange/alerts/thresholds", T, { lowKesThreshold: round2(fNow + 1), lowUsdThreshold: 0, largeTransactionThreshold: 10000000 });
+  check("Alert thresholds saved", th.success, th.message);
+  const al = list(await get("/api/exchange/alerts"));
+  check("Float just below its threshold raises a low-balance alert for UGX", al.some((a) => a.alertType === "LowBalance" && a.currency === UGX && eq(a.currentBalance, fNow)), JSON.stringify(al));
+  await api("PUT", "/api/exchange/alerts/thresholds", T, { lowKesThreshold: 0, lowUsdThreshold: 0, largeTransactionThreshold: 10000000 });
+  check("Threshold at 0: no low-balance alert", !list(await get("/api/exchange/alerts")).some((a) => a.alertType === "LowBalance"));
+  check("Negative thresholds are refused", (await api("PUT", "/api/exchange/alerts/thresholds", T, { lowKesThreshold: -1, lowUsdThreshold: 0, largeTransactionThreshold: 0 })).success === false);
+
+  // ---------- the day: opening count, then the closing count and its variance
+  const [openUgx, openUsd] = [await bal.float(UGX), await bal.float(USD)];
+  const opening = await api("POST", "/api/exchange/daily/opening", T, { kesCount: openUgx, usdCount: openUsd, notes: "Counted at open" });
+  check("Opening count recorded", opening.success, opening.message);
+  check(`Opening = the counts given (UGX ${fmt(openUgx)}, USD ${fmt(openUsd)})`, eq(opening.data?.openingKes, openUgx) && eq(opening.data?.openingUsd, openUsd), JSON.stringify(opening.data));
+  check("A second opening count the same day is refused", (await api("POST", "/api/exchange/daily/opening", T, { kesCount: 1, usdCount: 1, notes: null })).success === false);
+  await op("Bureau BUYS USD 20 after opening (UGX 73,000 out)",
+    () => ex({ exchangeType: 0, direction: 0, amount: 20, clientName: "Walk In Customer" }),
+    [{ label: "float USD", read: () => bal.float(USD), delta: 20 }, { label: "float UGX", read: () => bal.float(UGX), delta: -73000 }]);
+  const [sysUgx, sysUsd] = [await bal.float(UGX), await bal.float(USD)];
+  const closing = await api("POST", "/api/exchange/daily/closing", T, { kesCount: round2(sysUgx - 1500), usdCount: sysUsd, notes: "UGX 1,500 short" });
+  check("Closing count recorded", closing.success, closing.message);
+  check(`Closing = the system float (UGX ${fmt(sysUgx)}, USD ${fmt(sysUsd)})`, eq(closing.data?.closingKes, sysUgx) && eq(closing.data?.closingUsd, sysUsd), JSON.stringify(closing.data));
+  check("Closing variance = counted − system: UGX −1,500, USD 0", eq(closing.data?.kesVariance, -1500) && eq(closing.data?.usdVariance, 0), `UGX ${closing.data?.kesVariance}, USD ${closing.data?.usdVariance}`);
+  check("The day is marked closed", closing.data?.isClosed === true);
+  check("Closing the same day twice is refused", (await api("POST", "/api/exchange/daily/closing", T, { kesCount: sysUgx, usdCount: sysUsd, notes: null })).success === false);
+  const today = await get("/api/exchange/daily/today");
+  check("Today's sheet shows the recorded opening and the variance", eq(today?.openingKes, openUgx) && eq(today?.kesVariance, -1500), JSON.stringify(today));
+
   // ---------- invoice arithmetic (worked out here)
   const items = [{ description: "Currency consultancy", quantity: 2, unitPrice: 150000 }, { description: "Courier", quantity: 3, unitPrice: 12500.5 }];
   const sub = round2(items.reduce((s, i) => s + i.quantity * i.unitPrice, 0)); // 337,501.50

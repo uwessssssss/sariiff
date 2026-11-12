@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle, Loader2, Plus, X } from "lucide-react";
-import { Currency } from "@/lib/api";
 import { type CashAtHandVM } from "../useCashAtHand";
 
 export function AddCashAccountSection({ vm }: { vm: CashAtHandVM }) {

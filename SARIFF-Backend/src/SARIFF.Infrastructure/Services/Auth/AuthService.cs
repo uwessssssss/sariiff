@@ -65,8 +65,8 @@ public partial class AuthService : IAuthService
         // FB-CL-2026-0001     → Client (contains -CL-)
         // FB-2026-0001        → OfficeUser (company prefix)
         // Legacy: CO-2026-0001 → OfficeUser, CL-2026-0001 → Client
-        var code = request.Code?.Trim().ToUpper() ?? "";
-        var codePrefix = code.Split('-').FirstOrDefault() ?? "";
+        var code = request.Code.Trim().ToUpper();   // checked non-blank above
+        var codePrefix = code.Split('-')[0];   // Split always returns at least one part
         
         _logger.LogInformation("Code prefix: {Prefix}", codePrefix);
 
@@ -501,10 +501,10 @@ public partial class AuthService : IAuthService
         await LogLoginAttempt(companyId, userId, otp.Role, ipAddress, userAgent, true, null);
 
         // === SAVE TRUSTED DEVICE — Skip OTP next time from this device ===
-        if (!string.IsNullOrEmpty(request.DeviceId) && userId.HasValue)
+        if (!string.IsNullOrEmpty(request.DeviceId) && userId is { } trustedUserId)
         {
             var existingTrust = await _context.TrustedDevices
-                .FirstOrDefaultAsync(d => d.UserId == userId.Value && d.DeviceId == request.DeviceId);
+                .FirstOrDefaultAsync(d => d.UserId == trustedUserId && d.DeviceId == request.DeviceId);
             
             if (existingTrust != null)
             {

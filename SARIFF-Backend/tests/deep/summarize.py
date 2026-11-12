@@ -30,14 +30,14 @@ if mode == "sarif":
                 note = ""
                 if path.startswith("SARIFF-Backend/tests/"): note = " (test script)"
                 elif rid in reviewed: note = " (reviewed)"
-                elif sev >= 7.0: blocking += 1
+                elif sev >= 7.0 or lvl in ("error", "warning"): blocking += 1; note = " (BLOCKING)"
                 if sev: worst = max(worst, sev)
                 print(f"  [{lvl}{f' sev {sev}' if sev else ''}] {rid}: {path}:{line}{note} — {res.get('message', {}).get('text', '')[:160]}")
     used = sorted({r for r in reviewed})
     if used:
         print("\nREVIEWED (not blocking):")
         for r in used: print(f"  {r}: {reviewed[r]}")
-    print(f"\nCODEQL: {total} finding(s); highest security severity {worst}; blocking (severity 7+, not reviewed, outside tests) {blocking}")
+    print(f"\nCODEQL: {total} finding(s); highest security severity {worst}; blocking (any warning/error, or severity 7+, not reviewed, outside tests) {blocking}")
     sys.exit(1 if blocking else 0)
 if mode == "zap":
     d = json.load(open(args[0])); label = args[1] if len(args) > 1 else ""

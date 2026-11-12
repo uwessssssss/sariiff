@@ -546,7 +546,8 @@ public class StatementHelper
         var start = startUtc;
         if (start.HasValue)
         {
-            var pre = accountTransactions.AsNoTracking().Where(t => t.TransactionDate < start.Value);
+            var startAt = start.Value;
+            var pre = accountTransactions.AsNoTracking().Where(t => t.TransactionDate < startAt);
             var isCash = accountType == AccountType.Cash;
 
             var asSource = pre.Where(t => isCash
@@ -586,8 +587,8 @@ public class StatementHelper
         var totalDebit = period.Sum(l => l.Debit ?? 0);
         var totalCredit = period.Sum(l => l.Credit ?? 0);
 
-        var shown = filter.TransactionType.HasValue
-            ? period.Where(l => l.TransactionType == filter.TransactionType.Value).ToList()
+        var shown = filter.TransactionType is { } onlyType
+            ? period.Where(l => l.TransactionType == onlyType).ToList()
             : period.ToList();
         shown.Reverse(); // newest first for display
 

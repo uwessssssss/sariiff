@@ -70,7 +70,6 @@ public partial class ExchangeService
     {
         var baseCur = await _context.BaseCurrencyAsync(companyId);
         var today = BureauClock.TodayLocal;            // the summary's date: the bureau's calendar day
-        var todayStartUtc = BureauClock.TodayStartUtc;  // ...which starts at this UTC instant
         var float_ = await GetOrCreateFloatAsync(companyId);
 
         // Check if already recorded today

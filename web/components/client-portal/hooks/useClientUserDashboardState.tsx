@@ -3,8 +3,6 @@
 import { Bell, FileText, LayoutDashboard, PieChart, User } from "lucide-react";
 import { ChangePasswordDto, ClientAlertDto, ClientAnalyticsDto, ClientDashboardDto, ClientProfileDto, ClientTransactionDto, Currency, PortalTransactionFilters, QuickStatsDto, TransactionType, downloadTransactionReceipt, exportTransactionsCsv, getClientAlerts, getClientAnalytics, getClientDashboard, getClientTransactions, getStoredAuth, markAlertAsRead, markAllAlertsAsRead } from "@/lib/api";
 import { ClientUserDashboardProps, ClientView } from "../helpers";
-import autoTable from "jspdf-autotable";
-import jsPDF from "jspdf";
 import { localDate } from "@/lib/dates";
 import { toast } from "sonner";
 import { useCallback, useState } from "react";
@@ -258,13 +256,15 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
       toast.error("Failed to export CSV");
     }
   };
-  const handleDownloadStatement = () => {
+  const handleDownloadStatement = async () => {
     if (!profile) {
       toast.error("Profile data not loaded");
       return;
     }
 
     try {
+      // The PDF library is loaded on first download, not with the dashboard (it's most of the page's weight).
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();

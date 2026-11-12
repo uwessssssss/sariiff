@@ -8,9 +8,9 @@ import { toastConfig } from '../../components/toastConfig';
 import { useAuth } from '../../hooks/useAuth';
 import * as api from '../../services/api';
 import { shareViaWhatsApp, buildCredentialMessage, buildPasswordResetMessage } from '../../utils/notifications';
-import { ClientDto, ClientType, formatCurrency, Currency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, ALL_CURRENCIES, allowedCurrenciesFor } from '../../types';
+import { ClientDto, ClientType, formatCurrency, Currency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow, SummaryCard, SummaryGrid } from '../../components/ui';
+import { Button, Input, EmptyState, LoadingScreen, ModalSheet, ActionBtn, InfoRow, SummaryCard, SummaryGrid } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type ViewMode = 'list' | 'detail' | 'create';

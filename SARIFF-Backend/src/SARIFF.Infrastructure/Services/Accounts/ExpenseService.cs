@@ -288,9 +288,9 @@ public class ExpenseService : IExpenseService
         var query = _context.Expenses.Where(e => e.CompanyId == companyId && !e.IsDeleted);
         
         // Expense dates are calendar dates: compare whole days, end day included.
-        if (filter?.StartDate.HasValue == true) { var from = filter.StartDate.Value.Date; query = query.Where(e => e.ExpenseDate >= from); }
-        if (filter?.EndDate.HasValue == true) { var toEx = filter.EndDate.Value.Date.AddDays(1); query = query.Where(e => e.ExpenseDate < toEx); }
-        if (filter?.Currency.HasValue == true) query = query.Where(e => e.Currency == filter.Currency.Value);
+        if (filter?.StartDate is { } startDate) { var from = startDate.Date; query = query.Where(e => e.ExpenseDate >= from); }
+        if (filter?.EndDate is { } endDate) { var toEx = endDate.Date.AddDays(1); query = query.Where(e => e.ExpenseDate < toEx); }
+        if (filter?.Currency is { } currency) query = query.Where(e => e.Currency == currency);
 
         var totalCount = await query.CountAsync();
         var expenses = await query

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "../styles/globals.css";
@@ -35,11 +36,15 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Reading the request makes every page render per request, so Next.js can put this
+  // request's CSP nonce (set in middleware.ts) on its scripts. A page built ahead of time
+  // would carry no nonce, and the policy would block its scripts.
+  await headers();
   return (
     <html
       lang="en"

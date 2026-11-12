@@ -140,7 +140,7 @@ public sealed class AuditInterceptor : SaveChangesInterceptor
     {
         var s = JsonSerializer.Serialize(v);
         if (s.Length <= 4000) return s;
-        var shortV = v.ToDictionary(k => k.Key, k => (object?)(k.Value?.ToString() is { Length: > 120 } t ? t[..120] + "…" : k.Value));
+        var shortV = v.ToDictionary(k => k.Key, k => k.Value?.ToString() is { Length: > 120 } t ? t[..120] + "…" : k.Value);
         s = JsonSerializer.Serialize(shortV);
         return s.Length <= 4000 ? s : JsonSerializer.Serialize(new Dictionary<string, object?> { ["_fields"] = string.Join(",", v.Keys) });
     }

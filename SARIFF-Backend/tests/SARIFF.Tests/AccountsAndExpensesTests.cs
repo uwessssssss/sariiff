@@ -280,7 +280,7 @@ public class ReconciliationTests
         var b = await CreateAsync();
         var txns = b.Transactions();
         for (var i = 1; i <= 3; i++)
-            await txns.CreateAsync(b.Co, b.UserId, Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.Cash.Id, 100 * i));
+            await txns.CreateAsync(b.Co, b.UserId, Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.Cash.Id, 100m * i));
         var ids = await b.Db.Transactions.Select(t => t.Id).ToListAsync();
         var svc = Svc(b);
 

@@ -202,6 +202,8 @@ app.Use(async (ctx, next) =>
     h["X-Frame-Options"] = "DENY";
     h["Referrer-Policy"] = "no-referrer";
     h["Cache-Control"] = "no-store"; // balances and statements must not sit in shared caches
+    // Other sites can't embed API responses (the web app reads them with CORS, which this doesn't affect).
+    h["Cross-Origin-Resource-Policy"] = "same-site";
     if (!app.Environment.IsDevelopment())
         h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
     await next();

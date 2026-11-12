@@ -21,7 +21,6 @@ public partial class SuperAdminService
         {
             var now = DateTime.UtcNow;
             var startOfMonth = BureauClock.MonthStartUtc(BureauClock.TodayLocal);
-            var lastMonth = startOfMonth.AddMonths(-1);
             var today = BureauClock.TodayStartUtc; // the bureaus' day (EAT) as a UTC instant
 
             // PERF: Use DB-level aggregation instead of loading all entities into memory
