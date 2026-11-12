@@ -20,19 +20,11 @@ const nextConfig = {
   // produces style-level lint noise (unused vars etc.) that aren't bugs.
   // TypeScript errors are NO LONGER ignored — real type-correctness is enforced.
   eslint: { ignoreDuringBuilds: true },
-  images: {
-    domains: ["images.unsplash.com"],
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
-  },
-  // Enable SWC minification for better performance
-  swcMinify: true,
-  // Optimize fonts
-  optimizeFonts: true,
+  // The app uses no next/image, so the image optimizer is switched off. It was open to any
+  // host ("**"), and the optimizer is where Next.js's remote-code-execution and
+  // denial-of-service advisories live (Nov 2026 review).
+  images: { unoptimized: true },
+  // (swcMinify / optimizeFonts removed: on by default in 14, and gone from Next 15)
   // Experimental features
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts", "framer-motion"],

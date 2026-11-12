@@ -26,8 +26,12 @@ jobs:
           node-version: 20
       - name: Install current packages
         run: npm install --no-audit --no-fund
-      - name: Align every package with the Expo SDK
+      - name: Security fixes that keep the same major versions
+        run: npm audit fix --omit=dev || true
+      - name: Align every package with the Expo SDK (undoes any fix Expo can't run with)
         run: npx expo install --fix
+      - name: Advisories left (most are build tools that never ship in the app)
+        run: npm audit --omit=dev || true
       - name: Add packages the app needs but the lock file lacks
         run: npx expo install react-native-worklets expo-print expo-local-authentication
       - name: Expo project health after the fix
@@ -40,5 +44,5 @@ jobs:
           git add package.json package-lock.json
           git diff --cached --stat
           git diff --cached --quiet && { echo "Nothing to change"; exit 0; }
-          git commit -m "Mobile: align packages with Expo SDK 54 and regenerate lock file"
+          git commit -m "Mobile: security fixes within Expo SDK 54; regenerate lock file"
           git push
