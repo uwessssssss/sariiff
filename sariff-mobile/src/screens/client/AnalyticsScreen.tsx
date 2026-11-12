@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as api from '../../services/api';
 import { formatCurrency, currencyCode } from '../../types';
-import { LoadingScreen, SectionHeader } from '../../components/ui';
+import { LoadingScreen, SectionHeader, SummaryCard, SummaryGrid, HeroCard } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 export default function AnalyticsScreen() {
@@ -63,16 +63,16 @@ export default function AnalyticsScreen() {
   // plus any other currency the client actually transacted in.
   const breakdownRows: any[] = [];
   if (totalIncomeKES !== 0 || totalExpensesKES !== 0) {
-    breakdownRows.push({ label: 'KES Credits', value: formatCurrency(totalIncomeKES), icon: 'add-circle-outline', color: colors.success });
-    breakdownRows.push({ label: 'KES Debits', value: formatCurrency(totalExpensesKES), icon: 'remove-circle-outline', color: colors.danger });
+    breakdownRows.push({ label: 'KES received', value: formatCurrency(totalIncomeKES), icon: 'add-circle-outline', color: colors.success });
+    breakdownRows.push({ label: 'KES sent', value: formatCurrency(totalExpensesKES), icon: 'remove-circle-outline', color: colors.danger });
   }
   if (totalIncomeUSD !== 0 || totalExpensesUSD !== 0) {
-    breakdownRows.push({ label: 'USD Credits', value: formatCurrency(totalIncomeUSD, 1), icon: 'add-circle-outline', color: '#3B82F6' });
-    breakdownRows.push({ label: 'USD Debits', value: formatCurrency(totalExpensesUSD, 1), icon: 'remove-circle-outline', color: '#EF4444' });
+    breakdownRows.push({ label: 'USD received', value: formatCurrency(totalIncomeUSD, 1), icon: 'add-circle-outline', color: colors.success });
+    breakdownRows.push({ label: 'USD sent', value: formatCurrency(totalExpensesUSD, 1), icon: 'remove-circle-outline', color: colors.danger });
   }
   otherTotals.forEach((c: any) => {
-    breakdownRows.push({ label: `${c.currencyCode} Credits`, value: formatCurrency(c.income || 0, c.currency), icon: 'add-circle-outline', color: '#7C3AED' });
-    breakdownRows.push({ label: `${c.currencyCode} Debits`, value: formatCurrency(c.expenses || 0, c.currency), icon: 'remove-circle-outline', color: '#A855F7' });
+    breakdownRows.push({ label: `${c.currencyCode} received`, value: formatCurrency(c.income || 0, c.currency), icon: 'add-circle-outline', color: colors.success });
+    breakdownRows.push({ label: `${c.currencyCode} sent`, value: formatCurrency(c.expenses || 0, c.currency), icon: 'remove-circle-outline', color: colors.danger });
   });
 
   return (
@@ -85,45 +85,33 @@ export default function AnalyticsScreen() {
       <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: 120 }}>
 
-        {/* Overview Cards */}
-        <View style={styles.cardsRow}>
-          <Animated.View style={[{ flex: 1 }, { opacity: anims[0], transform: [{ scale: anims[0].interpolate({ inputRange: [0,1], outputRange: [0.8,1] }) }] }]}>
-            <LinearGradient colors={colors.gradients.emerald} style={[styles.overviewCard, shadows.lg]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-              <Ionicons name="arrow-down-circle" size={24} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.overviewLabel}>Total Received</Text>
-              {ov.map((r, i) => (
-                <Text key={r.c} style={i === 0 ? styles.overviewValue : styles.overviewLabel} numberOfLines={1} adjustsFontSizeToFit>
-                  {formatCurrency(r.inc, r.c)}
-                </Text>
-              ))}
-            </LinearGradient>
-          </Animated.View>
-          <Animated.View style={[{ flex: 1 }, { opacity: anims[1], transform: [{ scale: anims[1].interpolate({ inputRange: [0,1], outputRange: [0.8,1] }) }] }]}>
-            <LinearGradient colors={colors.gradients.red} style={[styles.overviewCard, shadows.lg]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-              <Ionicons name="arrow-up-circle" size={24} color="rgba(255,255,255,0.8)" />
-              <Text style={styles.overviewLabel}>Total Sent</Text>
-              {ov.map((r, i) => (
-                <Text key={r.c} style={i === 0 ? styles.overviewValue : styles.overviewLabel} numberOfLines={1} adjustsFontSizeToFit>
-                  {formatCurrency(r.exp, r.c)}
-                </Text>
-              ))}
-            </LinearGradient>
-          </Animated.View>
-        </View>
-
-        {/* Net Flow */}
-        <Animated.View style={[{ opacity: anims[2], transform: [{ translateY: anims[2].interpolate({ inputRange: [0,1], outputRange: [20,0] }) }] }]}>
-          <LinearGradient colors={colors.gradients.blue} style={[styles.netCard, shadows.md]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-            <View>
-              <Text style={styles.netLabel}>Net Flow</Text>
-              {ov.map((r, i) => (
-                <Text key={r.c} style={i === 0 ? styles.netValue : styles.netLabel}>
-                  {formatCurrency(r.net, r.c)}
-                </Text>
-              ))}
-            </View>
-            <Ionicons name="analytics" size={32} color="rgba(255,255,255,0.3)" />
-          </LinearGradient>
+        {/* Overview (Nov 2026 redesign): one card style, colour = meaning */}
+        <Animated.View style={[{ marginBottom: 12 }, { opacity: anims[0], transform: [{ translateY: anims[0].interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }]}>
+          <HeroCard
+            eyebrow={`Net flow${ov[0] ? ` · ${currencyCode(ov[0].c)}` : ""}`}
+            value={ov[0] ? formatCurrency(ov[0].net, ov[0].c) : formatCurrency(0)}
+            valueColor={ov[0] && ov[0].net < 0 ? colors.danger : undefined}
+            caption={ov[0] && ov[0].net < 0 ? "More went out than came in" : "Money in minus money out"}
+            stats={ov.slice(1).map((r) => ({ label: `Net · ${currencyCode(r.c)}`, value: formatCurrency(r.net, r.c), tone: r.net < 0 ? "out" as const : undefined }))}
+          />
+        </Animated.View>
+        <Animated.View style={[{ marginBottom: 8 }, { opacity: anims[1], transform: [{ translateY: anims[1].interpolate({ inputRange: [0, 1], outputRange: [16, 0] }) }] }]}>
+          <SummaryGrid>
+            <SummaryCard
+              tone="in"
+              icon="arrow-down"
+              label="Received"
+              value={ov[0] ? formatCurrency(ov[0].inc, ov[0].c) : formatCurrency(0)}
+              extra={ov.slice(1).map((r) => formatCurrency(r.inc, r.c))}
+            />
+            <SummaryCard
+              tone="out"
+              icon="arrow-up"
+              label="Sent"
+              value={ov[0] ? formatCurrency(ov[0].exp, ov[0].c) : formatCurrency(0)}
+              extra={ov.slice(1).map((r) => formatCurrency(r.exp, r.c))}
+            />
+          </SummaryGrid>
         </Animated.View>
 
         {/* Transaction Stats */}

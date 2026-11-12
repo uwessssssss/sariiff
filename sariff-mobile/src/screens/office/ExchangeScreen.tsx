@@ -1433,7 +1433,7 @@ export default function ExchangeScreen() {
             onChangeText={setBuyRate}
             keyboardType="numeric"
             icon="trending-up-outline"
-            placeholder="128.50"
+            placeholder={base === Currency.UGX ? "3640" : "128.50"}
           />
         </FormSection>
         <FormSection label={`Sell Rate (${baseCode} per 1 ${currencyCode(rateCurrency)})`}>
@@ -1443,7 +1443,7 @@ export default function ExchangeScreen() {
             onChangeText={setSellRate}
             keyboardType="numeric"
             icon="trending-down-outline"
-            placeholder="129.50"
+            placeholder={base === Currency.UGX ? "3700" : "129.50"}
           />
         </FormSection>
         {rates[rateCurrency] && (
@@ -1629,7 +1629,7 @@ export default function ExchangeScreen() {
               onChangeText={setFloatPurchaseRate}
               keyboardType="numeric"
               icon="calculator-outline"
-              placeholder="e.g. 128.50"
+              placeholder={base === Currency.UGX ? "e.g. 3640" : "e.g. 128.50"}
             />
             {floatAmount && floatPurchaseRate && (
               <Text style={{ fontSize: 13, color: "#39D9B0", marginTop: 4 }}>

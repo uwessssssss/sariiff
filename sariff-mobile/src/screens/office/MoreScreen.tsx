@@ -56,9 +56,10 @@ export default function MoreScreen() {
               onPress={() => navigation.navigate(item.screen)}
               activeOpacity={0.7}
             >
-              <LinearGradient colors={item.gradient as [string, string]} style={styles.menuIcon} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <Ionicons name={item.icon} size={22} color="#FFF" />
-              </LinearGradient>
+              {/* one accent for every menu entry (was a different gradient each) */}
+              <View style={[styles.menuIcon, { backgroundColor: 'rgba(91,156,255,0.14)' }]}>
+                <Ionicons name={item.icon} size={22} color={colors.primary} />
+              </View>
               <View style={styles.menuText}>
                 <Text style={styles.menuLabel}>{item.label}</Text>
                 <Text style={styles.menuSubtitle}>{item.subtitle}</Text>

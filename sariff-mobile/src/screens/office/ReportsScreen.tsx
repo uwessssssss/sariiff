@@ -108,9 +108,9 @@ export default function ReportsScreen() {
 
   const reportTypes: { key: ReportType; label: string; icon: keyof typeof Ionicons.glyphMap; gradient: readonly [string, string, ...string[]] }[] = [
     { key: 'daily', label: 'Daily', icon: 'calendar-outline', gradient: colors.gradients.blue },
-    { key: 'accountSummary', label: 'Accounts', icon: 'wallet-outline', gradient: colors.gradients.emerald },
-    { key: 'clientBalances', label: 'Clients', icon: 'people-outline', gradient: colors.gradients.purple },
-    { key: 'transactions', label: 'Transactions', icon: 'receipt-outline', gradient: ['#F59E0B', '#D97706'] },
+    { key: 'accountSummary', label: 'Accounts', icon: 'wallet-outline', gradient: colors.gradients.blue },
+    { key: 'clientBalances', label: 'Clients', icon: 'people-outline', gradient: colors.gradients.blue },
+    { key: 'transactions', label: 'Transactions', icon: 'receipt-outline', gradient: colors.gradients.blue },
   ];
 
   return (

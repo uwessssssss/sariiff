@@ -32,6 +32,9 @@ import {
   LoadingScreen,
   TransactionRow,
   CountUp,
+  SummaryCard,
+  SummaryGrid,
+  HeroCard,
 } from "../../components/ui";
 import {
   colors,
@@ -248,186 +251,64 @@ export default function OfficeDashboardScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* ====== BALANCE CARDS — exact web gradient matches ====== */}
-        <Animated.View style={[styles.cardRow, makeAnim(0)]}>
-          {/* Cash KES — emerald→teal */}
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={["#10B981", "#0D9488"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons name="wallet-outline" size={18} color="#FFF" />
-                  </View>
-                  <Text style={styles.cardLabel}>CASH — {baseCode}</Text>
-                </View>
-                <CountUp
-                  value={homeCash}
-                  format={(n) => formatCurrency(n, base)}
-                  style={styles.cardValue}
-                />
-                <Text style={styles.cardSub}>{currencyPlural(base)}</Text>
-              </View>
-            </LinearGradient>
-          </View>
-          {/* Cash USD — blue→indigo */}
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={["#3B82F6", "#4F46E5"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons name="logo-usd" size={18} color="#FFF" />
-                  </View>
-                  <Text style={styles.cardLabel}>CASH — USD</Text>
-                </View>
-                <CountUp
-                  value={s?.cashUSD || 0}
-                  format={(n) => formatCurrency(n, Currency.USD)}
-                  style={styles.cardValue}
-                />
-                <Text style={styles.cardSub}>US Dollars</Text>
-              </View>
-            </LinearGradient>
-          </View>
+        {/* ====== POSITION — home currency first (Nov 2026 redesign) ====== */}
+        <Animated.View style={[{ marginBottom: 12 }, makeAnim(0)]}>
+          <HeroCard
+            eyebrow={`Cash on hand · ${baseCode}`}
+            badge={baseCode}
+            value={<CountUp value={homeCash} format={(n) => formatCurrency(n, base)} style={styles.heroFigure} />}
+            caption={currencyPlural(base)}
+            stats={[
+              { label: `Banks · ${baseCode}`, value: formatCurrency(homeBank, base) },
+              { label: `Mobile money · ${baseCode}`, value: formatCurrency(s?.totalMpesa || 0, base) },
+            ]}
+          />
         </Animated.View>
 
-        <Animated.View style={[styles.cardRow, makeAnim(1)]}>
-          {/* M-Pesa — green→emerald */}
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={["#16A34A", "#059669"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons
-                      name="phone-portrait-outline"
-                      size={18}
-                      color="#FFF"
-                    />
-                  </View>
-                  <Text style={styles.cardLabel}>MOBILE MONEY</Text>
-                </View>
-                <CountUp
-                  value={s?.totalMpesa || 0}
-                  format={(n) => formatCurrency(n, base)}
-                  style={styles.cardValue}
+        <Animated.View style={[{ marginBottom: 12 }, makeAnim(1)]}>
+          <SummaryGrid>
+            <SummaryCard
+              icon="logo-usd"
+              label="Cash · USD"
+              value={<CountUp value={s?.cashUSD || 0} format={(n) => formatCurrency(n, Currency.USD)} style={styles.summaryFigure} />}
+              caption="US Dollars"
+            />
+            <SummaryCard
+              icon="business-outline"
+              label="Banks · USD"
+              value={<CountUp value={s?.totalBankUSD || 0} format={(n) => formatCurrency(n, Currency.USD)} style={styles.summaryFigure} />}
+              caption="All USD accounts"
+            />
+            <SummaryCard
+              icon="phone-portrait-outline"
+              label="Mobile money"
+              value={formatCurrency(s?.totalMpesa || 0, base)}
+              caption={`${baseCode} wallets`}
+              extra={(s?.mobileMoneyByCurrency || [])
+                .filter((w) => w.currency !== base && w.amount)
+                .map((w) => `+ ${formatCurrency(w.amount, w.currency)}`)}
+            />
+            <SummaryCard
+              tone="value"
+              icon="swap-horizontal"
+              label="USD buy rate"
+              value={s?.currentExchangeRate ? s.currentExchangeRate.buyRate.toFixed(2) : "—"}
+              caption={s?.currentExchangeRate ? `${baseCode} per 1 USD · sell ${s.currentExchangeRate.sellRate.toFixed(2)}` : "No rate set yet"}
+            />
+            {(s?.byCurrency || [])
+              .filter((h) => h.currency !== base && h.currency !== Currency.USD && (h.cash || h.bank))
+              .map((h) => (
+                <SummaryCard
+                  key={h.currency}
+                  tone="neutral"
+                  icon="cash-outline"
+                  label={`Cash · ${currencyCode(h.currency)}`}
+                  value={formatCurrency(h.cash, h.currency)}
+                  caption={h.bank ? `Banks ${formatCurrency(h.bank, h.currency)}` : currencyPlural(h.currency)}
                 />
-                <Text style={styles.cardSub}>
-                  {(s?.mobileMoneyByCurrency || []).filter((w) => w.currency !== base && w.amount).length
-                    ? `${baseCode} wallets · also ${(s?.mobileMoneyByCurrency || [])
-                        .filter((w) => w.currency !== base && w.amount)
-                        .map((w) => formatCurrency(w.amount, w.currency)).join(', ')}`
-                    : `All agents (${baseCode})`}
-                </Text>
-              </View>
-            </LinearGradient>
-          </View>
-          {/* Exchange — purple→pink */}
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={["#8B5CF6", "#EC4899"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons name="swap-horizontal" size={18} color="#FFF" />
-                  </View>
-                  <Text style={styles.cardLabel}>EXCHANGE</Text>
-                </View>
-                <Text style={styles.cardValue}>
-                  {s?.currentExchangeRate
-                    ? s.currentExchangeRate.buyRate.toFixed(2)
-                    : "—"}
-                </Text>
-                <Text style={styles.cardSub}>Buy rate (USD→{baseCode})</Text>
-              </View>
-            </LinearGradient>
-          </View>
+              ))}
+          </SummaryGrid>
         </Animated.View>
-
-        {/* ====== BANK ACCOUNTS — white card with gradient icon (web style) ====== */}
-        <Animated.View style={[styles.cardRow, makeAnim(2)]}>
-          <View style={[styles.halfCard]}>
-            <View style={[styles.bankCard, shadows.md]}>
-              <LinearGradient
-                colors={["#06B6D4", "#2563EB"]}
-                style={styles.bankIcon}
-              >
-                <Ionicons name="business" size={18} color="#FFF" />
-              </LinearGradient>
-              <Text style={styles.bankLabel}>Banks — {baseCode}</Text>
-              <CountUp
-                value={homeBank}
-                format={(n) => formatCurrency(n, base)}
-                style={[styles.bankValue, { color: "#06B6D4" }]}
-              />
-            </View>
-          </View>
-          <View style={[styles.halfCard]}>
-            <View style={[styles.bankCard, shadows.md]}>
-              <LinearGradient
-                colors={["#6366F1", "#8B5CF6"]}
-                style={styles.bankIcon}
-              >
-                <Ionicons name="business" size={18} color="#FFF" />
-              </LinearGradient>
-              <Text style={styles.bankLabel}>Banks — USD</Text>
-              <CountUp
-                value={s?.totalBankUSD || 0}
-                format={(n) => formatCurrency(n, Currency.USD)}
-                style={[styles.bankValue, { color: "#6366F1" }]}
-              />
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Other currencies (beyond home + USD) — only those the office holds */}
-        {(s?.byCurrency || [])
-          .filter((h) => h.currency !== base && h.currency !== Currency.USD && (h.cash || h.bank))
-          .map((h) => (
-            <Animated.View key={h.currency} style={[styles.cardRow, makeAnim(2)]}>
-              <View style={[styles.halfCard]}>
-                <View style={[styles.bankCard, shadows.md]}>
-                  <Text style={styles.bankLabel}>Cash — {currencyCode(h.currency)}</Text>
-                  <Text style={[styles.bankValue, { color: CURRENCY_COLOR[h.currency] || "#475569" }]}>
-                    {formatCurrency(h.cash, h.currency)}
-                  </Text>
-                </View>
-              </View>
-              <View style={[styles.halfCard]}>
-                <View style={[styles.bankCard, shadows.md]}>
-                  <Text style={styles.bankLabel}>Banks — {currencyCode(h.currency)}</Text>
-                  <Text style={[styles.bankValue, { color: CURRENCY_COLOR[h.currency] || "#475569" }]}>
-                    {formatCurrency(h.bank, h.currency)}
-                  </Text>
-                </View>
-              </View>
-            </Animated.View>
-          ))}
 
         {/* ====== TODAY'S TRANSACTIONS — daily activity section (matches web) ====== */}
         <Animated.View style={makeAnim(3)}>
@@ -718,6 +599,8 @@ const styles = StyleSheet.create({
   },
 
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  heroFigure: { fontSize: 34, color: colors.text, fontFamily: fonts.display, fontWeight: "700", letterSpacing: -0.6 },
+  summaryFigure: { fontSize: 22, color: colors.text, fontFamily: fonts.display, fontWeight: "700", letterSpacing: -0.3 },
 
   // Balance Cards
   cardRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm },

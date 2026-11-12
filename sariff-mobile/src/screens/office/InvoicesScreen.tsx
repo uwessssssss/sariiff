@@ -119,7 +119,8 @@ export default function InvoicesScreen() {
   const [dueDate] = useState(localDate(new Date(Date.now() + 30*86400000)));
   const [currency, setCurrency] = useState<number>(Currency.KES);
   useEffect(() => setCurrency(base), [base]); // new invoices default to the home currency
-  const [taxRate, setTaxRate] = useState('16');
+  // 0% like the web: forex services are generally VAT-exempt; a bureau that charges tax sets it per invoice
+  const [taxRate, setTaxRate] = useState('0');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([{ description: '', quantity: '1', unitPrice: '' }]);
 

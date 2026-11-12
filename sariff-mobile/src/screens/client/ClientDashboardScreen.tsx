@@ -25,7 +25,7 @@ import {
   currencyCode,
   balanceRowsFrom,
 } from "../../types";
-import { SectionHeader, LoadingScreen, InfoRow } from "../../components/ui";
+import { SectionHeader, LoadingScreen, InfoRow, SummaryCard, SummaryGrid, HeroCard } from "../../components/ui";
 import {
   colors,
   spacing,
@@ -127,253 +127,58 @@ export default function ClientDashboardScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* ====== BALANCE CARDS — matches web ClientStatCard ====== */}
-        <Animated.View style={[styles.cardRow, makeAnim(0)]}>
-          {/* KES Balance — emerald→teal — shown only if this client uses KES */}
-          {((d?.profile?.balanceKES ?? 0) !== 0 ||
-            (d?.profile?.totalInKES ?? 0) !== 0 ||
-            (d?.profile?.totalOutKES ?? 0) !== 0) && (
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={
-                (d?.profile?.balanceKES ?? 0) < 0
-                  ? ["#F43F5E", "#B91C1C"]
-                  : ["#10B981", "#0D9488"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons
-                      name={
-                        (d?.profile?.balanceKES ?? 0) < 0
-                          ? "trending-down"
-                          : "cash-outline"
-                      }
-                      size={18}
-                      color="#FFF"
-                    />
-                  </View>
-                  <Text style={styles.cardLabel}>KES BALANCE</Text>
-                </View>
-                <Text
-                  style={styles.cardValue}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.6}
-                >
-                  {formatCurrency(d?.profile?.balanceKES || 0, Currency.KES)}
-                </Text>
-                <Text style={styles.cardSub}>Kenyan Shillings</Text>
+        {/* ====== BALANCES (Nov 2026 redesign) ======
+            The currency the client actually uses leads (UGX for a Ugandan client). Before,
+            KES and USD always had the big cards and UGX was a small chip in dark text that
+            was unreadable on the dark background. */}
+        {(() => {
+          const rows = balanceRowsFrom(d?.profile)
+            .slice()
+            .sort((a, b) => (Math.abs(b.totalIn) + Math.abs(b.totalOut) + Math.abs(b.balance)) - (Math.abs(a.totalIn) + Math.abs(a.totalOut) + Math.abs(a.balance)));
+          if (!rows.length)
+            return (
+              <View style={styles.emptyBalances}>
+                <Ionicons name="wallet-outline" size={28} color={colors.textSecondary} />
+                <Text style={styles.emptyBalancesText}>No balances yet. Your account activity will appear here.</Text>
               </View>
-            </LinearGradient>
-          </View>
-          )}
-          {/* USD Balance — violet→purple — shown only if this client uses USD */}
-          {((d?.profile?.balanceUSD ?? 0) !== 0 ||
-            (d?.profile?.totalInUSD ?? 0) !== 0 ||
-            (d?.profile?.totalOutUSD ?? 0) !== 0) && (
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={
-                (d?.profile?.balanceUSD ?? 0) < 0
-                  ? ["#F43F5E", "#B91C1C"]
-                  : ["#8B5CF6", "#7C3AED"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons
-                      name={
-                        (d?.profile?.balanceUSD ?? 0) < 0
-                          ? "trending-down"
-                          : "logo-usd"
-                      }
-                      size={18}
-                      color="#FFF"
-                    />
-                  </View>
-                  <Text style={styles.cardLabel}>USD BALANCE</Text>
-                </View>
-                <Text
-                  style={styles.cardValue}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.6}
-                >
-                  {formatCurrency(d?.profile?.balanceUSD || 0, Currency.USD)}
-                </Text>
-                <Text style={styles.cardSub}>US Dollars</Text>
-              </View>
-            </LinearGradient>
-          </View>
-          )}
-        </Animated.View>
-
-        {/* Balances in other currencies (UGX, EUR, ...) — only shown if held */}
-        {(d?.profile?.otherBalances || []).length > 0 && (
-          <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 8,
-              marginHorizontal: 16,
-              marginTop: 10,
-            }}
-          >
-            {(d?.profile?.otherBalances || []).map((b: any) => (
-              <View
-                key={b.currencyCode || b.currency}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  backgroundColor: "rgba(154,123,255,0.12)",
-                  borderWidth: 1,
-                  borderColor: "rgba(154,123,255,0.32)",
-                  borderRadius: 12,
-                  paddingHorizontal: 12,
-                  paddingVertical: 8,
-                  gap: 6,
-                }}
-              >
-                <Text style={{ fontSize: 11, fontWeight: "800" as any, color: "#7C3AED" }}>
-                  {b.currencyCode || currencyCode(b.currency)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "700" as any,
-                    color: (b.balance ?? 0) < 0 ? "#FF6B81" : "#1E1B4B",
-                  }}
-                >
-                  {formatCurrency(b.balance || 0, b.currency)}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Fallback: brand-new client with no balances in any currency yet */}
-        {(d?.profile?.balanceKES ?? 0) === 0 &&
-          (d?.profile?.totalInKES ?? 0) === 0 &&
-          (d?.profile?.totalOutKES ?? 0) === 0 &&
-          (d?.profile?.balanceUSD ?? 0) === 0 &&
-          (d?.profile?.totalInUSD ?? 0) === 0 &&
-          (d?.profile?.totalOutUSD ?? 0) === 0 &&
-          (d?.profile?.otherBalances || []).length === 0 && (
-            <View
-              style={{
-                marginHorizontal: 16,
-                marginTop: 12,
-                padding: 20,
-                backgroundColor: colors.surfaceAlt,
-                borderRadius: 14,
-                alignItems: "center",
-              }}
-            >
-              <Ionicons
-                name="wallet-outline"
-                size={28}
-                color={colors.textTertiary}
-              />
-              <Text
-                style={{
-                  marginTop: 8,
-                  fontSize: fontSize.sm,
-                  color: colors.textSecondary,
-                  textAlign: "center",
-                }}
-              >
-                No balances yet. Your account activity will appear here.
-              </Text>
-            </View>
-          )}
-
-        <Animated.View style={[styles.cardRow, makeAnim(1)]}>
-          {/* Total Credit — cyan→blue */}
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={["#06B6D4", "#2563EB"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons name="arrow-down-circle" size={18} color="#FFF" />
-                  </View>
-                  <Text style={styles.cardLabel}>TOTAL IN</Text>
-                </View>
-                {(() => {
-                  const rows = balanceRowsFrom(d?.profile).filter((r) => r.totalIn || r.totalOut);
-                  const list = rows.length ? rows : balanceRowsFrom(d?.profile, true).slice(0, 1);
-                  return (
-                    <>
-                      <Text style={styles.cardValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
-                        {formatCurrency(list[0]?.totalIn || 0, list[0]?.currency ?? Currency.KES)}
-                      </Text>
-                      {list.slice(1).map((r) => (
-                        <Text key={r.currency} style={styles.cardSub}>
-                          {formatCurrency(r.totalIn, r.currency)}
-                        </Text>
-                      ))}
-                    </>
-                  );
-                })()}
-              </View>
-            </LinearGradient>
-          </View>
-          {/* Total Debit — rose→red */}
-          <View style={[styles.halfCard, shadows.xl]}>
-            <LinearGradient
-              colors={["#F43F5E", "#DC2626"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.balanceCard}
-            >
-              <View style={styles.decorCircle1} />
-              <View style={styles.decorCircle2} />
-              <View style={styles.cardInner}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.glassIcon}>
-                    <Ionicons name="arrow-up-circle" size={18} color="#FFF" />
-                  </View>
-                  <Text style={styles.cardLabel}>TOTAL OUT</Text>
-                </View>
-                {(() => {
-                  const rows = balanceRowsFrom(d?.profile).filter((r) => r.totalIn || r.totalOut);
-                  const list = rows.length ? rows : balanceRowsFrom(d?.profile, true).slice(0, 1);
-                  return (
-                    <>
-                      <Text style={styles.cardValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
-                        {formatCurrency(list[0]?.totalOut || 0, list[0]?.currency ?? Currency.KES)}
-                      </Text>
-                      {list.slice(1).map((r) => (
-                        <Text key={r.currency} style={styles.cardSub}>
-                          {formatCurrency(r.totalOut, r.currency)}
-                        </Text>
-                      ))}
-                    </>
-                  );
-                })()}
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
+            );
+          const [main, ...rest] = rows;
+          const owes = main.balance < 0;
+          return (
+            <>
+              <Animated.View style={[{ marginBottom: 12 }, makeAnim(0)]}>
+                <HeroCard
+                  eyebrow={`Your balance · ${main.code}`}
+                  badge={main.code}
+                  value={formatCurrency(main.balance, main.currency)}
+                  valueColor={owes ? colors.danger : undefined}
+                  caption={owes ? "You owe the bureau this amount" : "Held for you by the bureau"}
+                  stats={[
+                    { label: "Money in", value: formatCurrency(main.totalIn, main.currency), tone: "in" },
+                    { label: "Money out", value: formatCurrency(main.totalOut, main.currency), tone: "out" },
+                  ]}
+                />
+              </Animated.View>
+              {rest.length > 0 && (
+                <Animated.View style={[{ marginBottom: 12 }, makeAnim(1)]}>
+                  <SummaryGrid>
+                    {rest.map((r) => (
+                      <SummaryCard
+                        key={r.currency}
+                        tone={r.balance < 0 ? "out" : "accent"}
+                        icon={r.currency === Currency.USD ? "logo-usd" : "cash-outline"}
+                        label={`Balance · ${r.code}`}
+                        value={formatCurrency(r.balance, r.currency)}
+                        valueColor={r.balance < 0 ? colors.danger : undefined}
+                        caption={`In ${formatCurrency(r.totalIn, r.currency)} · Out ${formatCurrency(r.totalOut, r.currency)}`}
+                      />
+                    ))}
+                  </SummaryGrid>
+                </Animated.View>
+              )}
+            </>
+          );
+        })()}
 
         {/* ====== QUICK STATS BAR ====== */}
         <Animated.View style={[styles.statsBar, makeAnim(2)]}>
@@ -382,17 +187,17 @@ export default function ClientDashboardScreen() {
               icon: "swap-horizontal" as const,
               label: "Transactions",
               value: String(d?.quickStats?.transactionCount || 0),
-              color: "#3B82F6",
+              color: colors.primary,
             },
             {
               icon: "notifications" as const,
               label: "Unread",
               value: String(d?.quickStats?.unreadAlerts || 0),
-              color: d?.quickStats?.unreadAlerts ? "#FF6B81" : "#10B981",
+              color: d?.quickStats?.unreadAlerts ? colors.danger : colors.textSecondary,
             },
             {
               icon: "calendar" as const,
-              label: "This Month",
+              label: "In this month",
               value: (() => {
                 const q: any = d?.quickStats || {};
                 const month = [
@@ -404,7 +209,7 @@ export default function ClientDashboardScreen() {
                   ? formatCurrency(0)
                   : month.map((m) => formatCurrency(m.v, m.c)).join("\n");
               })(),
-              color: "#8B5CF6",
+              color: colors.success,
             },
           ].map((stat, i) => (
             <View key={i} style={styles.statItem}>
@@ -425,24 +230,18 @@ export default function ClientDashboardScreen() {
               icon: "document-text-outline" as const,
               label: "Statements",
               sub: "View full history",
-              gradient: ["#3B82F6", "#06B6D4"],
-              border: "rgba(91,156,255,0.32)",
               tab: "Statements",
             },
             {
               icon: "bar-chart-outline" as const,
               label: "Analytics",
               sub: "Detailed insights",
-              gradient: ["#EC4899", "#F43F5E"],
-              border: "#FBCFE8",
               tab: "Analytics",
             },
             {
               icon: "notifications-outline" as const,
               label: "Alerts",
               sub: "View notifications",
-              gradient: ["#10B981", "#0D9488"],
-              border: "rgba(57,217,176,0.32)",
               tab: "Alerts",
               badge: d?.quickStats?.unreadAlerts || 0,
             },
@@ -450,27 +249,21 @@ export default function ClientDashboardScreen() {
               icon: "person-outline" as const,
               label: "Profile",
               sub: "Account settings",
-              gradient: ["#8B5CF6", "#7C3AED"],
-              border: "rgba(154,123,255,0.32)",
               tab: "Profile",
             },
           ].map((action, i) => (
             <TouchableOpacity
               key={i}
-              style={[
-                styles.actionCard,
-                shadows.md,
-                { borderColor: action.border },
-              ]}
+              style={[styles.actionCard, shadows.sm]}
               onPress={() => navigation.navigate(action.tab)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={`${action.label}: ${action.sub}`}
             >
-              <LinearGradient
-                colors={action.gradient as [string, string]}
-                style={styles.actionIcon}
-              >
-                <Ionicons name={action.icon} size={22} color="#FFF" />
-              </LinearGradient>
+              {/* one accent for every shortcut (was a different gradient per card) */}
+              <View style={styles.actionIcon}>
+                <Ionicons name={action.icon} size={20} color={colors.primary} />
+              </View>
               {(action as any).badge > 0 && (
                 <View style={styles.actionBadge}>
                   <Text style={styles.actionBadgeText}>
@@ -590,8 +383,8 @@ export default function ClientDashboardScreen() {
                 <LinearGradient
                   colors={
                     selectedTxn.type === "Credit"
-                      ? ["#059669", "#10B981"]
-                      : ["#DC2626", "#EF4444"]
+                      ? ["#047857", "#059669"]
+                      : ["#B91C1C", "#DC2626"]
                   }
                   style={{
                     paddingVertical: 28,
@@ -768,6 +561,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
 
   cardRow: { flexDirection: "row", gap: spacing.sm, marginBottom: spacing.sm },
+  emptyBalances: { marginBottom: 12, padding: 20, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1, borderColor: colors.border, alignItems: "center" },
+  emptyBalancesText: { marginTop: 8, fontSize: fontSize.sm, color: colors.textSecondary, textAlign: "center" },
   halfCard: { flex: 1 },
   balanceCard: {
     borderRadius: borderRadius.lg,
@@ -841,12 +636,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
-    borderWidth: 2,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.sm,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(91,156,255,0.14)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.sm,

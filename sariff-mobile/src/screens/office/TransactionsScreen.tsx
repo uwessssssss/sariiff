@@ -393,7 +393,7 @@ export default function TransactionsScreen() {
         </FormSection>
         {needsFx && (<View style={{ backgroundColor: 'rgba(246,180,94,0.12)', borderWidth: 1, borderColor: 'rgba(246,180,94,0.32)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '700' as any, color: '#F6B45E', marginBottom: 8 }}>Cross-Currency</Text>
-          <Input label={`Rate (${rateLabel(base, ctrAcc?.currency, priAcc?.currency)})`} value={exchRate} onChangeText={setExchRate} keyboardType="numeric" icon="swap-horizontal-outline" placeholder="130.50" />
+          <Input label={`Rate (${rateLabel(base, ctrAcc?.currency, priAcc?.currency)})`} value={exchRate} onChangeText={setExchRate} keyboardType="numeric" icon="swap-horizontal-outline" placeholder={base === Currency.UGX ? "3700" : "130.50"} />
           {amount && exchRate && parseFloat(exchRate) > 0 && ctrAcc && priAcc && (<View style={{ backgroundColor: 'rgba(91,156,255,0.12)', borderRadius: 8, padding: 8, marginTop: 4 }}>
             <Text style={{ fontSize: 13, color: '#7FB3FF', fontWeight: '700' as any }}>{`${currencyCode(ctrAcc.currency)} ${parseFloat(amount).toLocaleString()} ${ctrAcc.currency === Currency.KES ? '÷' : '×'} ${exchRate} = ${currencyCode(priAcc.currency)} ${convertAmount(parseFloat(amount), ctrAcc.currency, priAcc.currency, parseFloat(exchRate), base).toFixed(2)}`}</Text></View>)}
         </View>)}
