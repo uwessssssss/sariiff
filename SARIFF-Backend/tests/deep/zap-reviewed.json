@@ -1,0 +1,4 @@
+{
+  "CSP: style-src unsafe-inline": "Deliberate: React style attributes, framer-motion and the toast library set inline styles. Scripts need a per-request nonce, so injected markup can't run code; CSS alone can't.",
+  "Unexpected Content-Type was returned": "Swagger UI's /swagger/ redirect; Swagger is only mapped when ASPNETCORE_ENVIRONMENT=Development, never in production."
+}

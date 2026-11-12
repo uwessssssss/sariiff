@@ -40,14 +40,21 @@ if mode == "sarif":
     print(f"\nCODEQL: {total} finding(s); highest security severity {worst}; blocking (any warning/error, or severity 7+, not reviewed, outside tests) {blocking}")
     sys.exit(1 if blocking else 0)
 if mode == "zap":
+    import os
     d = json.load(open(args[0])); label = args[1] if len(args) > 1 else ""
-    counts = collections.Counter()
+    rp = os.path.join(os.path.dirname(__file__), "zap-reviewed.json")
+    reviewed = json.load(open(rp)) if os.path.exists(rp) else {}
+    counts = collections.Counter(); blocking = 0; used = set()
     for site in d.get("site", []):
         for a in site.get("alerts", []):
             risk = a.get("riskdesc", "?").split(" ")[0]; counts[risk] += 1
-            print(f"  [{a.get('riskdesc')}] {a.get('name')} — {len(a.get('instances', []))} place(s); e.g. {(a.get('instances') or [{}])[0].get('uri', '')[:110]}")
-    print(f"\nZAP {label}: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())) or "no alerts")
-    sys.exit(1 if counts.get("High", 0) else 0)
+            name = a.get("name", ""); note = ""
+            if name in reviewed: note = " (reviewed)"; used.add(name)
+            elif risk in ("High", "Medium"): note = " (BLOCKING)"; blocking += 1
+            print(f"  [{a.get('riskdesc')}] {name}{note} — {len(a.get('instances', []))} place(s); e.g. {(a.get('instances') or [{}])[0].get('uri', '')[:110]}")
+    for n in sorted(used): print(f"  reviewed: {n}: {reviewed[n]}")
+    print(f"\nZAP {label}: " + (", ".join(f"{k} {v}" for k, v in sorted(counts.items())) or "no alerts") + f"; blocking (High/Medium, not reviewed) {blocking}")
+    sys.exit(1 if blocking else 0)
 if mode == "gitleaks":
     try: d = json.load(open(args[0]))
     except Exception: d = []

@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
     pathname.includes(".") // static files like favicon.ico
   ) {
     const res = NextResponse.next();
-    res.headers.set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'");
+    res.headers.set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
     setCommonHeaders(res.headers);
     return res;
   }
