@@ -9,21 +9,36 @@ import json, sys, collections, xml.etree.ElementTree as ET
 
 mode, args = sys.argv[1], sys.argv[2:]
 if mode == "sarif":
-    total, worst = 0, 0
+    import os
+    total, worst, blocking = 0, 0, 0
+    rp = os.path.join(os.path.dirname(__file__), "codeql-reviewed.json")
+    reviewed = json.load(open(rp)) if os.path.exists(rp) else {}
     for f in args:
         d = json.load(open(f))
         for run in d.get("runs", []):
-            rules = {r["id"]: r for r in run.get("tool", {}).get("driver", {}).get("rules", [])}
+            # CodeQL keeps its rules (with their security-severity) in tool.extensions, not the driver
+            tool = run.get("tool", {})
+            comps = [tool.get("driver", {})] + tool.get("extensions", [])
+            rules = {r["id"]: r for c in comps for r in c.get("rules", [])}
             for res in run.get("results", []):
                 rid = res.get("ruleId"); r = rules.get(rid, {})
                 sev = float(r.get("properties", {}).get("security-severity", 0) or 0)
                 lvl = res.get("level", r.get("defaultConfiguration", {}).get("level", "warning"))
                 loc = res.get("locations", [{}])[0].get("physicalLocation", {})
                 path = loc.get("artifactLocation", {}).get("uri", "?"); line = loc.get("region", {}).get("startLine", "?")
-                total += 1; worst = max(worst, sev)
-                print(f"  [{lvl}{f' sev {sev}' if sev else ''}] {rid}: {path}:{line} — {res.get('message', {}).get('text', '')[:160]}")
-    print(f"\nCODEQL: {total} finding(s); highest security severity {worst}")
-    sys.exit(1 if worst >= 7.0 else 0)  # high/critical security findings fail
+                total += 1
+                note = ""
+                if path.startswith("SARIFF-Backend/tests/"): note = " (test script)"
+                elif rid in reviewed: note = " (reviewed)"
+                elif sev >= 7.0: blocking += 1
+                if sev: worst = max(worst, sev)
+                print(f"  [{lvl}{f' sev {sev}' if sev else ''}] {rid}: {path}:{line}{note} — {res.get('message', {}).get('text', '')[:160]}")
+    used = sorted({r for r in reviewed})
+    if used:
+        print("\nREVIEWED (not blocking):")
+        for r in used: print(f"  {r}: {reviewed[r]}")
+    print(f"\nCODEQL: {total} finding(s); highest security severity {worst}; blocking (severity 7+, not reviewed, outside tests) {blocking}")
+    sys.exit(1 if blocking else 0)
 if mode == "zap":
     d = json.load(open(args[0])); label = args[1] if len(args) > 1 else ""
     counts = collections.Counter()

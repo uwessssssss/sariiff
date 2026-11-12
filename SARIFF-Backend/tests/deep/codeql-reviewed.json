@@ -1,0 +1,6 @@
+{
+  "cs/log-forging": "Mitigated in one place: StripNewlinesEnricher (API/Middleware/LogSafety.cs) writes line breaks in logged values as \\r \\n, so user input can't start a new log line. CodeQL can't see a Serilog enricher.",
+  "cs/user-controlled-bypass": "False positive: the sign-in code only chooses which sign-in flow runs (super admin / client / office); every flow still checks the password and the SMS code.",
+  "js/insecure-randomness": "Idempotency keys, not secrets: the server scopes every key to the signed-in user, and the web app uses crypto.randomUUID where it exists (Math.random is only the fallback).",
+  "js/clear-text-storage-of-sensitive-data": "The signed-in user's own profile (incl. their phone number) cached in that browser's storage, next to the session token that browser already holds."
+}

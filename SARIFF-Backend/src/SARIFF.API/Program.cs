@@ -29,6 +29,7 @@ builder.WebHost.UseUrls($"http://+:{listenPort}");
 // Serilog - adjust logging level based on environment
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.With(new SARIFF.API.Middleware.StripNewlinesEnricher()) // no forged log lines from user input
     .MinimumLevel.Is(builder.Environment.IsDevelopment() 
         ? Serilog.Events.LogEventLevel.Debug 
         : Serilog.Events.LogEventLevel.Information)
