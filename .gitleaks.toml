@@ -1,0 +1,10 @@
+# gitleaks settings for the deep audit. Default rules, plus one reviewed exception:
+# google-services.json carries the Firebase Android API key. Google designs that key to ship
+# inside the app (it identifies the project, it is not a password); it must instead be
+# restricted in Google Cloud Console to the app's package name + signing certificate.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Firebase client config (public by design; restricted in Google Cloud)"
+paths = ['''sariff-mobile/google-services\.json''']

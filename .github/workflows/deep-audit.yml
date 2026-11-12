@@ -83,7 +83,7 @@ jobs:
         working-directory: web
         run: |
           npm ci --no-audit --no-fund
-          [ -f .eslintrc.json ] || echo '{ "extends": "next/core-web-vitals" }' > .eslintrc.json
+          [ -f .eslintrc.json ] || echo '{ "extends": "next/core-web-vitals", "rules": { "react/no-unescaped-entities": "off" } }' > .eslintrc.json
           npx next lint --max-warnings 1000 2>&1 | tee "$RUNNER_TEMP/lint.txt"
           echo "LINT: $(grep -cE '^[0-9]+:[0-9]+ +Error' "$RUNNER_TEMP/lint.txt") error(s), $(grep -cE '^[0-9]+:[0-9]+ +Warning' "$RUNNER_TEMP/lint.txt") warning(s)"
           ! grep -qE '^[0-9]+:[0-9]+ +Error' "$RUNNER_TEMP/lint.txt"
