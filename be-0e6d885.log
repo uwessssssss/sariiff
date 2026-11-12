@@ -1,0 +1,926 @@
+9Z Current runner version: '2.338.2'
+##[group]Runner Image Provisioner
+Hosted Compute Agent
+Version: 20261103.629
+Commit: 15dbd9ccb5dbf34fae002b6ed1a2670f52df37bc
+Build Date: 2026-11-03T17:26:59Z
+Worker ID: {160f0781-9bc4-4f1e-80a5-aa90e20dee47}
+Region: centralus
+Cloud: Azure
+##[endgroup]
+##[group]Operating System
+Ubuntu
+24.04.5
+LTS
+##[endgroup]
+##[group]Runner Image
+Image: ubuntu-24.04
+Version: 20261111.370.1
+Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261111.370/images/ubuntu/Ubuntu2404-Readme.md
+Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261111.370
+##[endgroup]
+##[group]GITHUB_TOKEN Permissions
+Contents: read
+Metadata: read
+Packages: read
+##[endgroup]
+Secret source: Actions
+Cache mode: write
+Prepare workflow directory
+Prepare all required actions
+Getting action download info
+Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+Download action repository 'actions/setup-dotnet@v4' (SHA:67a3573c9a986a3f9c594539f4ab511d57bb3ce9)
+Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+Complete job name: backend
+##[group]Checking docker version
+##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+'1.48'
+Docker daemon API version: '1.48'
+##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+'1.48'
+Docker client API version: '1.48'
+##[endgroup]
+##[group]Clean up resources from previous jobs
+##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=eb45e0"
+##[command]/usr/bin/docker network prune --force --filter "label=eb45e0"
+##[endgroup]
+##[group]Create local container network
+##[command]/usr/bin/docker network create --label eb45e0 github_network_198dc792e3e44c7b88562e4126a8046e
+8162dc9aed5c8e732b4ea7e0bee17815dff1a764bedc49ac4ab8304584bf706d
+##[endgroup]
+##[group]Starting postgres service container
+##[command]/usr/bin/docker pull postgres:16-alpine
+16-alpine: Pulling from library/postgres
+881fc932939e: Pulling fs layer
+fd818ebd7c87: Pulling fs layer
+07e60219949d: Pulling fs layer
+ec3414c15456: Pulling fs layer
+a8b9fccd8d77: Pulling fs layer
+850c0285d2f3: Pulling fs layer
+ac5e852d5d1d: Pulling fs layer
+55cd3be29a9d: Pulling fs layer
+108fda73eb54: Pulling fs layer
+45a91a95fdfe: Pulling fs layer
+9df8a060171e: Pulling fs layer
+ec3414c15456: Waiting
+55cd3be29a9d: Waiting
+a8b9fccd8d77: Waiting
+850c0285d2f3: Waiting
+108fda73eb54: Waiting
+ac5e852d5d1d: Waiting
+9df8a060171e: Waiting
+45a91a95fdfe: Waiting
+fd818ebd7c87: Verifying Checksum
+fd818ebd7c87: Download complete
+07e60219949d: Verifying Checksum
+07e60219949d: Download complete
+881fc932939e: Verifying Checksum
+881fc932939e: Download complete
+881fc932939e: Pull complete
+ec3414c15456: Download complete
+a8b9fccd8d77: Verifying Checksum
+a8b9fccd8d77: Download complete
+ac5e852d5d1d: Download complete
+55cd3be29a9d: Verifying Checksum
+55cd3be29a9d: Download complete
+108fda73eb54: Verifying Checksum
+108fda73eb54: Download complete
+fd818ebd7c87: Pull complete
+9df8a060171e: Verifying Checksum
+9df8a060171e: Download complete
+45a91a95fdfe: Verifying Checksum
+45a91a95fdfe: Download complete
+850c0285d2f3: Verifying Checksum
+850c0285d2f3: Download complete
+07e60219949d: Pull complete
+ec3414c15456: Pull complete
+a8b9fccd8d77: Pull complete
+850c0285d2f3: Pull complete
+ac5e852d5d1d: Pull complete
+55cd3be29a9d: Pull complete
+108fda73eb54: Pull complete
+45a91a95fdfe: Pull complete
+9df8a060171e: Pull complete
+Digest: sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
+Status: Downloaded newer image for postgres:16-alpine
+docker.io/library/postgres:16-alpine
+##[command]/usr/bin/docker create --name 492420f40b1b48989207bac29f4dceb5_postgres16alpine_e5438e --label eb45e0 --network github_network_198dc792e3e44c7b88562e4126a8046e --network-alias postgres -p 5432:5432 --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10 -e "POSTGRES_PASSWORD=test" -e GITHUB_ACTIONS=true -e CI=true postgres:16-alpine
+c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+##[command]/usr/bin/docker start c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+##[command]/usr/bin/docker ps --all --filter id=c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb Up Less than a second (health: starting)
+##[command]/usr/bin/docker port c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+5432/tcp -> 0.0.0.0:5432
+5432/tcp -> [::]:5432
+##[endgroup]
+##[group]Waiting for all services to be ready
+##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+starting
+postgres service is starting, waiting 2 seconds before checking again.
+##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+starting
+postgres service is starting, waiting 4 seconds before checking again.
+##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+healthy
+postgres service is healthy.
+##[endgroup]
+##[group]Run actions/checkout@v4
+with:
+  repository: uwessssssss/sariiff
+  token: ***
+  ssh-strict: true
+  ssh-user: git
+  persist-credentials: true
+  clean: true
+  sparse-checkout-cone-mode: true
+  fetch-depth: 1
+  fetch-tags: false
+  show-progress: true
+  lfs: false
+  submodules: false
+  set-safe-directory: true
+  allow-unsafe-pr-checkout: false
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+##[endgroup]
+Syncing repository: uwessssssss/sariiff
+##[group]Getting Git version info
+Working directory is '/home/runner/work/sariiff/sariiff'
+[command]/usr/bin/git version
+git version 2.56.1
+##[endgroup]
+Temporarily overriding HOME='/home/runner/work/_temp/a9429d8a-2357-4e51-9e09-9d7d0e64bf92' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/sariiff/sariiff
+Deleting the contents of '/home/runner/work/sariiff/sariiff'
+##[group]Initializing the repository
+[command]/usr/bin/git init /home/runner/work/sariiff/sariiff
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /home/runner/work/sariiff/sariiff/.git/
+[command]/usr/bin/git remote add origin https://github.com/uwessssssss/sariiff
+##[endgroup]
+##[group]Disabling automatic garbage collection
+[command]/usr/bin/git config --local gc.auto 0
+##[endgroup]
+##[group]Setting up auth
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+[command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+##[endgroup]
+##[group]Fetching the repository
+[command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +0e6d885c84184741f8e0a1bb7375296b45663478:refs/remotes/origin/ci/monorepo-pipeline
+From https://github.com/uwessssssss/sariiff
+ * [new ref]         0e6d885c84184741f8e0a1bb7375296b45663478 -> origin/ci/monorepo-pipeline
+##[endgroup]
+##[group]Determining the checkout info
+##[endgroup]
+[command]/usr/bin/git sparse-checkout disable
+[command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+##[group]Checking out the ref
+[command]/usr/bin/git checkout --progress --force -B ci/monorepo-pipeline refs/remotes/origin/ci/monorepo-pipeline
+Switched to a new branch 'ci/monorepo-pipeline'
+branch 'ci/monorepo-pipeline' set up to track 'origin/ci/monorepo-pipeline'.
+##[endgroup]
+[command]/usr/bin/git log -1 --format=%H
+0e6d885c84184741f8e0a1bb7375296b45663478
+##[group]Run actions/setup-dotnet@v4
+with:
+  dotnet-version: 8.0.x
+  cache: false
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+##[endgroup]
+(node:2529) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[command]/home/runner/work/_actions/actions/setup-dotnet/v4/externals/install-dotnet.sh --skip-non-versioned-files --runtime dotnet --channel LTS
+dotnet-install: .NET Core Runtime with version '10.0.15' is already installed.
+[command]/home/runner/work/_actions/actions/setup-dotnet/v4/externals/install-dotnet.sh --skip-non-versioned-files --channel 8.0
+dotnet-install: .NET Core SDK with version '8.0.428' is already installed.
+##[group]Run actions/setup-node@v4
+with:
+  node-version: 20
+  always-auth: false
+  check-latest: false
+  token: ***
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+Attempting to download 20...
+(node:2721) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Acquiring 20.20.2 - x64 from https://github.com/actions/node-versions/releases/download/20.20.2-23521894959/node-20.20.2-linux-x64.tar.gz
+Extracting ...
+[command]/usr/bin/tar xz --strip 1 --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/ab187b49-06d4-461f-b9f2-87d28eb1e12f -f /home/runner/work/_temp/113ac6da-9b73-4fc5-b7b4-22d9f44235a0
+Adding to the cache ...
+##[group]Environment details
+node: v20.20.2
+npm: 10.8.2
+yarn: 1.22.22
+##[endgroup]
+##[group]Run dotnet tool install -g dotnet-ef --version "8.*"
+[36;1mdotnet tool install -g dotnet-ef --version "8.*"[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+You can invoke the tool using the following command: dotnet-ef
+Tool 'dotnet-ef' (version '8.0.34') was successfully installed.
+##[group]Run dotnet restore SARIFF.sln
+[36;1mdotnet restore SARIFF.sln[0m
+[36;1mdotnet build SARIFF.sln --no-restore -c Release[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+  Determining projects to restore...
+  Restored /home/runner/work/sariiff/sariiff/SARIFF-Backend/src/SARIFF.Core/SARIFF.Core.csproj (in 25 ms).
+  Restored /home/runner/work/sariiff/sariiff/SARIFF-Backend/src/SARIFF.Infrastructure/SARIFF.Infrastructure.csproj (in 7.84 sec).
+  Restored /home/runner/work/sariiff/sariiff/SARIFF-Backend/src/SARIFF.API/SARIFF.API.csproj (in 7.84 sec).
+  Restored /home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/SARIFF.Tests.csproj (in 8.76 sec).
+  SARIFF.Core -> /home/runner/work/sariiff/sariiff/SARIFF-Backend/src/SARIFF.Core/bin/Release/net8.0/SARIFF.Core.dll
+  SARIFF.Infrastructure -> /home/runner/work/sariiff/sariiff/SARIFF-Backend/src/SARIFF.Infrastructure/bin/Release/net8.0/SARIFF.Infrastructure.dll
+  SARIFF.API -> /home/runner/work/sariiff/sariiff/SARIFF-Backend/src/SARIFF.API/bin/Release/net8.0/SARIFF.API.dll
+##[warning]/home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/TransactionServiceTests.cs(522,23): warning CS8604: Possible null reference argument for parameter 'collection' in 'CurrencyFlowTotalsDto Assert.Single<CurrencyFlowTotalsDto>(IEnumerable<CurrencyFlowTotalsDto> collection)'. [/home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/SARIFF.Tests.csproj]
+  SARIFF.Tests -> /home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/bin/Release/net8.0/SARIFF.Tests.dll
+
+Build succeeded.
+
+##[warning]/home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/TransactionServiceTests.cs(522,23): warning CS8604: Possible null reference argument for parameter 'collection' in 'CurrencyFlowTotalsDto Assert.Single<CurrencyFlowTotalsDto>(IEnumerable<CurrencyFlowTotalsDto> collection)'. [/home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/SARIFF.Tests.csproj]
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:13.20
+##[group]Run MIG=src/SARIFF.Infrastructure/Migrations
+[36;1mMIG=src/SARIFF.Infrastructure/Migrations[0m
+[36;1mif ! ls $MIG/*_*.cs >/dev/null 2>&1; then[0m
+[36;1m  echo "::error title=Migrations missing::No EF Core migrations are committed in SARIFF-Backend/$MIG. Commit the Migrations folder from your working copy (it was left out of the zips on purpose)."[0m
+[36;1m  echo "missing=true" >> "$GITHUB_OUTPUT"[0m
+[36;1m  dotnet ef migrations add CiTemporarySnapshot -p src/SARIFF.Infrastructure -s src/SARIFF.API[0m
+[36;1m  dotnet build SARIFF.sln --no-restore -c Release[0m
+[36;1m  exit 0[0m
+[36;1mfi[0m
+[36;1mdotnet ef migrations has-pending-model-changes -p src/SARIFF.Infrastructure -s src/SARIFF.API[0m
+[36;1mlatest=$(ls -t $MIG/*_*.cs | grep -v Designer | head -1)[0m
+[36;1mif awk '/void Up\(/,/void Down\(/' "$latest" | grep -nE 'DropTable|DropColumn|name: "xmin"'; then[0m
+[36;1m  echo "::error title=Destructive migration::$latest drops data in Up()"; exit 1[0m
+[36;1mfi[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+Build started...
+Build succeeded.
+[20:50:06 INF] : ========================================
+[20:50:06 INF] : SARIFF API - DEVELOPMENT MODE
+[20:50:06 INF] : ========================================
+WARNING: Using the development JWT key. Never deploy with it.
+No changes have been made to the model since the last migration.
+##[group]Run dotnet test SARIFF.sln --no-build -c Release --logger "console;verbosity=normal"
+[36;1mdotnet test SARIFF.sln --no-build -c Release --logger "console;verbosity=normal"[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+  SARIFF_TEST_PG: Host=localhost;Port=5432;Username=postgres;***;Database=postgres
+##[endgroup]
+Test run for /home/runner/work/sariiff/sariiff/SARIFF-Backend/tests/SARIFF.Tests/bin/Release/net8.0/SARIFF.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.5.4.1+b9eacec401 (64-bit .NET 8.0.34)
+[xUnit.net 00:00:00.07]   Discovering: SARIFF.Tests
+[xUnit.net 00:00:00.20]   Discovered:  SARIFF.Tests
+[xUnit.net 00:00:00.20]   Starting:    SARIFF.Tests
+  Passed SARIFF.Tests.CsvTextTests.Null_becomes_an_empty_quoted_cell [2 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "@SUM(A1)", expected: "\"'@SUM(A1)\"") [< 1 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "", expected: "\"\"") [< 1 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "He said \"hi\"", expected: "\"He said \"\"hi\"\"\"") [< 1 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "+254700000000", expected: "\"'+254700000000\"") [< 1 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "=HYPERLINK(\"x\")", expected: "\"'=HYPERLINK(\"\"x\"\")\"") [< 1 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "-5", expected: "\"'-5\"") [< 1 ms]
+  Passed SARIFF.Tests.CsvTextTests.Cells_are_quoted_and_formulas_neutralised(input: "Rent, October", expected: "\"Rent, October\"") [< 1 ms]
+  Passed SARIFF.Tests.ExchangeRateTests.Rate_history_is_newest_first_and_any_day_count_is_safe [1 s]
+  Passed SARIFF.Tests.ReconciliationTests.A_shortfall_stays_pending_until_completed_as_unmatched [1 s]
+  Passed SARIFF.Tests.ExchangeRateTests.A_quote_without_an_amount_currency_or_rate_is_refused [11 ms]
+  Passed SARIFF.Tests.ExchangeReportTests.Alerts_warn_about_low_negative_and_unsettled_money [337 ms]
+  Passed SARIFF.Tests.ExchangeRateTests.A_quote_uses_the_same_maths_as_a_trade [11 ms]
+  Passed SARIFF.Tests.ReconciliationTests.A_count_that_matches_the_books_is_reconciled_at_once [26 ms]
+  Passed SARIFF.Tests.ExchangeRateTests.Rates_that_make_no_sense_are_refused [21 ms]
+  Passed SARIFF.Tests.ExchangeRateTests.A_new_rate_replaces_the_old_one_for_that_currency_only [14 ms]
+  Passed SARIFF.Tests.ReconciliationTests.A_shilling_M_Pesa_wallet_in_a_Ugandan_bureau_is_reconciled_in_shillings [57 ms]
+  Passed SARIFF.Tests.ExpenseTests.Only_the_words_of_an_expense_can_be_edited_and_the_ledger_line_follows [1 s]
+  Passed SARIFF.Tests.AccountServiceTests.One_cash_till_per_currency_and_only_currencies_the_country_uses [89 ms]
+  Passed SARIFF.Tests.ExpenseTests.An_expense_paid_in_cash_lowers_the_till_and_writes_a_linked_ledger_line [58 ms]
+  Passed SARIFF.Tests.ExpenseTests.Expenses_from_the_bank_and_mobile_money_check_the_account_and_its_currency [37 ms]
+  Passed SARIFF.Tests.ExchangeReportTests.The_profit_report_adds_up_the_days_trades_and_the_spread [245 ms]
+  Passed SARIFF.Tests.ExchangeReportTests.The_dollar_position_shows_unrealised_profit_at_the_sell_rate [15 ms]
+  Passed SARIFF.Tests.ExpenseTests.Categories_are_unique_named_and_kept_while_they_hold_expenses [122 ms]
+  Passed SARIFF.Tests.ExchangeReportTests.Large_trades_are_listed_biggest_first_with_who_traded [87 ms]
+  Passed SARIFF.Tests.ExchangeReportTests.A_clients_exchange_history_totals_both_sides [46 ms]
+  Passed SARIFF.Tests.ExpenseTests.Deleting_an_expense_reverses_it_and_keeps_the_original_line_visible [98 ms]
+  Passed SARIFF.Tests.ExpenseTests.Expenses_that_cannot_be_paid_or_described_are_refused [10 ms]
+  Passed SARIFF.Tests.ReconciliationTests.Bulk_reconciling_marks_every_line_as_seen_in_full [374 ms]
+  Passed SARIFF.Tests.ExchangeReportTests.Thresholds_can_be_changed_but_not_made_negative [55 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Expired_status_without_a_date_is_blocked [1 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Active_and_in_date_is_allowed [< 1 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Suspended_is_blocked_even_when_in_date [< 1 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Expired_within_seven_day_grace_is_still_allowed [< 1 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Cancelled_is_blocked [< 1 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Trial_without_a_date_is_allowed [< 1 ms]
+  Passed SARIFF.Tests.SubscriptionTests.Expired_past_grace_is_blocked [< 1 ms]
+  Passed SARIFF.Tests.BureauClockTests.An_omitted_date_means_no_limit [< 1 ms]
+  Passed SARIFF.Tests.BureauClockTests.Stored_times_print_as_bureau_time [< 1 ms]
+  Passed SARIFF.Tests.BureauClockTests.A_local_day_starts_at_21_00_UTC_the_day_before [5 ms]
+  Passed SARIFF.Tests.AccountServiceTests.Cash_totals_statement_and_deletion_follow_that_currencys_postings [333 ms]
+  Passed SARIFF.Tests.BureauClockTests.A_date_range_covers_whole_local_days_including_the_end_day [4 ms]
+  Passed SARIFF.Tests.BureauClockTests.A_month_starts_at_local_midnight_on_the_first [< 1 ms]
+  Passed SARIFF.Tests.BureauClockTests.Extreme_dates_never_throw [< 1 ms]
+  Passed SARIFF.Tests.BureauClockTests.An_exact_time_is_kept_as_an_instant [< 1 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Company_prefixes(name: "Amana", expected: "AMA") [< 1 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Company_prefixes(name: "Sunnah Alpha", expected: "SAX") [4 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Company_prefixes(name: "Alpha Forex Bureau Ltd", expected: "AFB") [< 1 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Company_prefixes(name: "Sariff Exchange", expected: "SE") [< 1 ms]
+  Passed SARIFF.Tests.ReconciliationTests.Reconciliations_list_newest_first_and_by_account_type [24 ms]
+  Passed SARIFF.Tests.ReconciliationTests.A_till_cannot_be_counted_below_zero [1 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Each_company_has_its_own_series [9 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Exchange_codes_keep_counting_past_9999 [7 ms]
+  Passed SARIFF.Tests.CodeGeneratorTests.Two_codes_in_one_request_before_saving_are_different [3 ms]
+  Passed SARIFF.Tests.ExpenseTests.Lists_filter_by_day_and_currency_and_stats_add_up_per_currency [111 ms]
+  Passed SARIFF.Tests.ReconciliationTests.Reconciling_one_line_records_what_the_bank_actually_showed [66 ms]
+  Passed SARIFF.Tests.AccountServiceTests.A_bank_accounts_names_and_status_can_change_but_must_stay_valid [82 ms]
+  Passed SARIFF.Tests.ReconciliationTests.Each_till_lists_how_many_of_its_lines_are_pending_matched_or_unmatched [28 ms]
+  Passed SARIFF.Tests.PinGateTests.A_failed_action_gives_the_approval_back [65 ms]
+  Passed SARIFF.Tests.PinGateTests.A_grant_lasts_a_few_minutes_and_is_per_user [5 ms]
+  Passed SARIFF.Tests.PinGateTests.Five_wrong_pins_lock_the_bureau_until_the_window_passes_and_a_right_one_resets [4 ms]
+  Passed SARIFF.Tests.PinGateTests.One_pin_entry_allows_exactly_one_action [1 ms]
+  Passed SARIFF.Tests.SystemLogResolveTests.Resolved_entries_are_hidden_by_default_but_kept [37 ms]
+  Passed SARIFF.Tests.SystemLogResolveTests.Unknown_entry_is_reported_not_found [< 1 ms]
+  Passed SARIFF.Tests.SystemLogResolveTests.Resolving_one_entry_clears_every_identical_one_and_nothing_else [13 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.Bad_amounts_are_refused_and_nothing_moves(amount: "1000000000") [34 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.Bad_amounts_are_refused_and_nothing_moves(amount: "1.005") [2 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.Bad_amounts_are_refused_and_nothing_moves(amount: "-5") [< 1 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.Bad_amounts_are_refused_and_nothing_moves(amount: "0") [2 ms]
+  Passed SARIFF.Tests.StatementTests.Random_ledgers_split_anywhere_join_up_exactly(seed: 1) [184 ms]
+  Passed SARIFF.Tests.AccountServiceTests.A_mobile_money_wallet_keeps_its_details_totals_and_history [135 ms]
+  Passed SARIFF.Tests.StatementTests.Random_ledgers_split_anywhere_join_up_exactly(seed: 2) [42 ms]
+  Passed SARIFF.Tests.AccountServiceTests.A_bank_account_with_money_history_cannot_be_deleted_and_its_totals_follow_postings [53 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.Shillings_in_a_Ugandan_bureau_and_shillings_out_keep_a_per_currency_row [76 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_bank_to_till_transfer_keeps_the_total [3 ms]
+  Passed SARIFF.Tests.ReportTests.Each_days_closing_is_the_next_days_opening_in_every_currency [138 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.An_expense_paid_from_the_till_lowers_the_till_and_names_the_category [19 ms]
+  Passed SARIFF.Tests.StatementTests.Random_ledgers_split_anywhere_join_up_exactly(seed: 4) [46 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_back_dated_posting_keeps_its_date [11 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_client_to_client_transfer_needs_no_reconciliation [25 ms]
+  Passed SARIFF.Tests.ReportTests.A_past_days_report_opens_and_closes_on_that_days_balances [57 ms]
+  Passed SARIFF.Tests.StatementTests.Random_ledgers_split_anywhere_join_up_exactly(seed: 5) [40 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Default_thresholds_scale_and_round_without_throwing(c: EUR, kes: 500000, expected: 3571) [5 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Default_thresholds_scale_and_round_without_throwing(c: UGX, kes: 500000, expected: 14000000) [< 1 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Default_thresholds_scale_and_round_without_throwing(c: UGX, kes: 50000, expected: 1400000) [< 1 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Default_thresholds_scale_and_round_without_throwing(c: USD, kes: 500000, expected: 3846) [< 1 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Default_thresholds_scale_and_round_without_throwing(c: KES, kes: 50000, expected: 50000) [< 1 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Default_thresholds_scale_and_round_without_throwing(c: KES, kes: 12345, expected: 12000) [< 1 ms]
+  Passed SARIFF.Tests.CurrencyInfoTests.Every_currency_converts [< 1 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.Same_currency_counter_amount_is_not_stored_as_forex [12 ms]
+  Passed SARIFF.Tests.ValidationTests.Email_is_optional_but_well_formed(email: null, ok: True) [6 ms]
+  Passed SARIFF.Tests.ValidationTests.Email_is_optional_but_well_formed(email: "not-an-email", ok: False) [2 ms]
+  Passed SARIFF.Tests.ValidationTests.Email_is_optional_but_well_formed(email: "amina@example.co.ke", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Phone_numbers_are_international(phone: "", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Phone_numbers_are_international(phone: "+2547", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Phone_numbers_are_international(phone: "+256772009900", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Phone_numbers_are_international(phone: "0712345678", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Phone_numbers_are_international(phone: "+254712345678", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Phone_numbers_are_international(phone: null, ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "999999999.99", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "10.555", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "1000000000", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "0", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "0.01", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "10.5", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Amounts_are_positive_to_the_cent_and_under_a_billion(amount: "-1", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Rates_are_positive_and_sane(rate: "0", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Rates_are_positive_and_sane(rate: "1000000", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Rates_are_positive_and_sane(rate: "0.000001", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Rates_are_positive_and_sane(rate: "129.5", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Account_numbers_are_4_to_30_letters_digits_or_dashes(number: null, ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Account_numbers_are_4_to_30_letters_digits_or_dashes(number: "12", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Account_numbers_are_4_to_30_letters_digits_or_dashes(number: "12 34 56", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Account_numbers_are_4_to_30_letters_digits_or_dashes(number: "ACC-2026", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Account_numbers_are_4_to_30_letters_digits_or_dashes(number: "0011223344", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Free_text_is_optional_limited_and_script_free [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Names_are_letters_spaces_and_punctuation(name: "Amina Wanjiru", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Names_are_letters_spaces_and_punctuation(name: "A", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Names_are_letters_spaces_and_punctuation(name: "Zoë Ñúñez", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Names_are_letters_spaces_and_punctuation(name: "R2D2", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Names_are_letters_spaces_and_punctuation(name: "  ", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Names_are_letters_spaces_and_punctuation(name: "O'Brien-Smith Jr.", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.An_overlong_email_is_refused [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Passwords_need_eight_characters(pw: "", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Passwords_need_eight_characters(pw: "Test@123", ok: True) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.Passwords_need_eight_characters(pw: "short", ok: False) [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.The_first_failing_rule_is_reported [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.An_overlong_password_is_refused [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.An_overlong_name_is_refused [< 1 ms]
+  Passed SARIFF.Tests.ValidationTests.An_opening_balance_may_be_zero_but_not_negative [< 1 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_dollar_deposit_paid_in_shillings_moves_each_side_in_its_own_currency [18 ms]
+  Passed SARIFF.Tests.StatementTests.Random_ledgers_split_anywhere_join_up_exactly(seed: 3) [28 ms]
+  Passed SARIFF.Tests.StatementTests.Client_is_a_liability_deposit_increases_the_balance [1 ms]
+  Passed SARIFF.Tests.LogoutTests.Signed_in_cache_is_reset_by_a_new_session [11 ms]
+  Passed SARIFF.Tests.AccountServiceTests.Raising_the_opening_balance_raises_the_till_and_is_audited [107 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_wallet_saved_without_a_currency_holds_the_home_currency [10 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_destination_till_cannot_go_below_zero_either [4 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_withdrawal_lowers_the_client_and_pays_out_cash_with_before_and_after_recorded [8 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_bad_counter_amount_rate_or_description_is_refused [2 ms]
+  Passed SARIFF.Tests.AccountServiceTests.A_bank_account_opens_with_its_opening_balance_and_a_unique_number [19 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Names_for_a_whole_page_cover_every_account_type [20 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_failing_SMS_after_the_posting_does_not_undo_or_fail_it [27 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.An_account_of_another_bureau_is_treated_as_not_found [1 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.An_M_Pesa_wallet_takes_shillings_and_refuses_dollars [4 ms]
+  Passed SARIFF.Tests.StatementTests.Cash_statement_period_numbers_match_hand_calculation [58 ms]
+  Passed SARIFF.Tests.StatementTests.End_date_without_time_includes_that_whole_day [2 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Entries_owned_by_another_module_cannot_be_edited(reference: "REV-TXN-1", expected: "reversal") [24 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_client_falling_below_the_threshold_gets_a_low_balance_alert [13 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Entries_owned_by_another_module_cannot_be_edited(reference: "FLOAT-TXN", expected: "float") [1 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_bank_cannot_pay_more_than_it_holds [2 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Entries_owned_by_another_module_cannot_be_edited(reference: "EXC-EX-1", expected: "exchange") [2 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Entries_owned_by_another_module_cannot_be_edited(reference: "EXP-1", expected: "expense") [1 ms]
+  Passed SARIFF.Tests.LogoutTests.Office_logout_keeps_the_bureaus_clients_signed_in [71 ms]
+  Passed SARIFF.Tests.TransactionPostingTests.A_Kenyan_bureau_cannot_start_UGX_but_can_settle_UGX_it_already_holds [6 ms]
+  Passed SARIFF.Tests.LogoutTests.Client_logout_ends_only_that_clients_sessions [9 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.A_transfer_between_tills_reverses_without_a_client [10 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.A_reversed_transaction_cannot_be_edited [16 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Selling_more_than_the_stock_from_a_client_account_values_the_shortfall_at_the_buy_rate [7 ms]
+  Passed SARIFF.Tests.IpAccessTests.Blocked_ip_is_refused_until_it_expires_or_is_unblocked [35 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.A_cash_trade_names_a_registered_client_and_checks_a_walk_in_name [6 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.A_transaction_is_reversed_once_and_a_reversal_is_never_reversed [19 ms]
+  Passed SARIFF.Tests.IpAccessTests.Admin_allow_list_is_off_when_empty_and_strict_when_set [15 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Trades_without_a_usable_rate_or_currency_are_refused [25 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.Reversing_from_the_client_statement_puts_both_sides_back_and_keeps_the_original_visible [16 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.An_unknown_or_other_bureaus_transaction_is_not_found [4 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.One_transaction_and_the_most_recent_ones_carry_account_names [43 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.A_forex_posting_reverses_each_side_in_its_own_currency [6 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.Postings_owned_by_another_module_are_refused(reference: "EXC-EX-1", expected: "Void Exchange") [1 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.Postings_owned_by_another_module_are_refused(reference: "FLOAT-TXN", expected: "Exchange module") [1 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.Postings_owned_by_another_module_are_refused(reference: "EXP-1", expected: "Delete the expense") [1 ms]
+  Passed SARIFF.Tests.ClientPortalTests.The_type_filter_means_money_in_or_out_for_the_client [31 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.Client_money_is_only_reversed_from_that_clients_statement [3 ms]
+  Passed SARIFF.Tests.TransactionReversalTests.A_reversal_that_would_overdraw_the_destination_till_is_refused [11 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Only_the_description_and_notes_can_be_edited [27 ms]
+  Passed SARIFF.Tests.ClientPortalTests.Analytics_totals_cover_exactly_the_months_shown [31 ms]
+  Passed SARIFF.Tests.ExchangeProfitTests.Custom_rate_is_used_within_ten_percent_and_rejected_outside [7 ms]
+  Passed SARIFF.Tests.ClientPortalTests.The_csv_export_filters_by_the_clients_own_currency [8 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Voiding_a_client_account_exchange_restores_the_client_and_the_float [64 ms]
+  Passed SARIFF.Tests.ExchangeProfitTests.Account_exchange_runs_the_balance_alert_rules_with_the_new_balances [7 ms]
+  Passed SARIFF.Tests.ClientPortalTests.A_statement_opens_on_what_came_before_the_period_on_either_side [18 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Euro_trades_use_the_euro_float_and_book_profit_against_euro_cost [26 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.A_client_account_exchange_moves_the_clients_own_balances_and_writes_two_statement_lines [19 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Voiding_a_euro_sale_puts_the_euros_back_at_cost [10 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Client_account_exchanges_need_a_known_client_with_enough_money [12 ms]
+  Passed SARIFF.Tests.ExchangeProfitTests.Legacy_buy_profit_is_reported_on_a_dry_run_and_removed_on_apply [121 ms]
+  Passed SARIFF.Tests.ExchangeProfitTests.Buy_then_sell_books_the_spread_once [3 ms]
+  Passed SARIFF.Tests.ExchangeProfitTests.Voiding_a_sale_puts_the_units_back_at_cost_and_removes_the_profit [3 ms]
+  Passed SARIFF.Tests.ExchangeProfitTests.Cash_sale_beyond_the_float_is_refused [1 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Lists_page_newest_first_and_filter_by_type_currency_and_bureau_days [165 ms]
+  Passed SARIFF.Tests.ClientPortalTests.Alerts_are_counted_read_and_never_shown_to_another_client [136 ms]
+  Passed SARIFF.Tests.ClientPortalTests.The_currency_filter_follows_the_clients_own_side [7 ms]
+  Passed SARIFF.Tests.RateServiceTests.The_rate_screen_sets_lists_and_converts_through_the_home_currency [30 ms]
+  Passed SARIFF.Tests.RateServiceTests.The_rate_screen_refuses_rates_that_make_no_sense [9 ms]
+  Passed SARIFF.Tests.TransactionQueryTests.Todays_totals_count_till_legs_in_their_own_currency [49 ms]
+  Passed SARIFF.Tests.ClientPortalTests.Analytics_and_the_dashboard_count_other_currencies_received_on_the_counter_side [73 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.Lists_search_by_code_client_name_or_id_number_and_hide_voided_trades [152 ms]
+  Passed SARIFF.Tests.ClientPortalTests.A_dollar_statement_includes_dollars_received_on_the_counter_side [6 ms]
+  Passed SARIFF.Tests.ExchangeTradeTests.A_large_trade_is_flagged_for_compliance [8 ms]
+  Passed SARIFF.Tests.ClientPortalTests.The_first_page_of_transactions_is_the_newest [15 ms]
+  Passed SARIFF.Tests.ClientPortalTests.A_search_keeps_each_lines_real_balance [10 ms]
+  Passed SARIFF.Tests.ClientPortalTests.A_client_cannot_take_another_clients_number_and_another_bureau_sees_nothing [9 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Lowering_the_opening_balance_below_what_was_spent_is_refused_and_changes_are_audited [11 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Usd_posted_to_a_shilling_cash_account_is_refused [3 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.References_are_unique_within_a_day [6 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Reversal_that_would_take_cash_below_zero_is_refused [25 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Client_deposit_raises_both_the_client_and_the_cash [18 ms]
+  Passed SARIFF.Tests.IdempotencyMiddlewareTests.Reads_are_never_intercepted [173 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Withdrawal_entered_from_the_cash_side_alerts_the_client_as_money_out [37 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Reversal_puts_both_sides_back [17 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.A_cash_account_cannot_open_with_a_negative_balance [17 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Cash_cannot_be_paid_out_beyond_what_is_in_the_drawer [1 ms]
+  Passed SARIFF.Tests.TransactionLogicTests.Todays_money_in_and_out_counts_tills_only [20 ms]
+  Passed SARIFF.Tests.MobileMoneyTests.Startup_settles_old_wallets_without_relabelling_money [51 ms]
+  Passed SARIFF.Tests.MobileMoneyTests.A_used_wallet_cannot_change_to_a_network_with_another_currency [8 ms]
+  Passed SARIFF.Tests.InvoiceAndAlertRuleTests.A_paid_invoice_cannot_be_reopened_cancelled_or_deleted [253 ms]
+  Passed SARIFF.Tests.IdempotencyMiddlewareTests.A_rejected_write_releases_the_key_for_a_corrected_retry [142 ms]
+  Passed SARIFF.Tests.InvoiceAndAlertRuleTests.A_discount_larger_than_the_invoice_is_refused [6 ms]
+  Passed SARIFF.Tests.MobileMoneyTests.Wallets_created_before_the_change_keep_the_home_currency [12 ms]
+  Passed SARIFF.Tests.IdempotencyMiddlewareTests.A_successful_write_is_remembered_with_its_response [5 ms]
+  Passed SARIFF.Tests.IdempotencyMiddlewareTests.Anonymous_writes_are_not_tracked [3 ms]
+  Passed SARIFF.Tests.MobileMoneyTests.M_Pesa_in_a_Ugandan_bureau_holds_KES_and_MTN_holds_UGX [9 ms]
+  Passed SARIFF.Tests.MobileMoneyTests.A_Kenyan_bureau_cannot_open_a_UGX_MTN_wallet [6 ms]
+  Passed SARIFF.Tests.IdempotencyMiddlewareTests.A_crashed_write_releases_the_key_and_rethrows [11 ms]
+  Passed SARIFF.Tests.IdempotencyMiddlewareTests.Writes_without_a_key_run_normally [< 1 ms]
+  Passed SARIFF.Tests.MobileMoneyTests.Totals_are_kept_per_currency_never_added_across [14 ms]
+  Passed SARIFF.Tests.RequestMetricsTests.Counts_rate_response_time_and_only_5xx_as_errors [16 ms]
+  Passed SARIFF.Tests.RequestMetricsTests.Old_minutes_drop_out_of_the_window [< 1 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Withdrawals_beyond_the_float_or_into_the_wrong_currency_are_refused [47 ms]
+  Passed SARIFF.Tests.InvoiceAndAlertRuleTests.An_alert_rule_needs_a_real_currency_direction_and_client [136 ms]
+  Passed SARIFF.Tests.InvoiceAndAlertRuleTests.Tax_is_rounded_once_and_the_total_is_built_from_the_rounded_tax [20 ms]
+  Passed SARIFF.Tests.InvoiceAndAlertRuleTests.An_invoice_with_fractional_quantities_adds_up_to_the_cent [9 ms]
+  Passed SARIFF.Tests.IdentityTests.Unknown_numbers_get_the_same_answer_and_no_sms [526 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Float_history_lists_every_movement_and_honours_dates [130 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Withdrawing_returns_money_to_an_account_in_the_same_currency [16 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Dollars_bought_with_shillings_cost_the_purchase_rate [3 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Float_history_comes_a_page_at_a_time_newest_first [10 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Funding_shillings_moves_them_from_the_till_and_records_it_twice [14 ms]
+  Passed SARIFF.Tests.ExchangeDayTests.Closing_without_an_opening_count_uses_the_balance_as_the_opening [224 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Euros_live_in_their_own_float_row_with_their_cost [9 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Funding_that_cannot_be_paid_is_refused_with_the_reason [3 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Only_earned_profit_can_be_settled_out_of_the_float [8 ms]
+  Passed SARIFF.Tests.ExchangeFloatTests.Dollars_from_a_dollar_account_are_costed_at_todays_buy_rate [3 ms]
+  Passed SARIFF.Tests.ExchangeDayTests.Closing_counts_the_day_and_shows_what_is_over_or_short [95 ms]
+  Passed SARIFF.Tests.ExchangeDayTests.The_opening_count_is_recorded_once_per_day_with_other_currencies [16 ms]
+  Passed SARIFF.Tests.CodeCounterPostgresTests.A_new_series_continues_after_existing_codes [90 ms]
+  Passed SARIFF.Tests.ExchangeDayTests.Todays_summary_is_built_live_until_the_day_is_opened [26 ms]
+  Passed SARIFF.Tests.CodeCounterPostgresTests.Exchange_codes_from_separate_contexts_never_collide [283 ms]
+  Passed SARIFF.Tests.CodeCounterPostgresTests.A_counter_behind_the_data_catches_up [9 ms]
+  Passed SARIFF.Tests.IdempotencyPostgresTests.Same_key_while_the_first_is_still_running_gets_409 [566 ms]
+  Passed SARIFF.Tests.CodeCounterPostgresTests.Two_hundred_parallel_requests_get_two_hundred_different_numbers [137 ms]
+  Passed SARIFF.Tests.IdempotencyPostgresTests.Same_key_on_another_endpoint_is_refused [71 ms]
+  Passed SARIFF.Tests.IdempotencyPostgresTests.Same_key_twice_replays_the_first_response_and_moves_money_once [60 ms]
+  Passed SARIFF.Tests.IdempotencyPostgresTests.Different_users_may_use_the_same_key [38 ms]
+  Passed SARIFF.Tests.IdentityTests.An_account_on_another_phone_cannot_be_linked_even_with_its_password [783 ms]
+  Passed SARIFF.Tests.IdentityTests.An_account_whose_number_changed_drops_out_of_the_phone_login [461 ms]
+  Passed SARIFF.Tests.IdentityTests.Phone_login_alone_shows_no_bureaus_until_each_is_linked_with_its_password [537 ms]
+  Passed SARIFF.Tests.IdentityTests.Wrong_codes_lock_the_phone_login [224 ms]
+[xUnit.net 00:00:05.98]   Finished:    SARIFF.Tests
+  Passed SARIFF.Tests.IdentityTests.A_trusted_device_skips_the_code_until_signed_out_everywhere [241 ms]
+  Passed SARIFF.Tests.IdentityTests.Office_unlink_removes_the_bureau_and_leaves_money_alone [333 ms]
+  Passed SARIFF.Tests.IdentityTests.Picking_a_bureau_gives_that_bureaus_client_token_and_rechecks_status_every_time [348 ms]
+
+Test Run Successful.
+Total tests: 260
+     Passed: 260
+ Total time: 6.4070 Seconds
+##[group]Run ASPNETCORE_ENVIRONMENT=Development PORT=18080 \
+[36;1mASPNETCORE_ENVIRONMENT=Development PORT=18080 \[0m
+[36;1mConnectionStrings__DefaultConnection="$PG_CS;Database=sariff_e2e" \[0m
+[36;1m  nohup dotnet run --project src/SARIFF.API -c Release --no-build --no-launch-profile > "$RUNNER_TEMP/api.log" 2>&1 &[0m
+[36;1mfor i in $(seq 1 120); do curl -sf http://127.0.0.1:18080/health && exit 0; sleep 1; done[0m
+[36;1mecho "API did not start"; tail -60 "$RUNNER_TEMP/api.log"; exit 1[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+{"status":"Healthy","timestamp":"2026-11-12T20:50:19.4596318Z"}
+##[group]Run node tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"
+[36;1mnode tests/e2e/e2e.mjs http://127.0.0.1:18080 "$RUNNER_TEMP/api.log"[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+SARIFF end-to-end test — http://127.0.0.1:18080
+
+PASS  API answers /health
+PASS  Kenyan office signs in with SMS code
+PASS  Super admin signs in with SMS code
+PASS  Wrong password is refused
+PASS  Super admin creates a Ugandan (UGX) bureau
+PASS  Ugandan office signs in
+PASS  M-Pesa wallet in a Ugandan bureau holds KES
+PASS  MTN MoMo wallet holds UGX
+PASS  A Kenyan bureau cannot open a UGX (MTN) wallet
+PASS  Dashboard keeps wallets apart: UGX 2,000,000
+PASS  Dashboard keeps wallets apart: KES 50,000
+PASS  Home-currency mobile money total is UGX only (not 2,050,000)
+PASS  UGX cash till exists
+PASS  New client gets a UGX opening balance of 500,000
+PASS  Deposit posts
+PASS  Client balance goes 500,000 → 600,000 UGX (credit raises a client)
+PASS  Cash till goes up by exactly 100,000 UGX (debit raises an asset)
+PASS  API sends the time marked as UTC (ends in Z)
+PASS  …and it is the real time (within 2 minutes)
+PASS  UGX cannot be posted into the KES M-Pesa wallet
+PASS  Transactions for today (2026-11-12, Nairobi/Kampala) include the deposit
+PASS  Client signs in to the portal
+PASS  Client sees the deposit
+PASS  Portal shows the bureau's local time (23:50), not UTC
+PASS  Phone login is switched on in Development
+PASS  Same person is also a client at the Kenyan bureau
+PASS  Phone login sends an SMS code
+PASS  Code is accepted; no bureau is linked by the number alone
+PASS  Linking with a wrong password is refused
+PASS  Both bureaus link with their own code + password
+PASS  The phone now lists 2 bureaus
+PASS  Picking the Ugandan bureau gives that bureau's client session
+PASS  The phone-only token cannot open portal data (403)
+
+END-TO-END: 33 passed, 0 failed
+##[group]Run docker build -f docker/Dockerfile -t sariff-api:ci .
+[36;1mdocker build -f docker/Dockerfile -t sariff-api:ci .[0m
+shell: /usr/bin/bash -e {0}
+env:
+  PG_CS: Host=localhost;Port=5432;Username=postgres;***
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_ROOT: /usr/share/dotnet
+##[endgroup]
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 828B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:8.0
+#2 DONE 0.1s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:8.0
+#3 DONE 0.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 185B done
+#4 DONE 0.0s
+
+#5 [build 1/8] FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:1b955f179b02df4f0eb5fadedaa898cbe44d620a64aab52eec72c8e91d1355b5
+#5 resolve mcr.microsoft.com/dotnet/sdk:8.0@sha256:1b955f179b02df4f0eb5fadedaa898cbe44d620a64aab52eec72c8e91d1355b5 done
+#5 ...
+
+#6 [internal] load build context
+#6 transferring context: 1.47MB 0.0s done
+#6 DONE 0.0s
+
+#5 [build 1/8] FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:1b955f179b02df4f0eb5fadedaa898cbe44d620a64aab52eec72c8e91d1355b5
+#5 sha256:45d16602f24ae4feb4e07f098336592abee3fdae51b048e8f59727efc5cd357b 5.06kB / 5.06kB done
+#5 sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 28.25MB / 28.25MB 0.2s
+#5 sha256:f26de69052514f28f47b02cad86c0e05a2955b40ccf54f92c9b5c5babde4cecd 3.37kB / 3.37kB 0.0s done
+#5 sha256:4cdea2a99ba7f4d8a48ebe250ec01db119d2102c141f85411a576be7bac5eb23 2.64kB / 2.64kB done
+#5 sha256:b7f13f868967b3114809277e7f3b231178346cd20361e83bc321791419e32a9f 6.29MB / 33.15MB 0.1s
+#5 sha256:1b955f179b02df4f0eb5fadedaa898cbe44d620a64aab52eec72c8e91d1355b5 1.08kB / 1.08kB done
+#5 sha256:1686d64e92be3fdfbb742b8868cbbd0fb103a5afed4f4f3d369b97c65de8f805 9.44MB / 19.18MB 0.1s
+#5 sha256:b7f13f868967b3114809277e7f3b231178346cd20361e83bc321791419e32a9f 33.15MB / 33.15MB 0.3s
+#5 sha256:1686d64e92be3fdfbb742b8868cbbd0fb103a5afed4f4f3d369b97c65de8f805 19.18MB / 19.18MB 0.3s done
+#5 sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 28.25MB / 28.25MB 0.4s done
+#5 sha256:b7f13f868967b3114809277e7f3b231178346cd20361e83bc321791419e32a9f 33.15MB / 33.15MB 0.6s done
+#5 sha256:0d099b7bcd26c8f44b1081014a338185b56ab5250e2198dad6e72b4ee4788c84 168B / 168B 0.6s done
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 0B / 182.55MB 0.6s
+#5 sha256:3dbd850ecee8cd370064dda536d7705d29666852c322ccfc7bbc1e6876b56f31 4.19MB / 11.46MB 0.6s
+#5 sha256:bb3a6672c10a787fdb511babd8d3ca0aadf83d31d662047cb5e118f09b4be9a1 0B / 31.91MB 0.6s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 9.44MB / 182.55MB 0.7s
+#5 sha256:bb3a6672c10a787fdb511babd8d3ca0aadf83d31d662047cb5e118f09b4be9a1 12.58MB / 31.91MB 0.7s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 39.85MB / 182.55MB 0.8s
+#5 sha256:bb3a6672c10a787fdb511babd8d3ca0aadf83d31d662047cb5e118f09b4be9a1 31.91MB / 31.91MB 0.8s
+#5 sha256:1eff008c0f274151c9e686438096182bf9908d0dd37aa9584e35a8e670e95069 12.58MB / 17.68MB 0.8s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 61.87MB / 182.55MB 0.9s
+#5 sha256:1eff008c0f274151c9e686438096182bf9908d0dd37aa9584e35a8e670e95069 17.68MB / 17.68MB 0.9s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 80.74MB / 182.55MB 1.0s
+#5 extracting sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 0.5s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 100.66MB / 182.55MB 1.1s
+#5 sha256:bb3a6672c10a787fdb511babd8d3ca0aadf83d31d662047cb5e118f09b4be9a1 31.91MB / 31.91MB 1.0s done
+#5 sha256:1eff008c0f274151c9e686438096182bf9908d0dd37aa9584e35a8e670e95069 17.68MB / 17.68MB 1.0s done
+#5 sha256:4e3c5ad781837cec17fc44f52d91c735bd8345a7abfa23934c78e8ebdcced04d 2.75kB / 2.75kB 1.0s done
+#5 sha256:d43dbee8fa15d93659e0d866836b69857ecdcc726f9481eacf1fee88441013bc 8.39MB / 17.45MB 1.1s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 120.59MB / 182.55MB 1.2s
+#5 sha256:d43dbee8fa15d93659e0d866836b69857ecdcc726f9481eacf1fee88441013bc 17.45MB / 17.45MB 1.2s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 164.63MB / 182.55MB 1.4s
+#5 sha256:d43dbee8fa15d93659e0d866836b69857ecdcc726f9481eacf1fee88441013bc 17.45MB / 17.45MB 1.2s done
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 182.55MB / 182.55MB 1.6s
+#5 sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 182.55MB / 182.55MB 2.5s done
+#5 extracting sha256:f26de69052514f28f47b02cad86c0e05a2955b40ccf54f92c9b5c5babde4cecd
+#5 extracting sha256:b7f13f868967b3114809277e7f3b231178346cd20361e83bc321791419e32a9f 0.1s
+#5 extracting sha256:b7f13f868967b3114809277e7f3b231178346cd20361e83bc321791419e32a9f 0.3s done
+#5 extracting sha256:0d099b7bcd26c8f44b1081014a338185b56ab5250e2198dad6e72b4ee4788c84
+#5 extracting sha256:bb3a6672c10a787fdb511babd8d3ca0aadf83d31d662047cb5e118f09b4be9a1
+#5 ...
+
+#7 [runtime 1/4] FROM mcr.microsoft.com/dotnet/aspnet:8.0@sha256:dccacae9e0e103b5d3ba5fbe442dd8d3316b990cd8f2ec9be0a0ec9db0c0e520
+#7 resolve mcr.microsoft.com/dotnet/aspnet:8.0@sha256:dccacae9e0e103b5d3ba5fbe442dd8d3316b990cd8f2ec9be0a0ec9db0c0e520 done
+#7 sha256:f34fd5466d42d8f21b41f9f752622838c1de794c95de167eb371ba22d3fadb5a 1.58kB / 1.58kB done
+#7 sha256:fea4327e50702227971002ce8ac8132bc3c9357fbc777e1cf2104f6446ed8659 2.54kB / 2.54kB done
+#7 sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 28.25MB / 28.25MB 0.5s done
+#7 sha256:f26de69052514f28f47b02cad86c0e05a2955b40ccf54f92c9b5c5babde4cecd 3.37kB / 3.37kB 0.0s done
+#7 sha256:b7f13f868967b3114809277e7f3b231178346cd20361e83bc321791419e32a9f 33.15MB / 33.15MB 0.6s done
+#7 sha256:dccacae9e0e103b5d3ba5fbe442dd8d3316b990cd8f2ec9be0a0ec9db0c0e520 1.08kB / 1.08kB done
+#7 extracting sha256:dd051e1b8c92ff101fa3071ab97ea4924885942f15644e01c3dc095764e863e3 0.9s done
+#7 sha256:3dbd850ecee8cd370064dda536d7705d29666852c322ccfc7bbc1e6876b56f31 11.46MB / 11.46MB 0.7s done
+#7 extracting sha256:1686d64e92be3fdfbb742b8868cbbd0fb103a5afed4f4f3d369b97c65de8f805 0.2s done
+#7 extracting sha256:f26de69052514f28f47b02cad86c0e05a2955b40ccf54f92c9b5c5babde4cecd done
+#7 extracting sha256:0d099b7bcd26c8f44b1081014a338185b56ab5250e2198dad6e72b4ee4788c84 done
+#7 extracting sha256:3dbd850ecee8cd370064dda536d7705d29666852c322ccfc7bbc1e6876b56f31 0.1s done
+#7 DONE 4.2s
+
+#8 [runtime 2/4] WORKDIR /app
+#8 DONE 0.0s
+
+#5 [build 1/8] FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:1b955f179b02df4f0eb5fadedaa898cbe44d620a64aab52eec72c8e91d1355b5
+#5 extracting sha256:bb3a6672c10a787fdb511babd8d3ca0aadf83d31d662047cb5e118f09b4be9a1 0.6s done
+#5 extracting sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698
+#5 extracting sha256:760fc116676481682ba391e2bab0deff494614e43a8f24197c4f025068ddb698 2.1s done
+#5 extracting sha256:1eff008c0f274151c9e686438096182bf9908d0dd37aa9584e35a8e670e95069
+#5 extracting sha256:1eff008c0f274151c9e686438096182bf9908d0dd37aa9584e35a8e670e95069 0.0s done
+#5 extracting sha256:4e3c5ad781837cec17fc44f52d91c735bd8345a7abfa23934c78e8ebdcced04d
+#5 extracting sha256:4e3c5ad781837cec17fc44f52d91c735bd8345a7abfa23934c78e8ebdcced04d done
+#5 extracting sha256:d43dbee8fa15d93659e0d866836b69857ecdcc726f9481eacf1fee88441013bc 0.1s
+#5 extracting sha256:d43dbee8fa15d93659e0d866836b69857ecdcc726f9481eacf1fee88441013bc 0.2s done
+#5 DONE 11.0s
+
+#9 [build 2/8] WORKDIR /src
+#9 DONE 0.0s
+
+#10 [build 3/8] COPY [src/SARIFF.Core/SARIFF.Core.csproj, src/SARIFF.Core/]
+#10 DONE 0.0s
+
+#11 [build 4/8] COPY [src/SARIFF.Infrastructure/SARIFF.Infrastructure.csproj, src/SARIFF.Infrastructure/]
+#11 DONE 0.0s
+
+#12 [build 5/8] COPY [src/SARIFF.API/SARIFF.API.csproj, src/SARIFF.API/]
+#12 DONE 0.0s
+
+#13 [build 6/8] RUN dotnet restore "src/SARIFF.API/SARIFF.API.csproj"
+#13 0.461   Determining projects to restore...
+#13 0.794   Restored /src/src/SARIFF.Core/SARIFF.Core.csproj (in 52 ms).
+#13 2.608   Restored /src/src/SARIFF.Infrastructure/SARIFF.Infrastructure.csproj (in 1.88 sec).
+#13 2.608   Restored /src/src/SARIFF.API/SARIFF.API.csproj (in 1.88 sec).
+#13 DONE 3.3s
+
+#14 [build 7/8] COPY . .
+#14 DONE 0.0s
+
+#15 [build 8/8] RUN dotnet publish "src/SARIFF.API/SARIFF.API.csproj" -c Release -o /app/publish
+#15 0.597   Determining projects to restore...
+#15 0.893   All projects are up-to-date for restore.
+#15 2.750   SARIFF.Core -> /src/src/SARIFF.Core/bin/Release/net8.0/SARIFF.Core.dll
+#15 6.068   SARIFF.Infrastructure -> /src/src/SARIFF.Infrastructure/bin/Release/net8.0/SARIFF.Infrastructure.dll
+#15 7.364   SARIFF.API -> /src/src/SARIFF.API/bin/Release/net8.0/SARIFF.API.dll
+#15 7.587   SARIFF.API -> /app/publish/
+#15 DONE 7.7s
+
+#16 [runtime 3/4] COPY --from=build /app/publish .
+#16 DONE 0.2s
+
+#17 [runtime 4/4] RUN mkdir -p /app/logs && chown app /app/logs
+#17 DONE 0.1s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 0.5s done
+#18 writing image sha256:d933f21da5dc311d2586628ee6dd75c9bce21214d66297efacc428ff9e953124 done
+#18 naming to docker.io/library/sariff-api:ci done
+#18 DONE 0.5s
+Post job cleanup.
+(node:4253) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Post job cleanup.
+(node:4261) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Post job cleanup.
+[command]/usr/bin/git version
+git version 2.56.1
+Temporarily overriding HOME='/home/runner/work/_temp/f6dc2ecc-9525-45ac-a966-7f00dab10891' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/sariiff/sariiff
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+[command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Print service container logs: 492420f40b1b48989207bac29f4dceb5_postgres16alpine_e5438e
+##[command]/usr/bin/docker logs --details c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+ The files belonging to this database system will be owned by user "postgres".
+ sh: locale: not found
+ 2026-11-12 20:49:14.763 UTC [35] WARNING:  no usable system locales were found
+ This user must also own the server process.
+ initdb: warning: enabling "trust" authentication for local connections
+ initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+ 2026-11-12 20:49:15.603 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+ 2026-11-12 20:49:15.603 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+ 2026-11-12 20:49:15.603 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+ 2026-11-12 20:49:15.604 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+ 2026-11-12 20:49:15.606 UTC [55] LOG:  database system was shut down at 2026-11-12 20:49:15 UTC
+ 2026-11-12 20:49:15.610 UTC [1] LOG:  database system is ready to accept connections
+ 2026-11-12 20:49:19.475 UTC [65] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:24.504 UTC [72] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:29.531 UTC [79] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:34.574 UTC [86] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:39.607 UTC [93] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:44.691 UTC [100] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:49.755 UTC [108] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:54.785 UTC [115] FATAL:  role "root" does not exist
+ 2026-11-12 20:49:59.835 UTC [123] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:04.875 UTC [130] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:09.915 UTC [138] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:11.254 UTC [139] FATAL:  database "sariff_test_576e60a39783" does not exist
+ 2026-11-12 20:50:12.587 UTC [143] FATAL:  database "sariff_test_f319461a9e21" does not exist
+ 2026-11-12 20:50:13.804 UTC [142] ERROR:  duplicate key value violates unique constraint "IX_IdempotencyRecords_Scope_Key"
+ 2026-11-12 20:50:13.804 UTC [142] DETAIL:  Key ("Scope", "Key")=(da8fa5c7-6d39-4f06-a9e7-03a2f1520fb5, in-flight) already exists.
+ 2026-11-12 20:50:13.804 UTC [142] STATEMENT:  INSERT INTO "IdempotencyRecords" ("Id", "Completed", "ContentType", "CreatedAt", "Key", "Method", "Path", "ResponseBody", "Scope", "StatusCode")
+ 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+ 2026-11-12 20:50:13.908 UTC [142] ERROR:  duplicate key value violates unique constraint "IX_IdempotencyRecords_Scope_Key"
+ 2026-11-12 20:50:13.908 UTC [142] DETAIL:  Key ("Scope", "Key")=(d7c11027-9520-452b-8413-bce8b0fe87bc, reused) already exists.
+ 2026-11-12 20:50:13.908 UTC [142] STATEMENT:  INSERT INTO "IdempotencyRecords" ("Id", "Completed", "ContentType", "CreatedAt", "Key", "Method", "Path", "ResponseBody", "Scope", "StatusCode")
+ 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+ 2026-11-12 20:50:13.963 UTC [179] ERROR:  duplicate key value violates unique constraint "IX_IdempotencyRecords_Scope_Key"
+ 
+ The database cluster will be initialized with locale "en_US.utf8".
+ The default database encoding has accordingly been set to "UTF8".
+ The default text search configuration will be set to "english".
+ 
+ Data page checksums are disabled.
+ 
+ fixing permissions on existing directory /var/lib/postgresql/data ... ok
+ creating subdirectories ... ok
+ selecting dynamic shared memory implementation ... posix
+ selecting default max_connections ... 100
+ selecting default shared_buffers ... 128MB
+ selecting default time zone ... UTC
+ creating configuration files ... ok
+ running bootstrap script ... ok
+ performing post-bootstrap initialization ... ok
+ syncing data to disk ... ok
+ 
+ 
+ Success. You can now start the database server using:
+ 
+     pg_ctl -D /var/lib/postgresql/data -l logfile start
+ 
+ waiting for server to start....2026-11-12 20:49:15.386 UTC [41] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+ 2026-11-12 20:49:15.387 UTC [41] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+ 2026-11-12 20:49:15.389 UTC [44] LOG:  database system was shut down at 2026-11-12 20:49:15 UTC
+ 2026-11-12 20:49:15.392 UTC [41] LOG:  database system is ready to accept connections
+  done
+ server started
+ 
+ /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+ 
+ waiting for server to shut down....2026-11-12 20:49:15.486 UTC [41] LOG:  received fast shutdown request
+ 2026-11-12 20:49:15.487 UTC [41] LOG:  aborting any active transactions
+ 2026-11-12 20:49:15.489 UTC [41] LOG:  background worker "logical replication launcher" (PID 47) exited with exit code 1
+ 2026-11-12 20:49:15.489 UTC [42] LOG:  shutting down
+ 2026-11-12 20:49:15.489 UTC [42] LOG:  checkpoint starting: shutdown immediate
+ 2026-11-12 20:49:15.491 UTC [42] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/14F7180, redo lsn=0/14F7180
+ 2026-11-12 20:49:15.496 UTC [41] LOG:  database system is shut down
+  done
+ server stopped
+ 
+ PostgreSQL init process complete; ready for start up.
+ 
+ 2026-11-12 20:50:13.963 UTC [179] DETAIL:  Key ("Scope", "Key")=(73773149-826a-4d96-8f01-df3acb7e4f4f, same-key) already exists.
+ 2026-11-12 20:50:13.963 UTC [179] STATEMENT:  INSERT INTO "IdempotencyRecords" ("Id", "Completed", "ContentType", "CreatedAt", "Key", "Method", "Path", "ResponseBody", "Scope", "StatusCode")
+ 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+ 2026-11-12 20:50:13.973 UTC [53] LOG:  checkpoint starting: immediate force wait
+ 2026-11-12 20:50:14.112 UTC [53] LOG:  checkpoint complete: wrote 899 buffers (5.5%); 1 WAL file(s) added, 0 removed, 0 recycled; write=0.054 s, sync=0.001 s, total=0.139 s; sync files=14, longest=0.001 s, average=0.001 s; distance=10705 kB, estimate=10705 kB; lsn=0/1F6C728, redo lsn=0/1F6B6F8
+ 2026-11-12 20:50:14.113 UTC [53] LOG:  checkpoint starting: immediate force wait
+ 2026-11-12 20:50:14.133 UTC [53] LOG:  checkpoint complete: wrote 2 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.021 s; sync files=2, longest=0.001 s, average=0.001 s; distance=4 kB, estimate=9635 kB; lsn=0/1F6C7E0, redo lsn=0/1F6C7A0
+ 2026-11-12 20:50:14.949 UTC [189] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:17.693 UTC [191] FATAL:  database "sariff_e2e" does not exist
+ 2026-11-12 20:50:17.705 UTC [192] FATAL:  database "sariff_e2e" does not exist
+ 2026-11-12 20:50:17.709 UTC [193] FATAL:  database "sariff_e2e" does not exist
+ 2026-11-12 20:50:19.981 UTC [204] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:25.010 UTC [212] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:30.041 UTC [219] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:35.092 UTC [226] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:40.123 UTC [233] FATAL:  role "root" does not exist
+ 2026-11-12 20:50:45.176 UTC [240] FATAL:  role "root" does not exist
+Stop and remove container: 492420f40b1b48989207bac29f4dceb5_postgres16alpine_e5438e
+##[command]/usr/bin/docker rm --force c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+c6e7f0a7ebcb22748311b67b0b79f4ac5a00598395dbb39b7472e41cde11e8cb
+Remove container network: github_network_198dc792e3e44c7b88562e4126a8046e
+##[command]/usr/bin/docker network rm github_network_198dc792e3e44c7b88562e4126a8046e
+github_network_198dc792e3e44c7b88562e4126a8046e
+Cleaning up orphan processes
+Terminate orphan process: pid (2879) (MSBuild)
+Terminate orphan process: pid (2904) (MSBuild)
+Terminate orphan process: pid (2905) (MSBuild)
+Terminate orphan process: pid (2906) (MSBuild)
+Terminate orphan process: pid (3079) (VBCSCompiler)
+Terminate orphan process: pid (3611) (dotnet)
+Terminate orphan process: pid (3635) (SARIFF.API)
+##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-dotnet@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

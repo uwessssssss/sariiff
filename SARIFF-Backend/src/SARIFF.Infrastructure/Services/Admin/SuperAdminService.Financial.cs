@@ -184,7 +184,7 @@ public partial class SuperAdminService
             CompanyAccessCache.Invalidate(dto.CompanyId);
 
             return new ApiResponse<PaymentHistoryDto>(true, "Payment recorded",
-                new PaymentHistoryDto(payment.Id, dto.CompanyId, company.Name, dto.Amount, dto.Currency,
+                new PaymentHistoryDto(payment.Id, dto.CompanyId, company.Name, dto.Amount, billingCurrency,
                     dto.PaymentMethod, "Completed", dto.Reference, payment.PaidAt, payment.PeriodStart, payment.PeriodEnd));
         }
         catch (Exception ex)

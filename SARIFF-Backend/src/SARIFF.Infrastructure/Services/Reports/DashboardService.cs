@@ -89,6 +89,7 @@ public class DashboardService : IDashboardService
                 await _context.BankAccounts.AnyAsync(a => a.CompanyId == companyId && !a.IsDeleted && a.Currency == c && a.Balance != 0) ||
                 await _context.ClientCurrencyBalances.AnyAsync(b => b.CompanyId == companyId && !b.IsDeleted && b.Currency == c && b.Balance != 0) ||
                 await _context.ExchangeFloatBalances.AnyAsync(b => b.CompanyId == companyId && b.Currency == c && b.Balance != 0) ||
+                await _context.MpesaAgents.AnyAsync(m => m.CompanyId == companyId && !m.IsDeleted && m.Currency == c && m.Balance != 0) ||   // a wallet still holding it
                 (c == Currency.KES && await _context.Users.AnyAsync(u => u.CompanyId == companyId && !u.IsDeleted && u.Role == UserRole.Client && u.BalanceKES != 0)) ||
                 (c == Currency.USD && await _context.Users.AnyAsync(u => u.CompanyId == companyId && !u.IsDeleted && u.Role == UserRole.Client && u.BalanceUSD != 0));
             if (!held) used.Remove(c);
