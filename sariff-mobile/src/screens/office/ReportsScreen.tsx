@@ -41,6 +41,17 @@ function balancesByCurrency(b: any): { currency: number; cash: number; bank: num
   ];
 }
 
+// Opening and closing list the SAME currencies in the same order — home currency, USD, then
+// any other currency with money at either end of the day. (It was "KES and USD always":
+// a Ugandan bureau's opening list left out its UGX till while the closing list showed it.)
+function lineUp<T extends { currency: number; cash: number; bank: number }>(rows: T[], other: T[], base: number): T[] {
+  const keep = new Set<number>([base, Currency.USD]);
+  for (const r of [...rows, ...other]) if (r.cash || r.bank) keep.add(r.currency);
+  const by = new Map(rows.map((r) => [r.currency, r]));
+  const order = (c: number) => (c === base ? 0 : c === Currency.USD ? 1 : 2 + c);
+  return [...keep].sort((a, b) => order(a) - order(b)).map((c) => by.get(c) || ({ currency: c, cash: 0, bank: 0 } as T));
+}
+
 export default function ReportsScreen() {
   const { base } = useBaseCurrency();
   // Mobile money per wallet currency (an M-Pesa wallet is KES even in a Ugandan bureau).
@@ -164,15 +175,14 @@ export default function ReportsScreen() {
                 <TouchableOpacity accessibilityRole="button" accessibilityLabel="Next" onPress={() => shiftDay(1)} disabled={isToday} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: 6, backgroundColor: colors.surfaceAlt, borderRadius: 10, opacity: isToday ? 0.35 : 1 }}>
                   <Ionicons name="chevron-forward" size={20} color={colors.text} />
                 </TouchableOpacity>
-                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Share" onPress={shareDailySummary} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: 6, backgroundColor: '#4F46E5', borderRadius: 10 }}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel="Share" onPress={shareDailySummary} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: 6, backgroundColor: colors.primary, borderRadius: 10 }}>
                   <Ionicons name="share-social-outline" size={20} color="#fff" />
                 </TouchableOpacity>
               </View>
             </View>
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
               <Text style={{ fontSize: 11, fontWeight: '700' as any, color: '#4ADE80', letterSpacing: 1, marginBottom: 8 }}>OPENING BALANCES</Text>
-              {balancesByCurrency(report.openingBalances)
-                .filter((r) => r.currency <= 1 || r.cash || r.bank)
+              {lineUp(balancesByCurrency(report.openingBalances), balancesByCurrency(report.closingBalances), base)
                 .flatMap((r) => [
                   <InfoRow key={`c${r.currency}`} label={`Cash ${currencyCode(r.currency)}`} value={formatCurrency(r.cash, r.currency)} valueColor={CURRENCY_COLOR[r.currency]} />,
                   <InfoRow key={`b${r.currency}`} label={`Bank ${currencyCode(r.currency)}`} value={formatCurrency(r.bank, r.currency)} valueColor={CURRENCY_COLOR[r.currency]} />,
@@ -183,8 +193,7 @@ export default function ReportsScreen() {
             </View>
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 14, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: colors.border }}>
               <Text style={{ fontSize: 11, fontWeight: '700' as any, color: '#FCA5A5', letterSpacing: 1, marginBottom: 8 }}>CLOSING BALANCES</Text>
-              {balancesByCurrency(report.closingBalances)
-                .filter((r) => r.currency <= 1 || r.cash || r.bank)
+              {lineUp(balancesByCurrency(report.closingBalances), balancesByCurrency(report.openingBalances), base)
                 .flatMap((r) => [
                   <InfoRow key={`c${r.currency}`} label={`Cash ${currencyCode(r.currency)}`} value={formatCurrency(r.cash, r.currency)} valueColor={CURRENCY_COLOR[r.currency]} />,
                   <InfoRow key={`b${r.currency}`} label={`Bank ${currencyCode(r.currency)}`} value={formatCurrency(r.bank, r.currency)} valueColor={CURRENCY_COLOR[r.currency]} />,
@@ -230,6 +239,7 @@ export default function ReportsScreen() {
             </>)}
             {report.bankAccounts && (<>
               <Text style={{ fontSize: 11, fontWeight: '700' as any, color: colors.textTertiary, letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>BANK ACCOUNTS</Text>
+              {!(Array.isArray(report.bankAccounts) && report.bankAccounts.length) && <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 6 }}>No bank accounts yet</Text>}
               {(Array.isArray(report.bankAccounts) ? report.bankAccounts : []).map((a: any, i: number) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 12, marginBottom: 6 }}>
                   <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(91,156,255,0.12)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
@@ -244,14 +254,17 @@ export default function ReportsScreen() {
               ))}
             </>)}
             {report.mpesaAgents && (<>
-              <Text style={{ fontSize: 11, fontWeight: '700' as any, color: colors.textTertiary, letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>M-PESA AGENTS</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700' as any, color: colors.textTertiary, letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>MOBILE MONEY</Text>
               {(Array.isArray(report.mpesaAgents) ? report.mpesaAgents : []).map((a: any, i: number) => (
                 <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 12, marginBottom: 6 }}>
                   <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(57,217,176,0.12)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                     <Ionicons name="phone-portrait-outline" size={18} color="#059669" />
                   </View>
-                  <Text style={{ flex: 1, fontSize: 13, fontWeight: '600' as any, color: colors.text }}>{a.agentName || a.name}</Text>
-                  <Text style={{ fontSize: 14, fontWeight: '700' as any, color: '#39D9B0' }}>{formatCurrency(a.balance || 0, base)}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600' as any, color: colors.text }}>{a.agentName || a.name}</Text>
+                    {a.currency !== undefined && a.currency !== null && <Text style={{ fontSize: 10, color: colors.textTertiary }}>{currencyCode(a.currency)} wallet</Text>}
+                  </View>
+                  <Text style={{ fontSize: 14, fontWeight: '700' as any, color: '#39D9B0' }}>{formatCurrency(a.balance || 0, a.currency ?? base)}</Text>
                 </View>
               ))}
             </>)}
@@ -263,22 +276,28 @@ export default function ReportsScreen() {
           <View>
             <Text style={{ fontSize: 18, fontWeight: '700' as any, color: colors.text, marginBottom: 16 }}>👥 Client Balances</Text>
             {(Array.isArray(report) ? report : report.clients || report.items || []).map((c: any, i: number) => (
-              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 12, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: (c.balanceKES || 0) < 0 ? '#DC2626' : '#059669' }}>
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 12, padding: 12, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: [c.balanceKES, c.balanceUSD, ...(c.otherBalances || []).map((b: any) => b.amount ?? b.balance)].some((v: any) => (v || 0) < 0) ? colors.danger : colors.success }}>
                 <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(91,156,255,0.12)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '700' as any, color: '#4F46E5' }}>{(c.fullName || c.name || '?')[0]}</Text>
+                  <Text style={{ fontSize: 14, fontWeight: '700' as any, color: colors.primary }}>{(c.fullName || c.name || '?')[0]}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 13, fontWeight: '600' as any, color: colors.text }} numberOfLines={1}>{c.fullName || c.name}</Text>
                   <Text style={{ fontSize: 10, color: colors.textTertiary }}>{c.code}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700' as any, color: (c.balanceKES || 0) < 0 ? '#FF6B81' : (c.balanceKES || 0) > 0 ? '#39D9B0' : '#9AA6BE' }}>{formatCurrency(c.balanceKES || 0)}</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '600' as any, color: (c.balanceUSD || 0) < 0 ? '#FF6B81' : (c.balanceUSD || 0) > 0 ? '#7FB3FF' : '#9AA6BE' }}>{formatCurrency(c.balanceUSD || 0, Currency.USD)}</Text>
-                  {(c.otherBalances || []).filter((b: any) => (b.amount ?? b.balance)).map((b: any) => (
-                    <Text key={b.currency} style={{ fontSize: 11, fontWeight: '600' as any, color: (b.amount ?? b.balance) < 0 ? '#FF6B81' : CURRENCY_COLOR[b.currency] }}>
-                      {formatCurrency(b.amount ?? b.balance, b.currency)}
-                    </Text>
-                  ))}
+                  {(() => {
+                    const rows = [
+                      { currency: Currency.KES, v: c.balanceKES || 0 },
+                      { currency: Currency.USD, v: c.balanceUSD || 0 },
+                      ...(c.otherBalances || []).map((b: any) => ({ currency: b.currency, v: (b.amount ?? b.balance) || 0 })),
+                    ].filter((r) => r.v).sort((a, b) => (a.currency === base ? -1 : b.currency === base ? 1 : 0));
+                    if (!rows.length) return <Text style={{ fontSize: 13, fontWeight: '600' as any, color: colors.textSecondary }}>Settled</Text>;
+                    return rows.map((r, k) => (
+                      <Text key={r.currency} style={{ fontSize: k === 0 ? 13.5 : 11.5, fontWeight: (k === 0 ? '700' : '600') as any, color: r.v < 0 ? colors.danger : colors.success }}>
+                        {formatCurrency(r.v, r.currency)}
+                      </Text>
+                    ));
+                  })()}
                 </View>
               </View>
             ))}
