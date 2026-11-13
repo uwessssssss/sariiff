@@ -187,6 +187,8 @@ public class ReconciliationService : IReconciliationService
         int page = 1, 
         int pageSize = 50)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 500);
         var query = _context.Transactions
             .Where(t => t.CompanyId == companyId && !t.IsDeleted &&
                         ((t.SourceAccountType == accountType && t.SourceAccountId == accountId) ||

@@ -24,6 +24,8 @@ public class BankAccountService : IBankAccountService
 
     public async Task<ApiResponse<BankAccountResponseDto>> CreateAsync(Guid companyId, CreateBankAccountDto dto)
     {
+        // Checked trimmed, so stored and compared trimmed (" 0011…" was a second account with the same number).
+        dto = dto with { AccountNumber = dto.AccountNumber?.Trim()! };
         // Country rule: no NEW holdings in a currency the bureau's country doesn't use (UGX in Kenya).
         var currencyBlock = await _context.CurrencyNotAllowedAsync(companyId, dto.Currency);
         if (currencyBlock != null)
@@ -31,9 +33,10 @@ public class BankAccountService : IBankAccountService
 
         // Input validation
         var validationError = ValidationHelper.FirstError(
-            ValidationHelper.ValidateName(dto.BankName, "Bank name"),
+            ValidationHelper.ValidateLabel(dto.BankName, "Bank name", 100),
             ValidationHelper.ValidateAccountNumber(dto.AccountNumber, "Account number"),
-            ValidationHelper.ValidateName(dto.AccountName, "Account name"),
+            ValidationHelper.ValidateLabel(dto.AccountName, "Account name", 255),
+            ValidationHelper.ValidateText(dto.BranchCode, "Branch code", 50),
             ValidationHelper.ValidateAmount(dto.OpeningBalance, "Opening balance", allowZero: true)
         );
         if (validationError != null)
@@ -50,10 +53,10 @@ public class BankAccountService : IBankAccountService
             {
                 CompanyId = companyId,
                 Code = code,
-                BankName = dto.BankName,
+                BankName = dto.BankName.Trim(),
                 AccountNumber = dto.AccountNumber,
-                AccountName = dto.AccountName,
-                BranchCode = dto.BranchCode,
+                AccountName = dto.AccountName.Trim(),
+                BranchCode = string.IsNullOrWhiteSpace(dto.BranchCode) ? null : dto.BranchCode.Trim(),
                 Currency = dto.Currency,
                 Balance = dto.OpeningBalance,
                 OpeningBalance = dto.OpeningBalance,
@@ -102,17 +105,22 @@ public class BankAccountService : IBankAccountService
 
         if (dto.BankName != null)
         {
-            var check = ValidationHelper.ValidateName(dto.BankName, "Bank name");
+            var check = ValidationHelper.ValidateLabel(dto.BankName, "Bank name", 100);
             if (!check.IsValid) return new ApiResponse<BankAccountResponseDto>(false, check.Error!, null);
-            account.BankName = dto.BankName;
+            account.BankName = dto.BankName.Trim();
         }
         if (dto.AccountName != null)
         {
-            var check = ValidationHelper.ValidateName(dto.AccountName, "Account name");
+            var check = ValidationHelper.ValidateLabel(dto.AccountName, "Account name", 255);
             if (!check.IsValid) return new ApiResponse<BankAccountResponseDto>(false, check.Error!, null);
-            account.AccountName = dto.AccountName;
+            account.AccountName = dto.AccountName.Trim();
         }
-        if (dto.BranchCode != null) account.BranchCode = dto.BranchCode;
+        if (dto.BranchCode != null)
+        {
+            var check = ValidationHelper.ValidateText(dto.BranchCode, "Branch code", 50);
+            if (!check.IsValid) return new ApiResponse<BankAccountResponseDto>(false, check.Error!, null);
+            account.BranchCode = string.IsNullOrWhiteSpace(dto.BranchCode) ? null : dto.BranchCode.Trim();
+        }
         if (dto.IsActive.HasValue) account.IsActive = dto.IsActive.Value;
         account.UpdatedAt = DateTime.UtcNow;
 

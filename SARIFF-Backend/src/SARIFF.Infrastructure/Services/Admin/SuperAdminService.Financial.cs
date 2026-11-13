@@ -106,6 +106,8 @@ public partial class SuperAdminService
 
     public async Task<ApiResponse<PagedResult<PaymentHistoryDto>>> GetPaymentHistoryAsync(int page, int pageSize, Guid? companyId = null)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 200);
         try
         {
             var query = _context.Set<SubscriptionPayment>().Where(p => !p.IsDeleted);
@@ -140,6 +142,14 @@ public partial class SuperAdminService
     {
         if (dto.Amount <= 0)
             return new ApiResponse<PaymentHistoryDto>(false, "Payment amount must be more than zero", null!);
+        // Same rules as any other amount and text (none were checked here).
+        var invalid = ValidationHelper.FirstError(
+            ValidationHelper.ValidateAmount(dto.Amount, "Payment amount"),
+            ValidationHelper.ValidateText(dto.PaymentMethod, "Payment method", 50),
+            ValidationHelper.ValidateText(dto.Reference, "Reference", 100),
+            ValidationHelper.ValidateText(dto.Notes, "Notes", 2000));
+        if (invalid != null)
+            return new ApiResponse<PaymentHistoryDto>(false, invalid, null!);
         // Sarif bills every bureau in KES, Ugandan ones too. Revenue totals add amounts up
         // as KES, so a UGX or USD amount here would silently corrupt them.
         var billingCurrency = string.IsNullOrWhiteSpace(dto.Currency) ? "KES" : dto.Currency.Trim().ToUpperInvariant();

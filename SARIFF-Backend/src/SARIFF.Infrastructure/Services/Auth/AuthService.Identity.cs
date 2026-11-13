@@ -227,7 +227,7 @@ public partial class AuthService : IClientIdentityService
         // The bureau account must be on THIS phone. A matching phone alone never links:
         // the code + password prove the account, the SMS code already proved the phone.
         var client = await _context.Users.FirstOrDefaultAsync(u =>
-            u.Code == dto.ClientCode.Trim() && u.WhatsAppNumber == identity.PhoneNumber &&
+            u.Code == dto.ClientCode.Trim().ToUpperInvariant() && u.WhatsAppNumber == identity.PhoneNumber &&
             u.Role == UserRole.Client && u.ClientType == ClientType.Permanent && !u.IsDeleted);
         if (client == null)
         {
@@ -238,6 +238,8 @@ public partial class AuthService : IClientIdentityService
             return new ApiResponse<IdentityBureauDto>(false, "This account is locked after wrong passwords. Try again later.", null);
         if (string.IsNullOrEmpty(client.PasswordHash) || !BCrypt.Net.BCrypt.Verify(dto.Password, client.PasswordHash))
         {
+            // A lock that has run out starts the count again (as on the password sign-in).
+            if (client.LockedUntil.HasValue) { client.LockedUntil = null; client.FailedLoginAttempts = 0; }
             client.FailedLoginAttempts++;
             if (client.FailedLoginAttempts >= 5) client.LockedUntil = DateTime.UtcNow.AddMinutes(30);
             await _context.SaveChangesAsync();

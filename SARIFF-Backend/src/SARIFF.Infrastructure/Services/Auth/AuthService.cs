@@ -65,7 +65,10 @@ public partial class AuthService : IAuthService
         // FB-CL-2026-0001     → Client (contains -CL-)
         // FB-2026-0001        → OfficeUser (company prefix)
         // Legacy: CO-2026-0001 → OfficeUser, CL-2026-0001 → Client
-        var code = request.Code.Trim().ToUpper();   // checked non-blank above
+        var code = request.Code.Trim().ToUpperInvariant();   // checked non-blank above
+        // Look the account up with what was ROUTED on: codes are stored upper-case, and the
+        // mobile app sends the code as typed ("Qab-cl-…" from a phone keyboard was refused).
+        request = request with { Code = code, PhoneNumber = request.PhoneNumber.Trim() };
         var codePrefix = code.Split('-')[0];   // Split always returns at least one part
         
         _logger.LogInformation("Code prefix: {Prefix}", codePrefix);
@@ -396,6 +399,7 @@ public partial class AuthService : IAuthService
         if (string.IsNullOrWhiteSpace(request.Code))
             return new ApiResponse<TokenResponseDto>(false, "User code is required", null);
 
+        request = request with { Code = request.Code.Trim().ToUpperInvariant(), PhoneNumber = request.PhoneNumber?.Trim()!, Otp = request.Otp?.Trim()! };
         if (string.IsNullOrWhiteSpace(request.Otp) || request.Otp.Length != 6)
             return new ApiResponse<TokenResponseDto>(false, "OTP must be 6 digits", null);
 
@@ -608,6 +612,15 @@ public partial class AuthService : IAuthService
             ownerName = null;
         }
 
+        // Single use, taken in one statement: the same token sent twice at once used to give
+        // two sessions (both requests read "not revoked yet").
+        if (_context.Database.IsRelational())
+        {
+            var taken = await _context.UserSessions.Where(s => s.Id == session.Id && !s.IsRevoked)
+                .ExecuteUpdateAsync(u => u.SetProperty(s => s.IsRevoked, true));
+            if (taken == 0)
+                return new ApiResponse<TokenResponseDto>(false, "Invalid or expired refresh token", null);
+        }
         session.IsRevoked = true;
         var newSession = CreateSession(session.CompanyId, session.UserId, session.UserRole, ipAddress, session.UserAgent,
             session.ClientIdentityId);

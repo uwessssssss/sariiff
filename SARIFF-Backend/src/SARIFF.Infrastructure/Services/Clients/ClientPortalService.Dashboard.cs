@@ -106,11 +106,12 @@ public partial class ClientPortalService
             var emailCheck = ValidationHelper.ValidateEmail(dto.Email);
             if (!emailCheck.IsValid)
                 return new ApiResponse<ClientProfileDto>(false, emailCheck.Error!, null);
-            client.Email = dto.Email;
+            client.Email = dto.Email.Trim();
         }
 
         if (!string.IsNullOrWhiteSpace(dto.WhatsAppNumber))
         {
+            dto.WhatsAppNumber = dto.WhatsAppNumber.Trim();   // checked trimmed, so compared and stored trimmed
             var phoneCheck = ValidationHelper.ValidatePhone(dto.WhatsAppNumber, "WhatsApp number");
             if (!phoneCheck.IsValid)
                 return new ApiResponse<ClientProfileDto>(false, phoneCheck.Error!, null);

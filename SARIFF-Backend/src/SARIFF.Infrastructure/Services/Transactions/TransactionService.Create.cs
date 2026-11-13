@@ -93,6 +93,12 @@ public partial class TransactionService
                 return new ApiResponse<TransactionResponseDto>(false, $"Source account not found, or it doesn't hold {primaryCurrency}", null);
             if (destBalance == null)
                 return new ApiResponse<TransactionResponseDto>(false, $"Destination account not found, or it doesn't hold {counterCurrency}", null);
+            // A switched-off bank account or wallet, or an archived client, takes no NEW postings
+            // (reversals of old ones still work). The web hid them; the API and the mobile app did not.
+            if (await AccountActivity.SwitchedOffAsync(_context, companyId, dto.SourceAccountType, dto.SourceAccountId) is { } srcOff)
+                return new ApiResponse<TransactionResponseDto>(false, srcOff, null);
+            if (await AccountActivity.SwitchedOffAsync(_context, companyId, dto.DestAccountType, dto.DestAccountId) is { } dstOff)
+                return new ApiResponse<TransactionResponseDto>(false, dstOff, null);
 
             // Country rule: a currency the bureau's country doesn't use (UGX in Kenya)
             // can only be SETTLED — moved out of an account that already holds it —
@@ -283,7 +289,10 @@ public partial class TransactionService
         {
             // FIX #18: Optimistic concurrency — another request modified the same balance
             if (dbTransaction != null)
+            {
                 await dbTransaction.RollbackAsync();
+                _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
+            }
             return new ApiResponse<TransactionResponseDto>(false,
                 "Balance was modified by another operation. Please retry.", null);
         }
@@ -291,7 +300,10 @@ public partial class TransactionService
         {
             // FIX #3: Only rollback if we own the transaction
             if (dbTransaction != null)
+            {
                 await dbTransaction.RollbackAsync();
+                _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
+            }
             await _systemLog.LogErrorAsync("TransactionService", $"Failed to create transaction: {ex.Message}", ex.StackTrace, companyId, userId);
             return new ApiResponse<TransactionResponseDto>(false, "Failed to create transaction. Please try again.", null);
         }

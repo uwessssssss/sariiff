@@ -51,7 +51,9 @@ public partial class SuperAdminService
             };
 
             var overview = new AnalyticsOverviewDto(
-                dailyActiveUsers, weeklyActiveUsers, monthlyActiveUsers, 1800, // 30 min avg session
+                // Session length is not measured (a session has no end time), so none is
+                // reported. It said 30 minutes, always: a constant shown as a measurement.
+                dailyActiveUsers, weeklyActiveUsers, monthlyActiveUsers, 0,
                 featureUsage,
                 new List<GrowthDataPointDto>(),
                 new List<GrowthDataPointDto>(),
@@ -69,8 +71,13 @@ public partial class SuperAdminService
 
     // ==================== AUDIT LOGS ====================
 
-    public async Task<ApiResponse<PagedResult<AdminAuditLogDto>>> GetAuditLogsExtendedAsync(
-        int page, int pageSize, AuditLogFilterDto? filter = null)
+    public Task<ApiResponse<PagedResult<AdminAuditLogDto>>> GetAuditLogsExtendedAsync(
+        int page, int pageSize, AuditLogFilterDto? filter = null) =>
+        // The screen gets a capped page; the CSV export (below) reads up to 10,000 rows directly.
+        AuditLogPageAsync(Math.Max(1, page), Math.Clamp(pageSize, 1, 200), filter);
+
+    private async Task<ApiResponse<PagedResult<AdminAuditLogDto>>> AuditLogPageAsync(
+        int page, int pageSize, AuditLogFilterDto? filter)
     {
         try
         {
@@ -134,7 +141,7 @@ public partial class SuperAdminService
     {
         try
         {
-            var response = await GetAuditLogsExtendedAsync(1, 10000, filter);
+            var response = await AuditLogPageAsync(1, 10000, filter);
             if (!response.Success || response.Data == null)
                 return new ApiResponse<byte[]>(false, "Error exporting logs", null!);
 

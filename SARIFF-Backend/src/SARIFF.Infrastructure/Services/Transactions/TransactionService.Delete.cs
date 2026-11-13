@@ -144,7 +144,7 @@ public partial class TransactionService
                 CounterAmount = transaction.CounterAmount,
                 CounterCurrency = transaction.CounterCurrency,
                 
-                Description = $"REVERSAL: {transaction.Description}",
+                Description = ValidationHelper.Fit($"REVERSAL: {transaction.Description}", 500),   // the column holds 500
                 Notes = $"Reversal of {transaction.Code}. Reason: {dto.Reason ?? "Not specified"}",
                 ExchangeRate = transaction.ExchangeRate,
                 
@@ -193,7 +193,7 @@ public partial class TransactionService
             transaction.DeletedAt = DateTime.UtcNow;
             transaction.DeleteReason = dto.Reason;
             transaction.UpdatedAt = DateTime.UtcNow;
-            transaction.Description = $"[REVERSED] {transaction.Description}";
+            transaction.Description = ValidationHelper.Fit($"[REVERSED] {transaction.Description}", 500);
             transaction.Notes = (transaction.Notes ?? "") + $" [Reversed by: {reversalCode}]";
 
             await _context.SaveChangesAsync();
@@ -238,11 +238,13 @@ public partial class TransactionService
         catch (DbUpdateConcurrencyException)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             return new ApiResponse<bool>(false, "Balance was modified by another operation. Please retry.", false);
         }
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogErrorAsync("TransactionService", $"Failed to reverse transaction: {ex.Message}", ex.StackTrace, companyId, userId);
             return new ApiResponse<bool>(false, "Failed to reverse transaction. Please try again.", false);
         }

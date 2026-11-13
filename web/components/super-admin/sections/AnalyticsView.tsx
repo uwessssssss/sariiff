@@ -44,10 +44,10 @@ export function AnalyticsView({ vm }: { vm: SuperAdminDashboardVM }) {
                 Avg. session
               </p>
               <p className="text-2xl font-semibold text-slate-900 tracking-tight">
-                {Math.floor(
-                  (analytics?.avgSessionDurationSeconds || 0) / 60,
-                )}
-                m
+                {/* 0 = not measured (a session has no end time); never show a made-up figure */}
+                {analytics?.avgSessionDurationSeconds
+                  ? `${Math.floor(analytics.avgSessionDurationSeconds / 60)}m`
+                  : "Not measured"}
               </p>
             </div>
           </div>

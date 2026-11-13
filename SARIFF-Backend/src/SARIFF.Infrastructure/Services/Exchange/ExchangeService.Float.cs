@@ -80,6 +80,9 @@ public partial class ExchangeService
                     $"Set today's {dto.Currency} rate first: the float values these {dto.Currency} at the buy rate.", null);
         }
 
+        if (await AccountActivity.SwitchedOffAsync(_context, companyId, dto.SourceType, dto.SourceAccountId) is { } off)
+            return new ApiResponse<ExchangeFloatDto>(false, off, null);
+
         using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
         try
@@ -141,12 +144,14 @@ public partial class ExchangeService
         catch (DbUpdateConcurrencyException)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             return new ApiResponse<ExchangeFloatDto>(false,
                 "Balance was modified by another operation. Please retry.", null);
         }
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogErrorAsync("ExchangeService", $"Failed to fund float: {ex.Message}", 
                 ex.StackTrace, companyId, userId);
             return new ApiResponse<ExchangeFloatDto>(false, "Failed to fund float. Please try again.", null);
@@ -175,6 +180,9 @@ public partial class ExchangeService
         if (accountCurrency != dto.Currency)
             return new ApiResponse<ExchangeFloatDto>(false,
                 $"The destination account holds {accountCurrency}, not {dto.Currency}", null);
+
+        if (await AccountActivity.SwitchedOffAsync(_context, companyId, dto.DestinationType, dto.DestinationAccountId) is { } off)
+            return new ApiResponse<ExchangeFloatDto>(false, off, null);
 
         using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
@@ -227,12 +235,14 @@ public partial class ExchangeService
         catch (DbUpdateConcurrencyException)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             return new ApiResponse<ExchangeFloatDto>(false,
                 "Balance was modified by another operation. Please retry.", null);
         }
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogErrorAsync("ExchangeService", $"Failed to withdraw float: {ex.Message}",
                 ex.StackTrace, companyId, userId);
             return new ApiResponse<ExchangeFloatDto>(false, "Failed to withdraw float. Please try again.", null);
@@ -264,6 +274,9 @@ public partial class ExchangeService
         if (destCurrency != dto.Currency)
             return new ApiResponse<ExchangeFloatDto>(false,
                 $"The destination account holds {destCurrency}, not {dto.Currency}", null);
+
+        if (await AccountActivity.SwitchedOffAsync(_context, companyId, dto.DestinationType, dto.DestinationAccountId) is { } off)
+            return new ApiResponse<ExchangeFloatDto>(false, off, null);
 
         using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
@@ -335,12 +348,14 @@ public partial class ExchangeService
         catch (DbUpdateConcurrencyException)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             return new ApiResponse<ExchangeFloatDto>(false,
                 "Balance was modified by another operation. Please retry.", null);
         }
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogErrorAsync("ExchangeService", $"Failed to settle profit: {ex.Message}",
                 ex.StackTrace, companyId, userId);
             return new ApiResponse<ExchangeFloatDto>(false, "Failed to settle profit. Please try again.", null);

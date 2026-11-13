@@ -141,6 +141,8 @@ public class InvoiceService : IInvoiceService
 
     public async Task<ApiResponse<PagedResult<InvoiceResponseDto>>> GetAllAsync(Guid companyId, int page, int pageSize)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 500);
         var query = _context.Invoices.Where(i => i.CompanyId == companyId);
         var totalCount = await query.CountAsync();
         var invoices = await query.OrderByDescending(i => i.InvoiceDate).ThenByDescending(i => i.Id).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();

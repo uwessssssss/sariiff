@@ -5,9 +5,22 @@ import { apiRequest } from "./core";
 export const getClients = (page = 1, pageSize = 20, search = "") =>
   apiRequest<PagedResult<ClientDto>>(
     `/api/client?page=${page}&pageSize=${pageSize}${
-      search ? `&search=${search}` : ""
+      // encoded: a "+" in a phone search arrived as a space, an "&" cut the query
+      search ? `&search=${encodeURIComponent(search)}` : ""
     }`
   );
+/** Every client, page by page (one page of 500 left client 501 onward out of the pickers). */
+export async function getAllClients(): Promise<ClientDto[]> {
+  const all: ClientDto[] = [];
+  for (let page = 1; page <= 250; page++) {
+    const r = await getClients(page, 200);
+    const rows: ClientDto[] = r.success ? (r.data as any)?.items || [] : [];
+    all.push(...rows);
+    const total = (r.data as any)?.totalCount ?? all.length;
+    if (!r.success || rows.length < 200 || all.length >= total) break;
+  }
+  return all;
+}
 export const getClientById = (id: string) =>
   apiRequest<ClientDto>(`/api/client/${id}`);
 export const createClient = (dto: CreateClientDto) =>

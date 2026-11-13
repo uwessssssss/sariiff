@@ -18,6 +18,8 @@ public partial class SuperAdminService
     public async Task<ApiResponse<PagedResult<CompanyStatsDto>>> GetAllCompaniesWithStatsAsync(
         int page, int pageSize, string? search = null, string? status = null)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 200);
         try
         {
             var query = _context.Companies.AsQueryable();
@@ -83,8 +85,8 @@ public partial class SuperAdminService
     /// </summary>
     public async Task<ApiResponse<CompanyDetailDto>> SetBaseCurrencyAsync(Guid companyId, SetBaseCurrencyDto dto)
     {
-        if (!Enum.IsDefined(typeof(Currency), dto.BaseCurrency))
-            return new ApiResponse<CompanyDetailDto>(false, "Unsupported currency", null!);
+        if (dto.BaseCurrency is not (Currency.KES or Currency.UGX))
+            return new ApiResponse<CompanyDetailDto>(false, "The home currency must be KES (Kenya) or UGX (Uganda)", null!);
 
         var company = await _context.Companies.FirstOrDefaultAsync(c => c.Id == companyId && !c.IsDeleted);
         if (company == null)

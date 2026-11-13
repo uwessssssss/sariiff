@@ -83,6 +83,8 @@ public partial class ExchangeService
                 client = await _context.Users.FindAsync(dto.ClientId.Value);
                 if (client == null || client.CompanyId != companyId)
                     return new ApiResponse<ExchangeResponseDto>(false, "Client not found", null);
+                if (!client.IsActive)
+                    return new ApiResponse<ExchangeResponseDto>(false, $"{client.FullName} is archived. Reactivate the client first.", null);
                     
                 clientName = client.FullName;
                 clientIdNumber ??= client.IdPassport;
@@ -95,6 +97,8 @@ public partial class ExchangeService
                     client = await _context.Users.FindAsync(dto.ClientId.Value);
                     if (client == null || client.CompanyId != companyId)
                         return new ApiResponse<ExchangeResponseDto>(false, "Client not found", null);
+                    if (!client.IsActive)
+                        return new ApiResponse<ExchangeResponseDto>(false, $"{client.FullName} is archived. Reactivate the client first.", null);
                     clientName = client.FullName;
                     clientIdNumber ??= client.IdPassport;
                 }
@@ -275,12 +279,14 @@ public partial class ExchangeService
         catch (DbUpdateConcurrencyException)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             return new ApiResponse<ExchangeResponseDto>(false,
                 "Balance was modified by another operation. Please retry.", null);
         }
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogErrorAsync("ExchangeService", $"Exchange failed: {ex.Message}",
                 ex.StackTrace, companyId, userId);
             return new ApiResponse<ExchangeResponseDto>(false, "Exchange failed. Please try again.", null);
@@ -587,11 +593,13 @@ public partial class ExchangeService
         catch (DbUpdateConcurrencyException)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             return new ApiResponse<bool>(false, "Balance was modified by another operation. Please retry.", false);
         }
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogErrorAsync("ExchangeService", $"Failed to void exchange: {ex.Message}",
                 ex.StackTrace, companyId, userId);
             return new ApiResponse<bool>(false, "Failed to void exchange. Please try again.", false);

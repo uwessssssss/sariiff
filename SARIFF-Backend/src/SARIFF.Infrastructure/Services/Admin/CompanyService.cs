@@ -28,11 +28,15 @@ public class CompanyService : ICompanyService
 
     public async Task<ApiResponse<CompanyResponseDto>> CreateAsync(CreateCompanyDto dto)
     {
-        _logger.LogInformation("Creating company: {Name}, Phone: {Phone}", dto.Name, dto.WhatsAppNumber);
+        _logger.LogInformation("Creating company: {Name}", dto.Name);
+        // Checked trimmed, so stored and compared trimmed ("+2547… " was a second bureau on one number).
+        dto = dto with { Name = dto.Name?.Trim()!, OwnerName = dto.OwnerName?.Trim()!, WhatsAppNumber = dto.WhatsAppNumber?.Trim()!,
+                         Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim() };
         
-        // Input validation
+        // Input validation. A bureau's name is a business name ("24/7 Forex & Exchange"): the
+        // person-name rule refused "&", digits and "/". The owner is a person.
         var validationError = ValidationHelper.FirstError(
-            ValidationHelper.ValidateName(dto.Name, "Company name"),
+            ValidationHelper.ValidateLabel(dto.Name, "Company name", 255),
             ValidationHelper.ValidateName(dto.OwnerName, "Owner name"),
             ValidationHelper.ValidatePhone(dto.WhatsAppNumber, "WhatsApp number"),
             ValidationHelper.ValidateEmail(dto.Email),
@@ -42,8 +46,9 @@ public class CompanyService : ICompanyService
             return new ApiResponse<CompanyResponseDto>(false, validationError, null);
 
         var baseCurrency = dto.BaseCurrency ?? Currency.KES;
-        if (!Enum.IsDefined(typeof(Currency), baseCurrency))
-            return new ApiResponse<CompanyResponseDto>(false, "Unsupported base currency", null);
+        // A bureau's home is Kenya (KES) or Uganda (UGX); USD/EUR are what it trades against.
+        if (baseCurrency is not (Currency.KES or Currency.UGX))
+            return new ApiResponse<CompanyResponseDto>(false, "The home currency must be KES (Kenya) or UGX (Uganda)", null);
 
         // A prefix typed in by hand must be 2–4 letters or digits and not one the sign-in
         // page reads as something else: "SA-…" is a super admin and "CL-…" / "…-CL-…" a
@@ -112,17 +117,14 @@ public class CompanyService : ICompanyService
                 
                 _logger.LogInformation("Company created: {Code} - {Name}", company.Code, company.Name);
 
-                // Send credentials via WhatsApp
+                // One SMS with the login details. (The notification IS the SMS now; a second,
+                // separate SMS with the same password went out as well.)
                 var websiteUrl = _config["App:WebsiteUrl"] ?? "https://app.sariff.com";
-                await _notificationService.SendOfficeUserCredentialsAsync(
-                    company.Id, dto.WhatsAppNumber, dto.Name, company.Code, dto.Password, websiteUrl);
-
-                // Auto-send credentials via SMS
                 var smsSent = false;
                 try
                 {
-                    var smsMsg = $"Welcome to Sarif! Your bureau account: Code: {company.Code}, Password: {dto.Password}. Login at the Sarif app to manage your bureau.";
-                    smsSent = await _smsService.SendSmsAsync(dto.WhatsAppNumber, smsMsg);
+                    smsSent = await _notificationService.SendOfficeUserCredentialsAsync(
+                        company.Id, dto.WhatsAppNumber, dto.Name, company.Code, dto.Password, websiteUrl);
                 }
                 catch (Exception ex) { _logger.LogWarning(ex, "Credentials SMS failed for company {Code}", company.Code); }
                 if (!smsSent) _logger.LogWarning("Credentials SMS not delivered for company {Code}", company.Code);
@@ -153,6 +155,8 @@ public class CompanyService : ICompanyService
 
     public async Task<ApiResponse<PagedResult<CompanyResponseDto>>> GetAllAsync(int page, int pageSize, string? search = null)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 200);
         var query = _context.Companies.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -187,21 +191,21 @@ public class CompanyService : ICompanyService
 
         if (dto.Name != null)
         {
-            var check = ValidationHelper.ValidateName(dto.Name, "Company name");
+            var check = ValidationHelper.ValidateLabel(dto.Name, "Company name", 255);
             if (!check.IsValid) return new ApiResponse<CompanyResponseDto>(false, check.Error!, null);
-            company.Name = dto.Name;
+            company.Name = dto.Name.Trim();
         }
         if (dto.OwnerName != null)
         {
             var check = ValidationHelper.ValidateName(dto.OwnerName, "Owner name");
             if (!check.IsValid) return new ApiResponse<CompanyResponseDto>(false, check.Error!, null);
-            company.OwnerName = dto.OwnerName;
+            company.OwnerName = dto.OwnerName.Trim();
         }
         if (dto.Email != null)
         {
             var check = ValidationHelper.ValidateEmail(dto.Email);
             if (!check.IsValid) return new ApiResponse<CompanyResponseDto>(false, check.Error!, null);
-            company.Email = dto.Email;
+            company.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
         }
         if (dto.LogoUrl != null)
         {
@@ -215,9 +219,15 @@ public class CompanyService : ICompanyService
                 return new ApiResponse<CompanyResponseDto>(false, "The logo is too large (512 KB at most).", null);
             company.LogoUrl = logo.Length == 0 ? null : logo;
         }
-        if (dto.TaxId != null) company.TaxId = dto.TaxId;
-        if (dto.Website != null) company.Website = dto.Website;
-        if (dto.Address != null) company.Address = dto.Address;
+        // Shown on invoices and receipts: limited like every other text field (they had no limit).
+        var textError = ValidationHelper.FirstError(
+            ValidationHelper.ValidateText(dto.TaxId, "Tax ID", 50),
+            ValidationHelper.ValidateText(dto.Website, "Website", 255),
+            ValidationHelper.ValidateText(dto.Address, "Address", 500));
+        if (textError != null) return new ApiResponse<CompanyResponseDto>(false, textError, null);
+        if (dto.TaxId != null) company.TaxId = dto.TaxId.Trim();
+        if (dto.Website != null) company.Website = dto.Website.Trim();
+        if (dto.Address != null) company.Address = dto.Address.Trim();
 
         await _context.SaveChangesAsync();
 

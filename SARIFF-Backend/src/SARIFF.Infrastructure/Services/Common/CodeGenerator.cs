@@ -24,9 +24,12 @@ public static class CodeGenerator
             { "limited", "ltd", "inc", "incorporated", "llc", "plc", "corp", "corporation",
               "and", "the", "of", "for", "company", "co", "group" };
         
-        var words = companyName.Split(new[] { ' ', '-', '_', '.' }, StringSplitOptions.RemoveEmptyEntries)
-            .Where(w => !skipWords.Contains(w))
+        // Letters and digits only: "24/7 Forex & Exchange (K)" gave the prefix "2F&".
+        var words = companyName.Split(new[] { ' ', '-', '_', '.', '/', '&', '(', ')', ',' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(w => new string(w.Where(ch => ch is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9').ToArray()))
+            .Where(w => w.Length > 0 && !skipWords.Contains(w))
             .ToArray();
+        if (words.Length == 0) words = new[] { "CO" };
 
         string prefix;
         if (words.Length == 0)

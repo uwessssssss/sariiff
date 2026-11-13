@@ -248,9 +248,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutFn = useCallback(async () => {
     resetBaseCurrency(); // next company re-fetches its home currency
     pendingDtoRef.current = null;
-    // Push token is intentionally KEPT on logout so the user still gets
-    // re-engagement notifications. This is safe because notification text is
-    // generic (no balances/amounts) — sensitive data is only shown after login.
+    // Push token is KEPT on logout so the user still gets re-engagement notifications.
+    // Notification text DOES carry amounts and references, so the server hands the token to
+    // whoever signs in next on this phone and stops it for the previous account.
     await api.logout();
     try {
       await cacheClear();

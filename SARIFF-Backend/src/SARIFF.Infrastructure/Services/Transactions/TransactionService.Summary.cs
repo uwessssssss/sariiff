@@ -66,6 +66,7 @@ public partial class TransactionService
 
     public async Task<ApiResponse<List<TransactionResponseDto>>> GetRecentAsync(Guid companyId, int count = 10)
     {
+        count = Math.Clamp(count, 1, 100);   // "recent": count=1000000 loaded the whole history
         var transactions = await _context.Transactions.AsNoTracking()
             .Where(t => t.CompanyId == companyId && !t.IsDeleted)
             .OrderByDescending(t => t.TransactionDate)

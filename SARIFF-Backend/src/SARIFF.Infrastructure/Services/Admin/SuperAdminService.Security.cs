@@ -65,6 +65,8 @@ public partial class SuperAdminService
 
     public async Task<ApiResponse<PagedResult<SecurityAlertDto>>> GetSecurityAlertsAsync(int page, int pageSize, bool? resolved = null)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 200);
         try
         {
             var query = _context.Set<SecurityAlert>().Where(a => !a.IsDeleted);

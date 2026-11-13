@@ -23,15 +23,19 @@ public class MpesaAgentService : IMpesaAgentService
 
     public async Task<ApiResponse<MpesaAgentResponseDto>> CreateAsync(Guid companyId, CreateMpesaAgentDto dto)
     {
+        dto = dto with { PhoneNumber = dto.PhoneNumber?.Trim()!, AgentNumber = dto.AgentNumber?.Trim()! };
         // Input validation
         var validationError = ValidationHelper.FirstError(
-            ValidationHelper.ValidateName(dto.AgentName, "Agent name"),
+            ValidationHelper.ValidateLabel(dto.AgentName, "Agent name", 100),
+            ValidationHelper.ValidateText(dto.StoreNumber, "Store number", 50),
             ValidationHelper.ValidatePhone(dto.PhoneNumber, "Phone number"),
             ValidationHelper.ValidateText(dto.AgentNumber, "Agent number", 50, required: true),
             ValidationHelper.ValidateAmount(dto.OpeningBalance, "Opening balance", allowZero: true)
         );
         if (validationError != null)
             return new ApiResponse<MpesaAgentResponseDto>(false, validationError, null);
+        if (!Enum.IsDefined(dto.AgentType))
+            return new ApiResponse<MpesaAgentResponseDto>(false, "Agent type must be Standard or Super", null);
 
         if (await _context.MpesaAgents.AnyAsync(m => m.CompanyId == companyId && m.AgentNumber == dto.AgentNumber && !m.IsDeleted))
             return new ApiResponse<MpesaAgentResponseDto>(false, "Agent number already exists", null);
@@ -51,10 +55,10 @@ public class MpesaAgentService : IMpesaAgentService
             {
                 CompanyId = companyId,
                 Code = code,
-                AgentName = dto.AgentName,
+                AgentName = dto.AgentName.Trim(),
                 PhoneNumber = dto.PhoneNumber,
                 AgentNumber = dto.AgentNumber,
-                StoreNumber = dto.StoreNumber,
+                StoreNumber = string.IsNullOrWhiteSpace(dto.StoreNumber) ? null : dto.StoreNumber.Trim(),
                 AgentType = dto.AgentType,
                 Provider = provider,
                 Currency = walletCurrency,   // M-Pesa = KES even in a Ugandan bureau
@@ -103,12 +107,22 @@ public class MpesaAgentService : IMpesaAgentService
 
         if (dto.AgentName != null)
         {
-            var check = ValidationHelper.ValidateName(dto.AgentName, "Agent name");
+            var check = ValidationHelper.ValidateLabel(dto.AgentName, "Agent name", 100);
             if (!check.IsValid) return new ApiResponse<MpesaAgentResponseDto>(false, check.Error!, null);
-            agent.AgentName = dto.AgentName;
+            agent.AgentName = dto.AgentName.Trim();
         }
-        if (dto.StoreNumber != null) agent.StoreNumber = dto.StoreNumber;
-        if (dto.AgentType.HasValue) agent.AgentType = dto.AgentType.Value;
+        if (dto.StoreNumber != null)
+        {
+            var check = ValidationHelper.ValidateText(dto.StoreNumber, "Store number", 50);
+            if (!check.IsValid) return new ApiResponse<MpesaAgentResponseDto>(false, check.Error!, null);
+            agent.StoreNumber = string.IsNullOrWhiteSpace(dto.StoreNumber) ? null : dto.StoreNumber.Trim();
+        }
+        if (dto.AgentType.HasValue)
+        {
+            if (!Enum.IsDefined(dto.AgentType.Value))
+                return new ApiResponse<MpesaAgentResponseDto>(false, "Agent type must be Standard or Super", null);
+            agent.AgentType = dto.AgentType.Value;
+        }
         if (dto.IsActive.HasValue) agent.IsActive = dto.IsActive.Value;
         if (dto.Provider.HasValue && Enum.IsDefined(typeof(MobileMoneyProvider), dto.Provider.Value)
             && dto.Provider.Value != agent.Provider)

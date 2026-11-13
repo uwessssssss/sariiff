@@ -52,11 +52,15 @@ public static class MobileMoney
         var homes = await db.Companies.IgnoreQueryFilters()
             .Select(c => new { c.Id, c.BaseCurrency }).ToDictionaryAsync(c => c.Id, c => c.BaseCurrency);
         var ids = pending.Select(a => a.Id).ToList();
-        var used = (await db.Transactions.IgnoreQueryFilters()
-                .Where(t => (t.SourceAccountType == AccountType.Mpesa && ids.Contains(t.SourceAccountId)) ||
-                            (t.DestAccountType == AccountType.Mpesa && ids.Contains(t.DestAccountId)))
-                .Select(t => t.SourceAccountType == AccountType.Mpesa ? t.SourceAccountId : t.DestAccountId)
-                .ToListAsync()).ToHashSet();
+        // Both sides: a wallet that only ever RECEIVED (then paid out to zero) is used too.
+        // Taking one id per posting missed the receiving wallet of a wallet-to-wallet move.
+        var asSource = await db.Transactions.IgnoreQueryFilters()
+            .Where(t => t.SourceAccountType == AccountType.Mpesa && ids.Contains(t.SourceAccountId))
+            .Select(t => t.SourceAccountId).Distinct().ToListAsync();
+        var asDest = await db.Transactions.IgnoreQueryFilters()
+            .Where(t => t.DestAccountType == AccountType.Mpesa && ids.Contains(t.DestAccountId))
+            .Select(t => t.DestAccountId).Distinct().ToListAsync();
+        var used = asSource.Concat(asDest).ToHashSet();
 
         int set = 0, kept = 0;
         foreach (var a in pending)

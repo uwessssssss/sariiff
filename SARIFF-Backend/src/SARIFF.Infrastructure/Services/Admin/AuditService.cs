@@ -38,6 +38,8 @@ public class AuditService : IAuditService
 
     public async Task<ApiResponse<PagedResult<AdminAuditLogDto>>> GetAuditLogsAsync(int page, int pageSize, Guid? companyId = null)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 200);
         var query = _context.AuditLogs.AsQueryable();
         if (companyId.HasValue) query = query.Where(l => l.CompanyId == companyId);
 
@@ -74,6 +76,8 @@ public class AuditService : IAuditService
 
     public async Task<ApiResponse<PagedResult<AdminLoginHistoryDto>>> GetLoginHistoryAsync(int page, int pageSize, Guid? companyId = null)
     {
+        page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
+        pageSize = Math.Clamp(pageSize, 1, 200);
         var query = _context.LoginHistories.AsQueryable();
         if (companyId.HasValue) query = query.Where(l => l.CompanyId == companyId);
 

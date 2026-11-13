@@ -22,7 +22,7 @@ public class ReportController : BaseApiController
     public async Task<IActionResult> GetDailyReport([FromQuery] DateTime? date = null)
     {
         if (!CompanyId.HasValue) return Unauthorized();
-        var result = await _reportService.GetDailyReportAsync(CompanyId.Value, date ?? DateTime.UtcNow);
+        var result = await _reportService.GetDailyReportAsync(CompanyId.Value, date ?? BureauClock.TodayLocal);
         return Ok(result);
     }
 

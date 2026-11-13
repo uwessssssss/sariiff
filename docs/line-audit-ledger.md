@@ -84,11 +84,11 @@ Noted, not changed (needs the owner's decision): exchanges can still be made aft
 | ClientAlertHelper.cs | 125 | READ | none |
 | BalanceAlertService.cs | 216 | READ (12 Nov bug hunt, fixed then: undefined currency/direction) | none new |
 | ClientPortalService.cs and its 7 parts | 997 | READ (12 Nov bug hunt, ledger rewritten then) | CL3 (password), CL7 (alerts paging) |
-| ClientController.cs | 132 | READ | CL7 (no paging cap; now in the service) |
+| ClientController.cs | 132 | READ | none (paging is clamped by the global filter) |
 | ClientPortalController.cs | 255 | READ | none |
 | BalanceAlertController.cs | 54 | READ | none (see notes) |
 
-All 7 proven: each test failed in CI before its fix (commits 133c7e6 and 6be4942).
+6 defects proven, plus 1 hardening item (CL7): each test failed in CI before its fix (commits 133c7e6 and 6be4942).
 
 | Id | Bug | Fix |
 |---|---|---|
@@ -98,6 +98,116 @@ All 7 proven: each test failed in CI before its fix (commits 133c7e6 and 6be4942
 | CL4 | Edit stored an ID/passport of any length (create refuses more than 50) | Same limit |
 | CL5 | A client of an undefined type (5) could be created: neither permanent nor walk-in | Refused |
 | CL6 | Names were stored with surrounding spaces, and a search with a space around the word found nobody (list and lookup) | Trimmed |
-| CL7 | Client list and portal alerts had no page cap (pageSize=1000000 loads every client with its totals) and page 0 sent a negative offset, which PostgreSQL refuses (server error) | Page starts at 1; cap 500 for clients (the mobile transaction form asks for 500), 200 for alerts |
+| CL7 (hardening, corrected 13 Nov) | The services themselves accepted page 0 and any page size. **Correction:** through the API this was never reachable: a global filter (PagingClampFilter) already clamps `page` and `pageSize` on every endpoint. It was first recorded here as a server error; that was wrong. Not counted as a defect | The services clamp too (cap 500 for clients, 200 for alerts) |
 
 Noted, not changed: statements match a cash till by type and currency, so two tills in the same currency would share one statement (checked in Accounts); the stats' "clients with debit" counts positive balances (the web compensates); stats debit/credit totals include reversed pairs (both legs, so they net out in the balance, but inflate the turnover figures); BalanceAlertController answers 200 even when a rule is refused (the body says success=false, and the web reads it); a duplicate alert with the same title and transaction within an hour is dropped on purpose. Found for the mobile audit: the mobile transaction form loads only the first 500 clients, so client 501 onward cannot be picked there.
+
+## Backend: Services/Accounts (1,331 lines + AccountActivity, new) — complete
+
+| File | Lines | Status | Findings |
+|---|---|---|---|
+| CashAccountService.cs | 285 | READ | none (one till per currency is enforced by a unique index, which settles the statement question left open under Clients) |
+| BankAccountService.cs | 223 | READ, FIXED | AC1, AC2, AC4, CM1 |
+| MpesaAgentService.cs | 228 | READ, FIXED | AC1, AC4, AC5, CM1 |
+| MobileMoney.cs | 80 | READ, FIXED | AC3 |
+| ExpenseService.cs | 515 | READ, FIXED | EX1–EX6, AC2, FL1, LEN1 |
+
+| Id | Bug | Fix |
+|---|---|---|
+| AC1 | Bank, account-holder and agent names were checked with the rule for people's names: letters only. "I&M Bank" (a major Kenyan bank), "Shop 24", "Amana Forex (K) Ltd" were refused | A business-name rule: any characters, 2 to the column's length, no script |
+| AC2 | A switched-off bank account or wallet, or an archived client, still took new postings, expenses, float funding and exchanges. The web hid them; the API and the mobile app did not | Refused with the reason; reversing an old posting still works |
+| AC3 | The start-up currency backfill looked only at the sending side of each posting, so a wallet that had only received money (then paid it out) counted as unused and had its UGX history relabelled as KES | Both sides are looked at |
+| AC4 | Branch codes and store numbers had no length limit | 50 characters |
+| AC5 | An undefined agent type number was stored | Refused |
+| CM1 | Phone, e-mail and account numbers were CHECKED trimmed but stored and compared untrimmed, so a trailing space got a second client, bank account or bureau past the duplicate check | Trimmed before checking and storing (clients, portal profile, bank accounts, wallets, bureaus) |
+| EX1 | An expense dated in the future or with no date (stored as year 1) was accepted; postings refuse both | Same rule as postings |
+| EX2 | Editing an expense skipped every check that recording it applies | Same limits |
+| EX3 | Renaming a category was not checked (blank, too long, another category's name); "rent" next to "Rent" was allowed | Checked; names unique ignoring case |
+| EX4 | An expense could be booked to a switched-off category | Refused |
+| EX6 | An undefined payment-method number was stored | Refused |
+| EX5 (hardening) | The expense list service accepted page 0 and any size; the API filter already clamps them | Clamped in the service too; not counted |
+
+## Backend: Services/Reports (453) — complete
+
+| File | Lines | Status | Findings |
+|---|---|---|---|
+| ReportService.cs | 244 | READ (rewritten 12 Nov) | none new |
+| DashboardService.cs | 173 | READ | none |
+| CurrencyRollup.cs | 36 | READ | none |
+| ReportController.cs | 53 | READ, FIXED | RP1 (not proven, see below) |
+
+RP1, fixed but NOT proven by a test: the daily report with no date asked for the UTC day, which from 00:00 to 03:00 in Nairobi/Kampala is yesterday. Both apps always send a date, so only direct API callers saw it; the test would depend on the time of day it runs. Now the bureau's day.
+
+Noted, not changed: the super-admin "transactions today" also counts removed bureaus' postings.
+
+## Backend: Services/Notifications (509) and the device-token controller — complete
+
+| File | Lines | Status | Findings |
+|---|---|---|---|
+| NotificationService.cs | 253 | READ, FIXED | NT1 |
+| PushNotificationService.cs | 101 | READ | none |
+| SmsService.cs | 155 | READ | none (it logs full numbers on success: noted) |
+| DeviceTokenController.cs | 76 | READ, FIXED | DT1 |
+
+| Id | Bug | Fix |
+|---|---|---|
+| NT1 | Every SMS is copied to NotificationLogs, and the copies kept new accounts' passwords and live sign-in codes in plain text | The stored copy blanks the secret |
+| DT1 | One phone's push token stayed active for every account ever signed in on it. The app keeps the token after sign-out (its comment said notifications carry no amounts; they do), so after an office tablet changed hands, office balance alerts and the previous client's amounts went to the next user | Registering a token switches it off for every other account; the app's comment corrected |
+
+## Backend: Services/Common (713) — complete
+
+BureauClock, CsvText, RequestMetrics, CodeGenerator and ValidationHelper read in full. Findings: CM1 (above, the trimming gap is in how callers use ValidationHelper) and the code prefix (CP1 below). New helpers: `ValidateLabel` (business names) and `Fit` (text cut to its column).
+
+## Backend: Services/Auth (1,464) — complete (re-read in full; the 13 Nov sign-in audit fixes are not repeated here)
+
+| Id | Bug | Fix |
+|---|---|---|
+| AU1 | Sign-in routed on the upper-cased code but looked the account up with the code as typed. The mobile app only trims it, and phone keyboards capitalise the first letter, so "Qab-cl-…" was "Invalid credentials". The SMS-code step had the same problem | Code upper-cased and phone trimmed once, used everywhere |
+| AU2 | One refresh token sent twice at the same moment opened two sessions (both requests read "not revoked yet") | Taken in one database statement; the second is refused |
+| AU3 | Linking a bureau to the phone login kept the old wrong-password count after a lock ran out, so the first typo locked the account for another 30 minutes (fixed for the password sign-in on 13 Nov, missed here) | The count restarts |
+
+Noted, not changed: an OTP can be requested twice in the same instant (two SMS); a revoked phone-login session's access token still works while the same person has another live session (the per-request check is per person, not per session).
+
+## Backend: Services/Admin (2,168) — complete
+
+| Id | Bug | Fix |
+|---|---|---|
+| CP1 | Bureau names used the person-name rule ("24/7 Forex & Exchange" refused); the code prefix made from a name kept "&" and "(" | Business-name rule; prefix from letters and digits only |
+| CP2 | (CM1) a trailing space got a second bureau onto one number | Trimmed |
+| CP3 | Tax ID, website and address had no limits or script check | 50 / 255 / 500, checked |
+| DUP | New clients, converted clients and new bureaus got their password by SMS twice (the "WhatsApp" notification is SMS now, and a second SMS followed) | One SMS |
+| FN2 | A subscription payment of 1500.005 was recorded; reference and notes had no limits | Same amount rule as everywhere; limits |
+| AN1 | The super-admin Analytics screen showed "Avg. session 30m" for every platform: a constant, never measured | Reported as not measured |
+| BC1 | Both screens offer KES or UGX as a bureau's home currency, but the API accepted USD or EUR, which makes a bureau that trades "USD against USD" | KES or UGX only |
+| PG1 (hardening) | Admin, audit, invoice and reconciliation list services accepted page 0 and any size; the API filter already clamps them | Clamped in the services; not counted |
+
+Noted, not changed: the platform "total volume" figures add different currencies (the screens show the per-currency lists instead); a trial bureau never expires unless an expiry date is set; the audit CSV stops at 10,000 rows without saying so; trusted-device ids appear in the audit log.
+
+## Backend: failure paths (every money service) — FL1
+
+| Id | Bug | Fix |
+|---|---|---|
+| FL1 | When a save failed, the services rolled the database transaction back and then wrote the error to the system log through the SAME context, whose save wrote the half-done posting, expense, exchange or float move again: the money moved although the user was told it failed (and could retry, moving it twice) | Tracked changes are dropped after every rollback |
+
+## Backend: API controllers (2,671) — complete
+
+All 22 controllers read in full. Findings: CC1, DT1 (above), RC1, and RP1 (Reports).
+
+| Id | Bug | Fix |
+|---|---|---|
+| CC1 | The cash statement accepted the money-in/money-out filter and dropped it (passed null); bank and wallet statements pass it | Passed on |
+| RC1 | /api/transaction/recent?count=1000000 loaded and mapped the whole history ("count" is not covered by the paging filter) | 1 to 100 |
+
+## Backend: Middleware (650) and Program.cs (536) — complete
+
+Read in full. No new defect proven. Noted: unexpected InvalidOperationExceptions under 100 characters are shown to the user with a 400 (e.g. "Sequence contains no elements"); a failed 5xx after money was saved releases the idempotency key; the development seed log lists five test clients it never creates.
+
+## Backend: Data (792) — complete
+
+| Id | Bug | Fix |
+|---|---|---|
+| LEN1 | Text built from user input plus a prefix overflowed its column in PostgreSQL: "REVERSAL: " + a 500-character description, so any posting described in more than 490 characters could never be reversed; "Expense: Rent - " + description, so a long expense description could not be saved; category names were checked to 255 against a 100-character column (a server error) | Built text is cut to the column; category names to 100 |
+
+## Backend: Core (3,458) — complete at declaration level
+
+Enums, entity defaults and every record default were read; DTO and interface bodies were read where the services use them. No defect of their own.

@@ -131,6 +131,20 @@ public static partial class ValidationHelper
     /// <summary>
     /// Validate an optional text field (max length, no script injection)
     /// </summary>
+    /// <summary>
+    /// A business name (bank, account holder, agent, category): any characters people really
+    /// use ("I&M Bank", "Shop 24", "Amana Forex (K) Ltd"), 2 to <paramref name="maxLength"/> long.
+    /// ValidateName is for people's names and refused all of those.
+    /// </summary>
+    public static (bool IsValid, string? Error) ValidateLabel(string? text, string fieldName, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return (false, $"{fieldName} is required");
+        if (text.Trim().Length < 2)
+            return (false, $"{fieldName} must be at least 2 characters");
+        return ValidateText(text.Trim(), fieldName, maxLength, required: true);
+    }
+
     public static (bool IsValid, string? Error) ValidateText(string? text, string fieldName, int maxLength = 500, bool required = false)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -160,6 +174,12 @@ public static partial class ValidationHelper
         
         return (true, null);
     }
+
+    /// <summary>
+    /// Text built from user input plus a prefix ("REVERSAL: " + a 500-character description)
+    /// cut to its column's size, ending in "…". Without this the save failed in PostgreSQL.
+    /// </summary>
+    public static string Fit(string text, int max) => text.Length <= max ? text : text[..(max - 1)] + "…";
 
     /// <summary>
     /// Run multiple validations and return the first error, or null if all pass

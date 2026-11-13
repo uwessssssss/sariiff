@@ -34,7 +34,10 @@ public class NotificationService : INotificationService
     /// Core method: sends a notification via SMS (Africa's Talking) and records
     /// it in NotificationLogs. Replaces the former WhatsApp/WAHA channel.
     /// </summary>
-    private async Task<bool> SendMessageAsync(Guid? companyId, Guid? userId, string phoneNumber, string message, NotificationType type)
+    /// <param name="storedText">What NotificationLogs keeps when the message carries a secret
+    /// (a password or a sign-in code): the same text with the secret blanked. The copy used to
+    /// keep it in plain text, readable by anyone with the database or a backup.</param>
+    private async Task<bool> SendMessageAsync(Guid? companyId, Guid? userId, string phoneNumber, string message, NotificationType type, string? storedText = null)
     {
         var log = new NotificationLog
         {
@@ -42,7 +45,7 @@ public class NotificationService : INotificationService
             UserId = userId,
             NotificationType = type,
             RecipientPhone = phoneNumber,
-            MessageContent = message
+            MessageContent = storedText ?? message
         };
 
         try
@@ -126,9 +129,9 @@ public class NotificationService : INotificationService
 
     public async Task<bool> SendOtpAsync(string phoneNumber, string code)
     {
-        var message = $"Sarif verification code: {code}. " +
-                      $"It expires in 5 minutes. Do not share it with anyone.";
-        return await SendMessageAsync(null, null, phoneNumber, message, NotificationType.Login);
+        string Text(string c) => $"Sarif verification code: {c}. " +
+                                 $"It expires in 5 minutes. Do not share it with anyone.";
+        return await SendMessageAsync(null, null, phoneNumber, Text(code), NotificationType.Login, Text("******"));
     }
 
     public async Task<bool> SendWelcomeMessageAsync(Guid companyId, string phoneNumber, string companyName)
@@ -162,9 +165,9 @@ public class NotificationService : INotificationService
     /// </summary>
     public async Task<bool> SendOfficeUserCredentialsAsync(Guid companyId, string phoneNumber, string companyName, string code, string password, string websiteUrl)
     {
-        var message = $"Welcome to Sarif. Your {companyName} office account is ready. " +
-                      $"Login code: {code}, password: {password}. Sign in at {websiteUrl} and change your password. Keep these details private.";
-        return await SendMessageAsync(companyId, null, phoneNumber, message, NotificationType.NewClient);
+        string Text(string p) => $"Welcome to Sarif. Your {companyName} office account is ready. " +
+                                 $"Login code: {code}, password: {p}. Sign in at {websiteUrl} and change your password. Keep these details private.";
+        return await SendMessageAsync(companyId, null, phoneNumber, Text(password), NotificationType.NewClient, Text("(not stored)"));
     }
 
     /// <summary>
@@ -172,9 +175,9 @@ public class NotificationService : INotificationService
     /// </summary>
     public async Task<bool> SendClientCredentialsAsync(Guid companyId, Guid clientId, string phoneNumber, string fullName, string code, string password, string companyName, string websiteUrl)
     {
-        var message = $"Welcome {fullName}. Your {companyName} client account is ready. " +
-                      $"Login code: {code}, password: {password}. Sign in at {websiteUrl} and change your password. Keep these details private.";
-        return await SendMessageAsync(companyId, clientId, phoneNumber, message, NotificationType.NewClient);
+        string Text(string p) => $"Welcome {fullName}. Your {companyName} client account is ready. " +
+                                 $"Login code: {code}, password: {p}. Sign in at {websiteUrl} and change your password. Keep these details private.";
+        return await SendMessageAsync(companyId, clientId, phoneNumber, Text(password), NotificationType.NewClient, Text("(not stored)"));
     }
 
     /// <summary>

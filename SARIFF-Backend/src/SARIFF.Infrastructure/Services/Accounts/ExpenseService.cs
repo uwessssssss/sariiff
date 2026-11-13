@@ -20,21 +20,14 @@ public class ExpenseService : IExpenseService
 
     public async Task<ApiResponse<ExpenseCategoryResponseDto>> CreateCategoryAsync(Guid companyId, CreateExpenseCategoryDto dto)
     {
-        var nameCheck = ValidationHelper.ValidateName(dto.Name, "Category name");
-        if (!nameCheck.IsValid)
-            return new ApiResponse<ExpenseCategoryResponseDto>(false, nameCheck.Error!, null);
-
-        var descCheck = ValidationHelper.ValidateText(dto.Description, "Description", 500);
-        if (!descCheck.IsValid)
-            return new ApiResponse<ExpenseCategoryResponseDto>(false, descCheck.Error!, null);
-
-        if (await _context.ExpenseCategories.AnyAsync(c => c.CompanyId == companyId && c.Name == dto.Name && !c.IsDeleted))
-            return new ApiResponse<ExpenseCategoryResponseDto>(false, "Category already exists", null);
+        var problem = await CategoryProblemAsync(companyId, null, dto.Name, dto.Description);
+        if (problem != null)
+            return new ApiResponse<ExpenseCategoryResponseDto>(false, problem, null);
 
         var category = new ExpenseCategory
         {
             CompanyId = companyId,
-            Name = dto.Name,
+            Name = dto.Name.Trim(),
             Description = dto.Description,
             IsActive = true
         };
@@ -77,7 +70,14 @@ public class ExpenseService : IExpenseService
         if (category == null) 
             return new ApiResponse<ExpenseCategoryResponseDto>(false, "Category not found", null);
 
-        if (dto.Name != null) category.Name = dto.Name;
+        // Rename and description had no checks: blank, too long, or another category's name.
+        // (The duplicate check runs only on a real rename, so switching an old look-alike
+        // category off or editing its description still works.)
+        var renamed = dto.Name != null && !string.Equals(dto.Name.Trim(), category.Name, StringComparison.OrdinalIgnoreCase);
+        var problem = await CategoryProblemAsync(companyId, category.Id, dto.Name ?? category.Name, dto.Description, checkDuplicate: renamed);
+        if (problem != null)
+            return new ApiResponse<ExpenseCategoryResponseDto>(false, problem, null);
+        if (dto.Name != null) category.Name = dto.Name.Trim();
         if (dto.Description != null) category.Description = dto.Description;
         if (dto.IsActive.HasValue) category.IsActive = dto.IsActive.Value;
         category.UpdatedAt = DateTime.UtcNow;
@@ -86,6 +86,19 @@ public class ExpenseService : IExpenseService
         
         return new ApiResponse<ExpenseCategoryResponseDto>(true, "Category updated",
             new ExpenseCategoryResponseDto(category.Id, category.Name, category.Description, category.IsActive, 0, 0, 0));
+    }
+
+    /// <summary>Null when the name and description are fine. Names are unique ignoring case ("Rent" = "rent").</summary>
+    private async Task<string?> CategoryProblemAsync(Guid companyId, Guid? self, string? name, string? description, bool checkDuplicate = true)
+    {
+        var nameCheck = ValidationHelper.ValidateLabel(name, "Category name", 100);   // the column holds 100
+        if (!nameCheck.IsValid) return nameCheck.Error;
+        var descCheck = ValidationHelper.ValidateText(description, "Description", 500);
+        if (!descCheck.IsValid) return descCheck.Error;
+        var lower = name!.Trim().ToLower();
+        if (checkDuplicate && await _context.ExpenseCategories.AnyAsync(c => c.CompanyId == companyId && c.Id != self && !c.IsDeleted && c.Name.ToLower() == lower))
+            return "Category already exists";
+        return null;
     }
 
     public async Task<ApiResponse<bool>> DeleteCategoryAsync(Guid companyId, Guid id)
@@ -124,6 +137,14 @@ public class ExpenseService : IExpenseService
         );
         if (validationError != null)
             return new ApiResponse<ExpenseResponseDto>(false, validationError, null);
+        if (!Enum.IsDefined(dto.PaymentMethod))
+            return new ApiResponse<ExpenseResponseDto>(false, "Unknown payment method", null);
+        // Same rule as any transaction (an expense writes one): back-dating is fine, the future
+        // or a date before 2000 is a typo. A missing date used to be saved as year 1.
+        if (dto.ExpenseDate > DateTime.UtcNow.AddDays(1))
+            return new ApiResponse<ExpenseResponseDto>(false, "An expense can't be dated in the future", null);
+        if (dto.ExpenseDate < new DateTime(2000, 1, 1))
+            return new ApiResponse<ExpenseResponseDto>(false, "That expense date is too far in the past", null);
 
         using var dbTransaction = await _context.Database.BeginTransactionAsync();
         
@@ -136,6 +157,12 @@ public class ExpenseService : IExpenseService
             var category = await _context.ExpenseCategories.FindAsync(dto.CategoryId);
             if (category == null || category.CompanyId != companyId)
                 return new ApiResponse<ExpenseResponseDto>(false, "Invalid category", null);
+            if (!category.IsActive)
+                return new ApiResponse<ExpenseResponseDto>(false, $"Expense category {category.Name} is switched off.", null);
+            // A switched-off bank account or wallet pays nothing new.
+            if (dto.PaymentAccountType != AccountType.Cash &&
+                await AccountActivity.SwitchedOffAsync(_context, companyId, dto.PaymentAccountType, dto.PaymentAccountId) is { } off)
+                return new ApiResponse<ExpenseResponseDto>(false, off, null);
 
             var categoryName = category.Name;
 
@@ -211,7 +238,7 @@ public class ExpenseService : IExpenseService
                 Reference = $"EXP-{code}",
                 TransactionType = TransactionType.Credit, // Credit = money out
                 TransactionDate = expenseDate,
-                Description = $"Expense: {categoryName} - {dto.Description}",
+                Description = ValidationHelper.Fit($"Expense: {categoryName} - {dto.Description}", 500),   // the column holds 500
                 Notes = $"Vendor: {dto.VendorPayee ?? "N/A"} | Expense Code: {code}",
                 Currency = dto.Currency,
                 Amount = dto.Amount,
@@ -262,6 +289,7 @@ public class ExpenseService : IExpenseService
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogExpenseErrorAsync(companyId, $"Failed to create expense: {ex.Message}", userId);
             return new ApiResponse<ExpenseResponseDto>(false, "Failed to create expense. Please try again.", null);
         }
@@ -285,6 +313,8 @@ public class ExpenseService : IExpenseService
 
     public async Task<ApiResponse<PagedResult<ExpenseResponseDto>>> GetAllAsync(Guid companyId, int page, int pageSize, ReportFilterDto? filter = null)
     {
+        page = Math.Max(1, page);              // page 0 was a negative OFFSET (a server error on PostgreSQL)
+        pageSize = Math.Clamp(pageSize, 1, 500);
         var query = _context.Expenses.Where(e => e.CompanyId == companyId && !e.IsDeleted);
         
         // Expense dates are calendar dates: compare whole days, end day included.
@@ -360,6 +390,14 @@ public class ExpenseService : IExpenseService
                 "Amount cannot be changed. Please delete and recreate the expense for amount changes.", null);
         }
 
+        // The same limits as recording it (none were checked here).
+        var validationError = ValidationHelper.FirstError(
+            ValidationHelper.ValidateText(dto.Description, "Description", 500, required: dto.Description != null),
+            ValidationHelper.ValidateText(dto.VendorPayee, "Vendor/Payee", 255),
+            ValidationHelper.ValidateText(dto.Reference, "Reference", 50));
+        if (validationError != null)
+            return new ApiResponse<ExpenseResponseDto>(false, validationError, null);
+
         // Update allowed fields only
         if (dto.Description != null) expense.Description = dto.Description;
         if (dto.VendorPayee != null) expense.VendorPayee = dto.VendorPayee;
@@ -373,7 +411,7 @@ public class ExpenseService : IExpenseService
             if (transaction != null)
             {
                 var category = await _context.ExpenseCategories.FindAsync(expense.CategoryId);
-                transaction.Description = $"Expense: {category?.Name ?? "Unknown"} - {expense.Description}";
+                transaction.Description = ValidationHelper.Fit($"Expense: {category?.Name ?? "Unknown"} - {expense.Description}", 500);
                 transaction.Notes = $"Vendor: {expense.VendorPayee ?? "N/A"} | Expense Code: {expense.Code}";
                 transaction.UpdatedAt = DateTime.UtcNow;
             }
@@ -458,7 +496,7 @@ public class ExpenseService : IExpenseService
                 // Reversal: Source=Bank, Type=Debit (money BACK IN)
                 TransactionType = TransactionType.Debit,
                 TransactionDate = DateTime.UtcNow,
-                Description = $"REVERSAL: Expense {category?.Name ?? "Unknown"} - {expense.Description}",
+                Description = ValidationHelper.Fit($"REVERSAL: Expense {category?.Name ?? "Unknown"} - {expense.Description}", 500),
                 Notes = $"Reversal of expense {expense.Code}",
                 Currency = expense.Currency,
                 Amount = expense.Amount,
@@ -491,7 +529,7 @@ public class ExpenseService : IExpenseService
                     originalTransaction.DeletedByUserId = userId;
                     originalTransaction.DeletedAt = DateTime.UtcNow;
                     originalTransaction.DeleteReason = "Expense deleted";
-                    originalTransaction.Description = $"[REVERSED] {originalTransaction.Description}";
+                    originalTransaction.Description = ValidationHelper.Fit($"[REVERSED] {originalTransaction.Description}", 500);
                     originalTransaction.Notes = (originalTransaction.Notes ?? "") + $" [Reversed by: {reversalCode}]";
                     originalTransaction.UpdatedAt = DateTime.UtcNow;
                 }
@@ -508,6 +546,7 @@ public class ExpenseService : IExpenseService
         catch (Exception ex)
         {
             await dbTransaction.RollbackAsync();
+            _context.ChangeTracker.Clear();   // nothing half-done may be saved by a later SaveChanges (the error log's)
             await _systemLog.LogExpenseErrorAsync(companyId, $"Failed to delete expense: {ex.Message}", userId);
             return new ApiResponse<bool>(false, "Failed to delete expense. Please try again.", false);
         }

@@ -122,7 +122,8 @@ public class CashController : BaseApiController
     {
         if (!CompanyId.HasValue) return Unauthorized();
         
-        var filter = new StatementFilterDto(startDate, endDate,currency, null);
+        // The money-in / money-out filter was dropped here (null), unlike bank and wallet statements.
+        var filter = new StatementFilterDto(startDate, endDate, currency, transactionType);
         var result = await _cashService.GetStatementAsync(CompanyId.Value, currency, filter);
         return result.Success ? Ok(result) : NotFound(result);
     }

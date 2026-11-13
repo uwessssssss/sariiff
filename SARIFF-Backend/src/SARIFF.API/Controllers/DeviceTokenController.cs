@@ -48,6 +48,13 @@ public class DeviceTokenController : BaseApiController
             });
         }
 
+        // One phone, one account at a time. The app keeps its token after sign-out, so when
+        // someone else signs in on that phone the earlier account's rows must stop: office
+        // balance alerts and a client's amounts otherwise kept reaching the new user.
+        foreach (var other in await _context.DeviceTokens
+                     .Where(d => d.Token == dto.Token && d.UserId != userId && d.IsActive).ToListAsync())
+            other.IsActive = false;
+
         await _context.SaveChangesAsync();
         return Ok(new ApiResponse<object>(true, "Token registered"));
     }

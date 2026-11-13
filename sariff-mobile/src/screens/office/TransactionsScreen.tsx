@@ -81,8 +81,11 @@ export default function TransactionsScreen() {
     } catch {}
   }, [searchText, filterCurrency, filter]);
   const loadAccs = useCallback(async () => {
-    try { const [c, b, m, cl] = await Promise.all([api.getCashAccounts(), api.getBankAccounts(), api.getMpesaAgents(), api.getClients(1, 500)]);
-      setAccs({ cash: c.success ? c.data : [], bank: b.success ? b.data : [], mpesa: m.success ? m.data : [], clients: cl.success ? (cl.data?.items || cl.data || []) : [] });
+    try { const [c, b, m, cl] = await Promise.all([api.getCashAccounts(), api.getBankAccounts(), api.getMpesaAgents(), api.getAllClients()]);
+      // Every client (not the first 500), and only accounts that may take a posting: the
+      // server refuses a switched-off bank account or wallet and an archived client.
+      const active = (xs: any[]) => (xs || []).filter((x: any) => x.isActive !== false);
+      setAccs({ cash: c.success ? c.data : [], bank: b.success ? active(b.data) : [], mpesa: m.success ? active(m.data) : [], clients: active(cl) });
       api.getCompanyCurrencies().then((r: any) => { if (r?.success && r.data?.currencies) setCompanyCurrencies(r.data.currencies.map((x: any) => x.value)); }).catch(() => {});
     } catch {}
   }, []);

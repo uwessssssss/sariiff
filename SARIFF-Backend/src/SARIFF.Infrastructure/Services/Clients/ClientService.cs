@@ -32,6 +32,8 @@ public class ClientService : IClientService
 
     public async Task<ApiResponse<ClientResponseDto>> CreateAsync(Guid companyId, CreateClientDto dto)
     {
+        // Checked trimmed, so stored and compared trimmed: "+2547… " was a second client with the same number.
+        dto = dto with { WhatsAppNumber = dto.WhatsAppNumber?.Trim()!, Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim() };
         // Input validation
         var validationError = ValidationHelper.FirstError(
             ValidationHelper.ValidateName(dto.FullName, "Full name"),
@@ -114,19 +116,17 @@ public class ClientService : IClientService
                 // Send credentials via WhatsApp for permanent clients
                 if (client.ClientType == ClientType.Permanent && !string.IsNullOrEmpty(dto.Password))
                 {
+                    // One SMS with the login details (the notification IS the SMS; a second one
+                    // with the same password used to follow it).
                     var companyName = company?.Name ?? "Sarif";
                     var websiteUrl = _config["App:WebsiteUrl"] ?? "https://app.sariff.com";
-                    await _notificationService.SendClientCredentialsAsync(
-                        companyId, client.Id, client.WhatsAppNumber, client.FullName,
-                        code, dto.Password, companyName, websiteUrl);
-                    
-                    // Auto-send credentials via SMS
                     try
                     {
-                        var smsMsg = $"Welcome to {companyName}! Your account: Code: {code}, Password: {dto.Password}. Download the Sarif app to manage your account. Change your password after first login.";
-                        smsSent = await _smsService.SendSmsAsync(client.WhatsAppNumber, smsMsg);
+                        smsSent = await _notificationService.SendClientCredentialsAsync(
+                            companyId, client.Id, client.WhatsAppNumber, client.FullName,
+                            code, dto.Password, companyName, websiteUrl);
                     }
-                    catch { smsSent = false; /* SmsService logs the cause; creation still succeeds */ }
+                    catch { smsSent = false; /* logged by the notification service; creation still succeeds */ }
                 }
 
                 return new ApiResponse<ClientResponseDto>(true,
@@ -265,7 +265,7 @@ public class ClientService : IClientService
             var emailCheck = ValidationHelper.ValidateEmail(dto.Email);
             if (!emailCheck.IsValid)
                 return new ApiResponse<ClientResponseDto>(false, emailCheck.Error!, null);
-            client.Email = dto.Email;
+            client.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
         }
         if (dto.IdPassport != null)
         {
@@ -330,22 +330,18 @@ public class ClientService : IClientService
         client.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        // FIX: Send credentials via WhatsApp on conversion to permanent
+        // One SMS with the login details (it used to be sent twice: notification + SMS).
         var company = await _context.Companies.FindAsync(companyId);
         var companyName = company?.Name ?? "Sarif";
         var websiteUrl = _config["App:WebsiteUrl"] ?? "https://app.sariff.com";
-        await _notificationService.SendClientCredentialsAsync(
-            companyId, client.Id, client.WhatsAppNumber, client.FullName,
-            client.Code, dto.Password, companyName, websiteUrl);
-        
-        // Auto-send credentials via SMS
         bool sent;
         try
         {
-            var smsMsg = $"Welcome to {companyName}! Your account: Code: {client.Code}, Password: {dto.Password}. Download the Sarif app to manage your account.";
-            sent = await _smsService.SendSmsAsync(client.WhatsAppNumber, smsMsg);
+            sent = await _notificationService.SendClientCredentialsAsync(
+                companyId, client.Id, client.WhatsAppNumber, client.FullName,
+                client.Code, dto.Password, companyName, websiteUrl);
         }
-        catch { sent = false; /* SmsService logs the cause */ }
+        catch { sent = false; /* logged by the notification service */ }
 
         return new ApiResponse<bool>(true, sent ? "Client converted to permanent" : "Client converted to permanent, but the SMS with their login details could not be sent. Share the code and password with them yourself.", true);
     }
