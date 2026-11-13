@@ -4,7 +4,8 @@ import { Activity, ArrowLeftRight, BarChart3, Building2, TrendingUp, Users, Wall
 import { CURRENCY_CODES, loadKesRates, toKes } from "../helpers";
 import { allPages, apiRequest, getExchangeTodaySummary, getExchangeTransactions } from "@/lib/api";
 import { bureauFlow } from "@/lib/moneyflow";
-import { inDateRange } from "@/lib/dates";
+import { exchangeProfitBetween } from "@/lib/exchangeProfit";
+import { inDateRange, localDate } from "@/lib/dates";
 import { toast } from "sonner";
 import { useCallback, useState } from "react";
 import { type useReportsState } from "./useReportsState";
@@ -22,8 +23,11 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
       // trade the bureau ever made and throw most of them away.
       const now = new Date();
       const monthFirst = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+      // The 7-day trend below can reach back into last month, so fetch from whichever is earlier.
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+      const tradesFrom = weekStart < new Date(now.getFullYear(), now.getMonth(), 1) ? localDate(weekStart) : monthFirst;
       const [exchangeRes, summaryRes, txnRes] = await Promise.all([
-        allPages((p, n) => getExchangeTransactions(p, n, undefined, undefined, monthFirst)),
+        allPages((p, n) => getExchangeTransactions(p, n, undefined, undefined, tradesFrom)),
         getExchangeTodaySummary(),
         // This month only, and all of it: the endpoint's default page is 10 rows,
         // so the P&L used to be built from the last 10 transactions.
@@ -59,12 +63,10 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
       monthStart.setHours(0, 0, 0, 0);
       const inMonth = (d: any) => d && new Date(d) >= monthStart;
 
-      let exchangeProfit = 0;
-      if (Array.isArray(exchangeTransactions)) {
-        exchangeProfit = exchangeTransactions
-          .filter((x: any) => inMonth(x.transactionDate || x.createdAt))
-          .reduce((sum: number, x: any) => sum + (x.profit || 0), 0);
-      }
+      const exchangeProfit = exchangeProfitBetween(
+        Array.isArray(exchangeTransactions) ? exchangeTransactions : [],
+        monthStart,
+      );
 
       let totalIncome = 0;
       let totalExpenses = 0;
@@ -122,18 +124,22 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
         });
       }
 
-      // Generate daily profit trend (last 7 days mock for now)
+      // Daily profit, last 7 days, from the trades themselves. It used to chart six
+      // days of 0 (a placeholder) plus today, so every past day read as no profit.
       const dailyProfits = [];
       for (let i = 6; i >= 0; i--) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const profit = exchangeProfitBetween(
+          Array.isArray(exchangeTransactions) ? exchangeTransactions : [],
+          date,
+          new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1),
+        );
         dailyProfits.push({
           date: date.toLocaleDateString("en-KE", { weekday: "short" }),
-          profit: 0, // Historical daily data requires daily summaries API
+          profit,
         });
       }
-
-      // Use today's actual summary if available
+      // Today's figure: the server's own summary when it has one.
       if (todaySummary) {
         dailyProfits[dailyProfits.length - 1].profit =
           todaySummary.kesProfit || 0;
