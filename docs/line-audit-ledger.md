@@ -254,6 +254,26 @@ Backend, found while reading the mobile expense form:
 | M14 | The super admin could sign in on the phone and landed in the bureau tabs, where every request is refused. By reading | Refused with "the super admin dashboard is on the web"; the session it opened is ended |
 | M15 | Phone sign-in: a failing encrypted store left the opening spinner up for good. By reading | Falls back to the phone-number step |
 | AU5 | React Native's Hermes engine has no crypto.getRandomValues without a polyfill, so [Likely] the AU4 device id came out empty on phones (every office sign-in asked for a code) and the phone-sign-in secret fell back to Math.random. Not proven on a device | expo-crypto (added through the fix-mobile-deps workflow, which regenerates the lock file on GitHub); no secure source means no trusted device, never Math.random |
+| M16 | Receipts and CSV exports on the phone bypassed the token refresh: after the one-hour sign-in they failed with "Server returned 401". By reading | Refresh once on 401, as every other request |
+| M17 | A Render outage page (HTML) showed as "JSON Parse error: Unexpected character <". By reading | Plain message: the server is starting or unavailable |
+| M18 | Unused helpers that would mislead: daily summaries sent startDate/endDate (the API reads from/to); "getMonthlyReport" fetched one day. By reading (route/parameter cross-check script over both apps) | Corrected / removed |
+| M19 | The phone showed Ugandan shillings with cents ("USh 1,800,000.00") (proven failing first, d7f4552) | Whole shillings; statements, receipts, invoices and WhatsApp confirmations use each currency's decimals |
+| M20 | The exchange confirmation sent the received amount as String(n): "15467.5". By reading | Formatted in its currency |
+| M21 | Password and email fields let Android keyboards capitalise the first letter (the login password did so whenever shown). By reading | No auto-capitalisation or correction on those fields |
+| M22 | A password change ends every session on the server, this phone's too: the client was thrown out at the next tap with "Session expired". By reading (web: W12) | Says so and signs out |
+| M23 | Reports: ‹ › changed the date in the heading but left the previous day's figures under it. By reading | A new day loads its own report |
+| M24 | Reports: switching type quickly could draw one report's answer in another's view. By reading | Latest request only |
+| M25 | Office dashboard "today" compared the API's UTC date: from 00:00 to 03:00 the night's entries were left out. By reading | Local date |
+| M26 | Phone sign-in did not clear the screen cache or the home currency like the code+password sign-in. By reading | Cleared |
+| M27 | The phone's invoice PDF was headed "Sarif · Forex Bureau Services" on every invoice a bureau sent; values were not escaped. By reading | The bureau's name, address, phone, tax ID; every value escaped; discount shows its minus |
+| M28 | The expense list stopped at the latest 50 and its "total" was of those 50. By reading | Pages on scroll; total from the server |
+| M29 | A second invoice started with the first one's client and lines. By reading | Form reset |
+| M30 | Settle profit for a Ugandan bureau sent currency KES with its USD profit amount (the home-currency chip had the value 0): always refused, and KES accounts were offered. By reading | Home currency, default, and "no profit to settle" |
+| M31 | One tap on Logout in the More menu signed out mid-shift. By reading | Asks first |
+| M32 | Alerts: "Read all" disappeared when the loaded page was read even if older pages were not. By reading | Stays while more pages exist |
+| M33 | Withdrawing float in anything but KES hid mobile-money destinations (UGX float → MTN wallet). By reading | Wallets listed by their own currency |
+| M34 | The conversion preview showed × instead of ÷ when the counter account was a Ugandan bureau's UGX (display only). By reading (web: W13) | Compared with the home currency |
+| M35 | A client's profile always listed KES ("KES 0.00" for a Ugandan client). By reading | Currencies used |
 
 Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, clients.ts, invoices.ts; hooks/useAuth.tsx; utils/moneyflow.ts, cache.ts; components/InactivityWrapper.tsx; screens/office/TransactionsScreen.tsx, ClientsScreen.tsx, exchange/hooks/useExchangeScreenState.tsx. Read at logic-line level only (API calls, number parsing, totals): Accounts, Expenses, Reports, Invoices, Reconciliation, both dashboards, statements, alerts, analytics, profile. Not yet read: exchange sections, auth screens (Login, Otp, PhoneLogin), components/ui, utils/notifications and dates, navigation, types.
 
@@ -279,5 +299,42 @@ Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, c
 | SM3 | A statement PDF printed with a search or in/out filter on listed the matching lines under the whole period's totals without saying so. By reading | The PDF says it is filtered and that totals are for the whole period |
 | SM4 | Client list (web, server search per keystroke), transaction list (phone) and the exchange client search: an answer for an earlier spelling could replace the current one. By reading | Same latest-answer rule |
 | W8 | Client portal (web): "Download statement" and "Print statement" held only the page of transactions on screen, cut at 50, under a "Client Account Statement" heading. By reading | Both fetch every transaction matching the filters on screen |
+| W9 | The home currency was cached even when its first request failed (KES for good: a Ugandan bureau's figures labelled KES until reload), and an answer for the previous bureau could land after a switch (proven failing first, cbf3df2: 2 of 3; web and phone fixed) | Failed loads not cached; answers from before a sign-out/switch dropped |
+| W10 | After the one-hour sign-in every super-admin screen failed ("Request failed with status 401": the 401 body was read before the status, so it never refreshed), and receipt, invoice PDF, statement, CSV and audit-log downloads failed (fetch without refresh) (proven failing first, e207042: 0 of 5) | One authorizedFetch refreshes once; super-admin checks 401 first |
+| W11 | A token refresh rebuilt the stored user with id = company id and an empty phone. By reading | Keeps what sign-in stored |
+| W12 | See M22 (portal password change). By reading | Signs out |
+| W13 | See M34. By reading | Home currency |
+| W14 | The transaction form asks for "Transaction Date *" but never sent it: a back-dated entry was recorded today. By reading | Sent (noon that local day); no future days offered |
+| W15 | Cash accounts were listed as "Cash 0" / "Cash 1" in the transaction form (the API sends no name). By reading | Currency code |
+| W16 | The WhatsApp confirmation was never offered for a client's UGX or EUR account (only _KES/_USD ids were recognised). By reading | Every currency |
+| W17 | On a forex entry the confirmation gave the typed amount in the other side's currency. By reading | The client's own amount and currency |
+| W18 | Reconciliation "Create Adjustment" said "✓ Adjustment entry created" and created nothing. By reading | Says how to clear a variance (expense / transaction); no fake success |
+| W19 | "Auto Match All" (or the "a" key) marked every pending transaction matched without comparing anything or asking. By reading | Says exactly that and asks |
+| W20 | "Accept all suggestions" could match two transactions to one statement line. By reading | Strongest pairs first, each used once |
+| W21 | "Profile picture updated successfully!" kept it in memory only. By reading | Kept on this browser per bureau, and says so |
+| W22 | Generated client passwords used Math.random. By reading | crypto.getRandomValues |
+| W23 | The web refused an invoice without a client email (the API and phone take one). By reading | Optional |
+| W24 | Reports "Date Range" (Today by default) filtered nothing. By reading; the new inDateRange is tested in app-logic | Applied, page resets |
+| W25 | The transactions report PDF listed the first 50 of every transaction ever, whatever the filters. By reading | Every row on screen |
+| W26 | The transactions report's CSV exported the daily summary. By reading | The transactions |
+| W27 | CSV cells not escaped: quotes broke rows; =,+,@ opened as formulas. By reading | Escaped |
+| W28 | The web login's code check (letters only, 2-4) refused real codes whose prefix has digits ("24/7 Forex" → 2FK-…) or one letter. By reading | Letters and digits, 1-4 |
+| W29 | Expenses paid by account transfer were labelled "Credit Card". By reading | Correct label |
+| W30 | Super-admin sign-out cleared the browser before asking the server, which then refused (no token): the refresh token stayed valid. By reading | Server first |
+| W31 | Portal statement PDF/print always showed KES and USD boxes (empty for Ugandan clients). By reading | Currencies held |
 
 Read in full: lib/api/core.ts, providers/AuthProvider.tsx (sign-in, refresh, idle timer, device id), components/office/StatementModal.tsx, office/reconciliation/helpers.tsx and hooks/useReconciliationState.tsx (upload and matching), exchange/parts/NewExchangeModal.tsx and hooks/useExchangeSectionState.tsx (submit and share). Every web amount input checked: all are type="number", so a browser never hands over "1,500" (M12 does not apply to the web). Query strings in every lib/api file checked: searches are encoded. Not yet read: the rest.
+
+## Backend found from the apps (13 Nov, later round)
+
+| Id | Bug | Fix |
+|---|---|---|
+| CL8 | The client portal carried no bureau name: the web statement PDF/print was headed with the CLIENT's own name (a client's sign-in stores it as companyName); phone statements and receipts said "Sarif" (proven failing first, a40a5b9) | Profile and statement carry CompanyName; both apps use it |
+| I2 | An invoice's own date (web form "Invoice Date *") was dropped: every invoice was dated now (proven failing first, accfdb9) | Optional InvoiceDate (not future, not after the due date), stored at noon that local day |
+| SB1 | A subscription set to expire on a date counted as expired from 03:00 that morning in Nairobi (proven failing first, 100e3ab) | Runs to the end of that local day |
+
+## Coverage at the end of 13 Nov
+
+- Phone (14.8k lines): every file read for logic, including services/api, hooks, utils, components (UI kit by logic lines), navigation, types, and every screen. Style blocks not audited.
+- Web (49k lines): read in full: lib/api/*, lib/dates, lib/useBaseCurrency, lib/statement, lib/superadmin-api request helper, providers/AuthProvider, app/login, StatementModal, TransactionDialogs, transaction-form (hook and view), reconciliation (helpers, state, actions, effects, adjustment panel), reports hooks (state/data/effects export parts), invoices hook, expenses state hook, clients state hook, cash data hook, office-shell dashboard hook, settings hook, super-admin state hook, exchange section state and NewExchangeModal, client-portal state/data hooks. Searched by pattern only (not line by line): the remaining section/markup components (about 150 files of JSX), shadcn ui/*.
+- Every API path and query parameter used by both apps cross-checked against the controllers by script (scratchpad routes.py): only unused helpers were wrong (M18).
