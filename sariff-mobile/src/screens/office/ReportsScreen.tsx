@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -78,7 +78,11 @@ export default function ReportsScreen() {
     setReportDate(d);
   };
 
+  // Tapping "Accounts" then "Clients" quickly: the accounts answer could land last and be
+  // drawn by the clients view (wrong figures, or the error screen). Latest request only.
+  const reportSeq = useRef(0);
   const loadReport = useCallback(async () => {
+    const seq = ++reportSeq.current;
     setLoading(true); setReport(null);
     try {
       let res;
@@ -88,11 +92,20 @@ export default function ReportsScreen() {
         case 'clientBalances': res = await api.apiRequest<any>('/api/report/client-balances'); break;
         case 'transactions': res = await api.apiRequest<any>('/api/report/transactions?page=1&pageSize=30'); break;
       }
+      if (seq !== reportSeq.current) return;
       if (res?.success) setReport(res.data);
     } catch {}
-    setLoading(false);
+    if (seq === reportSeq.current) setLoading(false);
   }, [activeReport, reportDateStr]);
 
+  // ‹ › changed the date in the heading but left the previous day's figures under it until
+  // "Generate" was tapped again. A new day now loads its own report.
+  const firstDate = useRef(true);
+  useEffect(() => {
+    if (firstDate.current) { firstDate.current = false; return; }
+    if (activeReport === 'daily') loadReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reportDateStr]);
   // One-tap share of the daily summary (WhatsApp, SMS, anything on the sheet)
   const shareDailySummary = async () => {
     if (!report || activeReport !== 'daily') return;

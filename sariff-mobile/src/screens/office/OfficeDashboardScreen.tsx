@@ -95,10 +95,10 @@ export default function OfficeDashboardScreen() {
           const today = localDate();
           const todayTxns = statsRes.data.recentTransactions.filter(
             (t: any) => {
-              const txnDate = (t.transactionDate || t.createdAt || "").split(
-                "T",
-              )[0];
-              return txnDate === today;
+              // The API sends UTC ("…Z"): its date part is still yesterday from 00:00 to 03:00
+              // in Nairobi/Kampala, so the night's entries were left out of "today".
+              const when = new Date(t.transactionDate || t.createdAt || "");
+              return !isNaN(when.getTime()) && localDate(when) === today;
             },
           );
           const finalTxns =

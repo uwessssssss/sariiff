@@ -294,6 +294,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       companyId: data.companyId || undefined,
       companyName: undefined,
     };
+    // Like the code+password sign-in: nothing cached from another account may paint first.
+    try { await cacheClear(); } catch {}
+    resetBaseCurrency();
     await api.storeAuth(data.accessToken, data.refreshToken || "", userInfo);
     registerPushToken(); // push token now belongs to this bureau's account
     pendingDtoRef.current = null;
