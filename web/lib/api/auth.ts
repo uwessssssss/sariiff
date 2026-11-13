@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, apiRequest, clearStoredAuth } from "./core";
+import { API_BASE_URL, type ApiResponse, apiRequest, clearStoredAuth, getStoredAuth } from "./core";
 
 // ==============================================
 // Auth Types - Unified Login
@@ -97,7 +97,9 @@ export async function verifyOtp(
 }
 export async function logout(): Promise<void> {
   try {
-    await apiRequest("/api/auth/logout", { method: "POST" });
+    // This browser's refresh token: only this device signs out, not every device of the bureau.
+    const refreshToken = getStoredAuth()?.refreshToken;
+    await apiRequest("/api/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) });
   } finally {
     clearStoredAuth();
   }

@@ -60,13 +60,16 @@ public class AuthController : BaseApiController
     /// Logout
     /// </summary>
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout([FromBody] LogoutDto? dto = null)
     {
         if (UserId.HasValue)
         {
             UserRole? role = Enum.TryParse<UserRole>(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value, out var r) ? r : null;
-            await _authService.LogoutAsync(UserId.Value, role);
+            // The device's own refresh token: only this device signs out.
+            await _authService.LogoutAsync(UserId.Value, role, dto?.RefreshToken);
         }
         return Ok(new ApiResponse<bool>(true, "Logged out", true));
     }
 }
+
+public record LogoutDto(string? RefreshToken);

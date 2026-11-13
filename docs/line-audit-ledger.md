@@ -211,3 +211,13 @@ Read in full. No new defect proven. Noted: unexpected InvalidOperationExceptions
 ## Backend: Core (3,458) — complete at declaration level
 
 Enums, entity defaults and every record default were read; DTO and interface bodies were read where the services use them. No defect of their own.
+
+## Corrections and the sign-out round (13 Nov)
+
+- AC3: the first test also posted from a till, which the old backfill did count; it passed before the fix, so it proved nothing. Rewritten to the real gap (a wallet-to-wallet move that was reversed) and proven failing alone (b7befa6) before the fix.
+- LEN1 (reversal): the first test reversed a client posting, which the general reversal always refuses, so it failed for the wrong reason. Moved to cash-to-bank, proven failing with the old reversal text restored for one run, then fixed (c44e9b6).
+- An older test expected the category name "Fuel#2" to be refused; that was the letters-only rule replaced under AC1. It now expects acceptance, and script is still refused.
+
+| Id | Bug | Fix |
+|---|---|---|
+| LO1 | Signing out on one office device ended EVERY session of the bureau. Both apps sign out by themselves after a few idle minutes (3 on the phone), so an idle counter tablet logged the back office out mid-work | The apps send their own refresh token and only that session ends; without a token the old behaviour stays |

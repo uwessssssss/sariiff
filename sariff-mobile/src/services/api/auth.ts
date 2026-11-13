@@ -1,5 +1,5 @@
 import { ApiResponse, LoginResponseDto, OtpVerifyDto, UnifiedLoginDto } from "../../types";
-import { API_BASE, apiRequest, clearAuth } from "./core";
+import { API_BASE, apiRequest, clearAuth, getRefreshToken } from "./core";
 
 // ==================== AUTH ====================
 export async function login(
@@ -50,7 +50,9 @@ export async function verifyOtp(
 }
 export async function logout(): Promise<void> {
   try {
-    await apiRequest("/api/auth/logout", { method: "POST" });
+    // This phone's refresh token: only this device signs out, not every device of the account.
+    const refreshToken = await getRefreshToken();
+    await apiRequest("/api/auth/logout", { method: "POST", body: JSON.stringify({ refreshToken }) });
   } catch {}
   await clearAuth();
 }

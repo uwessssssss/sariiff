@@ -654,6 +654,15 @@ public partial class AuthService : IAuthService
             null => q.Where(s => s.UserId == userId && s.UserRole != UserRole.OfficeUser
                               || s.UserRole == UserRole.OfficeUser && s.CompanyId == userId),
         };
+        // With the device's refresh token, only THAT device signs out. The apps sign out by
+        // themselves after a few idle minutes; ending every session of the bureau meant an idle
+        // counter tablet logged the back office out mid-work. (Without a token: every session,
+        // as before, for callers that don't send one.)
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            var hash = HashToken(refreshToken);
+            q = q.Where(s => s.RefreshTokenHash == hash);
+        }
         var sessions = await q.ToListAsync();
         
         foreach (var session in sessions)
