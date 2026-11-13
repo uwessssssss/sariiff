@@ -2,7 +2,7 @@
 
 import { BankAccounts, CashAtHand, ClientManagement, DashboardStats, EMPTY_STATS, ExchangeSection, ExpensesAccount, InvoiceManagement, MPesaAccounts, NAV, OfficeSettings, OfficeUserDashboardProps, Reconciliation, Reports, TodayTxn, fmt, fmtKES, fmtUSD, greeting, initials, signed } from "./helpers";
 import { Building2, Loader2, LogOut, Plus, RefreshCw, Repeat, Smartphone, Wallet, X } from "lucide-react";
-import { type DashboardHolding, TransactionDto, currencyDecimals, getCompanyCurrencies, getCurrencyLabel, getCurrentExchangeRate, getDashboardStats, getRecentTransactions } from "@/lib/api";
+import { type DashboardHolding, TransactionDto, currencyDecimals, getStoredAuth, getCompanyCurrencies, getCurrencyLabel, getCurrentExchangeRate, getDashboardStats, getRecentTransactions } from "@/lib/api";
 import Link from "next/link";
 import { SarifMark } from "@/components/SarifMark";
 import { foreignCurrenciesFor, useBaseCurrency } from "@/lib/useBaseCurrency";
@@ -29,7 +29,17 @@ export function useOfficeUserDashboard({
     return () => window.removeEventListener("keydown", onKey);
   }, [mobileMenuOpen]);
   const [showTransactionForm, setShowTransactionForm] = useState(false);
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+  // Kept on this browser per bureau (there is no server field for it).
+  const profileKey = () => `sariff_profile_image_${getStoredAuth()?.user?.companyId || "office"}`;
+  const [profileImage, setProfileImageState] = useState<string | null>(null);
+  useEffect(() => {
+    try { setProfileImageState(localStorage.getItem(profileKey())); } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const setProfileImage = (img: string | null) => {
+    setProfileImageState(img);
+    try { if (img) localStorage.setItem(profileKey(), img); else localStorage.removeItem(profileKey()); } catch {}
+  };
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [todayTxns, setTodayTxns] = useState<TodayTxn[]>([]);
   const [refreshing, setRefreshing] = useState(false);

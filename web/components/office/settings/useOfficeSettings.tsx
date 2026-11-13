@@ -230,16 +230,17 @@ export function useOfficeSettings({
       setIsSaving(false);
     }
   };
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // The picture was kept in memory only: "updated successfully!" and gone on the next reload.
+  // There is no server field for it, so it is kept on this browser (small, shrunk copy).
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string;
-        onProfileImageChange(imageUrl);
-        toast.success("Profile picture updated successfully!");
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    try {
+      const imageUrl = await shrinkImage(file, 200);
+      onProfileImageChange(imageUrl);
+      toast.success("Profile picture updated on this browser");
+    } catch {
+      toast.error("That image could not be read");
     }
   };
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -316,9 +317,12 @@ export function useOfficeSettings({
   const generateRandomPassword = () => {
     const chars =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    // A client's password: from the browser's secure random source, not Math.random.
+    const bytes = new Uint32Array(12);
+    crypto.getRandomValues(bytes);
     let password = "";
     for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+      password += chars.charAt(bytes[i] % chars.length);
     }
     setNewPassword(password);
     setConfirmPassword(password);
