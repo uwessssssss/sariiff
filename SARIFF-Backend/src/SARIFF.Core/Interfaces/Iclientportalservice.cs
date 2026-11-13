@@ -154,6 +154,8 @@ public class ClientStatementDto
     public decimal TotalDebits { get; set; }
     public decimal NetMovement { get; set; }
     public List<ClientTransactionDto> Transactions { get; set; } = new();
+    /// <summary>The bureau issuing the statement (its PDF was headed with the software's name).</summary>
+    public string CompanyName { get; set; } = string.Empty;
 }
 
 public class ClientAlertDto

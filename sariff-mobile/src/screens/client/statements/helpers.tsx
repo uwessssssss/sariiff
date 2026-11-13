@@ -1,3 +1,4 @@
+import * as api from "../../../services/api";
 import { StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 import { borderRadius, colors, fontSize, fontWeight, spacing } from "../../../theme";
@@ -64,7 +65,7 @@ export function buildStatementHtml(s: any): string {
   </style></head>
   <body>
     <div class="head">
-      <div class="brand">Sarif</div>
+      <div class="brand">${esc(s?.companyName || "Account statement")}</div>
       <div class="title">Account Statement</div>
     </div>
     <div class="meta">
@@ -87,7 +88,8 @@ export function buildStatementHtml(s: any): string {
   </body></html>`;
 }
 // Single-transaction receipt as a real PDF (Credit = +/green, Debit = -/red).
-export function buildReceiptHtml(t: any): string {
+/** `bureau`: the bureau's name for the header (it said "Sarif", the software, on every client's receipt). */
+export function buildReceiptHtml(t: any, bureau?: string): string {
   const esc = (v: any) =>
     String(v ?? "")
       .replace(/&/g, "&amp;")
@@ -129,7 +131,7 @@ export function buildReceiptHtml(t: any): string {
   <body>
     <div class="card">
       <div class="head">
-        <div class="brand">Sarif</div>
+        <div class="brand">${String(bureau || "Receipt").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
         <div class="sub">Transaction Receipt</div>
       </div>
       <div class="amount">
@@ -153,7 +155,8 @@ export async function shareReceipt(t: any): Promise<void> {
     Toast.show({ type: "info", text1: "Generating receipt..." });
     const Print = require("expo-print");
     const Sharing = require("expo-sharing");
-    const { uri } = await Print.printToFileAsync({ html: buildReceiptHtml(t) });
+    const bureau = await api.getClientProfile().then((r: any) => r?.data?.companyName as string | undefined).catch(() => undefined);
+    const { uri } = await Print.printToFileAsync({ html: buildReceiptHtml(t, bureau) });
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(uri, {
         mimeType: "application/pdf",

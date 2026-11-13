@@ -139,6 +139,10 @@ public partial class ClientPortalService
             })
             .ToList();
 
+    /// <summary>The bureau's name, as its clients' statements and receipts should show it.</summary>
+    private async Task<string> BureauNameAsync(Guid companyId) =>
+        await _context.Companies.Where(c => c.Id == companyId).Select(c => c.Name).FirstOrDefaultAsync() ?? string.Empty;
+
     private async Task<ClientProfileDto> BuildProfileAsync(Guid companyId, User client)
     {
         var transactions = await GetClientTransactionsQuery(companyId, client.Id).ToListAsync();
@@ -179,7 +183,8 @@ public partial class ClientPortalService
             IsActive = client.IsActive,
             CreatedAt = client.CreatedAt,
             LastLoginAt = client.LastLoginAt,
-            OtherBalances = otherBalances
+            OtherBalances = otherBalances,
+            CompanyName = await BureauNameAsync(companyId)
         };
     }
 

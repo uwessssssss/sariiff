@@ -76,6 +76,7 @@ public partial class ClientPortalService
         {
             AccountName = client.FullName,
             AccountCode = client.Code,
+            CompanyName = await BureauNameAsync(companyId),
             Currency = statementCurrency,
             PeriodStart = periodStartLocal, // the day as picked, not the UTC instant
             PeriodEnd = endDate,

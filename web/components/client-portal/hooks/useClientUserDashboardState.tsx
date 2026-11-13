@@ -287,7 +287,8 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
 
       // Get company info
       const auth = getStoredAuth();
-      const companyName = auth?.user?.companyName || "Money Exchange";
+      // The bureau's name from the profile: a client's stored sign-in holds the CLIENT's name there.
+      const companyName = profile.companyName || "Account statement";
 
       // Safe profile data
       const clientName = profile.fullName || userName || "Client";

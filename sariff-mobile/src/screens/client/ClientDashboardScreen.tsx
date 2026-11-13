@@ -116,7 +116,7 @@ export default function ClientDashboardScreen() {
           </Text>
         </View>
         <Text style={styles.companyBadge} numberOfLines={1}>
-          {user?.companyName || d?.profile?.fullName || "Sarif"}
+          {(d?.profile as any)?.companyName || "Sarif"}
         </Text>
       </LinearGradient>
 

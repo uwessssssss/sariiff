@@ -41,6 +41,8 @@ export interface ClientProfileDto {
   lastLoginAt: string | null;
   // Balances in currencies beyond KES/USD (UGX, EUR, ...)
   otherBalances?: CurrencyBalanceDto[];
+  /** The bureau that holds this account (statements are issued in its name). */
+  companyName?: string;
 }
 export interface UpdateClientProfileDto {
   email?: string;
