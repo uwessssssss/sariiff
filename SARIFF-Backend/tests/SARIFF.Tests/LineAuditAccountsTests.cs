@@ -118,16 +118,17 @@ public class LineAuditAccountsTests
     {
         var b = await CreateAsync(Currency.UGX);
         // An old M-Pesa wallet in a Ugandan bureau (no currency stored, so it has meant UGX).
-        // It received UGX 50,000 from the MTN wallet and paid it all out to the till: balance 0.
+        // UGX 50,000 was moved to it from the MTN wallet by mistake, and that move was reversed:
+        // balance 0, and it appears only as the RECEIVING side of wallet-to-wallet postings.
         var old = new MpesaAgent { CompanyId = b.Co, Code = "MP-9", AgentName = "Old M-Pesa", PhoneNumber = "+256700000004", AgentNumber = "9", Provider = MobileMoneyProvider.MPesa };
         b.Db.Add(old);
         b.Db.Transactions.Add(TestDb.Txn(DateTime.UtcNow, TransactionType.Credit, 50_000, Currency.UGX, AccountType.Mpesa, b.Wallet.Id, AccountType.Mpesa, old.Id, companyId: b.Co));
-        b.Db.Transactions.Add(TestDb.Txn(DateTime.UtcNow, TransactionType.Debit, 50_000, Currency.UGX, AccountType.Cash, b.Cash.Id, AccountType.Mpesa, old.Id, companyId: b.Co));
+        b.Db.Transactions.Add(TestDb.Txn(DateTime.UtcNow, TransactionType.Debit, 50_000, Currency.UGX, AccountType.Mpesa, b.Wallet.Id, AccountType.Mpesa, old.Id, reference: "REV-1", companyId: b.Co));
         await b.Db.SaveChangesAsync();
 
         await MobileMoney.BackfillAsync(b.Db, NullLogger.Instance);
 
-        // Only the SOURCE side was looked at, so this wallet counted as "never used" and its
+        // For a wallet-to-wallet posting only the SOURCE side was taken, so this wallet counted as "never used" and its
         // UGX history was relabelled as Kenyan shillings.
         Assert.Null(old.Currency);
     }
