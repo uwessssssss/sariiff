@@ -15,7 +15,9 @@ public record CreateInvoiceDto(
     decimal TaxRate,
     decimal DiscountAmount,
     string? Notes,
-    string? Terms
+    string? Terms,
+    // The invoice's own date (the web form asks for it); null means today.
+    DateTime? InvoiceDate = null
 );
 
 public record InvoiceItemDto(

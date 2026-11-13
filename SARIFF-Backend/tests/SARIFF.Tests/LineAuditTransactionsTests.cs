@@ -211,6 +211,23 @@ public class LineAuditTransactionsTests
         Assert.False((await new InvoiceService(b.Db).CreateAsync(b.Co, dto)).Success);
         Assert.True((await new InvoiceService(b.Db).CreateAsync(b.Co, dto with { ClientId = b.Amina.Id })).Success);
     }
+
+    // I2
+    [Fact]
+    public async Task An_invoice_keeps_the_date_it_was_written_for()
+    {
+        // The web form has "Invoice Date *"; the date was dropped and every invoice was dated now.
+        var b = await CreateAsync();
+        var written = BureauClock.TodayLocal.AddDays(-3);
+        var dto = new CreateInvoiceDto(null, "Otieno Okello", null, null, null, BureauClock.TodayLocal.AddDays(14), Currency.KES,
+            new List<InvoiceItemDto> { new("Consulting", 1, 2500) }, 0, 0, null, null, written);
+
+        var made = await new InvoiceService(b.Db).CreateAsync(b.Co, dto);
+        Assert.True(made.Success, made.Message);
+        Assert.Equal(written, made.Data!.InvoiceDate.Date);
+
+        Assert.False((await new InvoiceService(b.Db).CreateAsync(b.Co, dto with { InvoiceDate = BureauClock.TodayLocal.AddDays(5) })).Success, "dated in the future");
+    }
 }
 
 /// <summary>Two requests at the same moment, against real PostgreSQL.</summary>
