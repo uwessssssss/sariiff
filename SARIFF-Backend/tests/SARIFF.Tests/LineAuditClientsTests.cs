@@ -132,4 +132,20 @@ public class LineAuditClientsTests
         Assert.Single((await svc.GetAllAsync(w.Co.Id, 1, 20, " zawadi ")).Data!.Items);
         Assert.Single((await svc.GetLookupAsync(w.Co.Id, " zawadi ")).Data!);
     }
+    // CL7
+    [Fact]
+    public async Task The_client_list_and_portal_alerts_cap_the_page_size_and_start_at_page_one()
+    {
+        var w = await SignInWorld.MakeAsync(TestDb.InMemory());
+        // Every other list caps a page (transactions 1,000, logs 200). These two loaded a whole
+        // bureau's clients, each with its totals, for pageSize=1000000; page 0 sent a negative
+        // offset to the database, which PostgreSQL refuses (a server error).
+        var list = (await Clients(w).GetAllAsync(w.Co.Id, 0, 1_000_000)).Data!;
+        Assert.Equal(1, list.Page);
+        Assert.True(list.PageSize <= 200, $"page size {list.PageSize}");
+
+        var alerts = (await new ClientPortalService(w.Db).GetAlertsAsync(w.Co.Id, w.Client.Id, 0, 1_000_000, false)).Data!;
+        Assert.Equal(1, alerts.Page);
+        Assert.True(alerts.PageSize <= 200, $"page size {alerts.PageSize}");
+    }
 }
