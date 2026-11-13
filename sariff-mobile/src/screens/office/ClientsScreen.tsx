@@ -191,9 +191,12 @@ export default function ClientsScreen() {
   };
 
   const [showResetPw, setShowResetPw] = useState(false);
+  // The same sheet asks for the password when a walk-in client is made permanent.
+  const [pwForConvert, setPwForConvert] = useState(false);
 
   const handleResetPassword = () => {
     if (!selectedClient) return;
+    setPwForConvert(false);
     setResetPw('');
     setShowResetPw(true);
   };
@@ -204,8 +207,21 @@ export default function ClientsScreen() {
     }
     setFormLoading(true);
     try {
-      const res = await api.resetClientPassword(selectedClient.id, resetPw);
-      if (res.success) {
+      const res = pwForConvert
+        ? await api.convertClientToPermanent(selectedClient.id, resetPw)
+        : await api.resetClientPassword(selectedClient.id, resetPw);
+      if (res.success && pwForConvert) {
+        Toast.show({ type: 'success', text1: 'Converted to permanent' });
+        setShowResetPw(false); setShowDetail(false); loadClients(1);
+        if (selectedClient?.whatsAppNumber) {
+          const pw = resetPw;
+          setTimeout(() => Alert.alert('Share Login Details?', `Send the login details to ${selectedClient.fullName} via WhatsApp?`, [
+            { text: 'Skip', style: 'cancel' },
+            { text: 'Share via WhatsApp', onPress: () => shareViaWhatsApp(selectedClient.whatsAppNumber, buildCredentialMessage({ role: 'client', fullName: selectedClient.fullName, code: selectedClient.code, password: pw, companyName: user?.companyName })) },
+          ]), 500);
+        }
+        setResetPw('');
+      } else if (res.success) {
         Toast.show({ type: 'success', text1: 'Password reset successfully' });
         setShowResetPw(false);
         // Share new password via WhatsApp
@@ -222,16 +238,13 @@ export default function ClientsScreen() {
     setFormLoading(false);
   };
 
+  // Staff choose the client's first password. It used to be "Change@123" for EVERY converted
+  // client: anyone knowing a client's code and phone number could sign in as them.
   const handleConvert = () => {
     if (!selectedClient || selectedClient.clientType !== ClientType.WalkIn) return;
-    Alert.alert('Convert to Permanent', `Upgrade ${selectedClient.fullName} to a permanent client?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Convert', onPress: async () => {
-        const res = await api.convertClientToPermanent(selectedClient.id, 'Change@123');
-        if (res.success) { Toast.show({ type: 'success', text1: 'Converted to permanent' }); setShowDetail(false); loadClients(1); }
-        else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
-      }},
-    ]);
+    setPwForConvert(true);
+    setResetPw('');
+    setShowResetPw(true);
   };
 
   const handleReverseTxn = async (txnId: string) => {
@@ -525,11 +538,11 @@ export default function ClientsScreen() {
         <Modal visible={showResetPw} transparent animationType="fade" onRequestClose={() => setShowResetPw(false)}>
           <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: spacing.lg }} activeOpacity={1} onPress={() => setShowResetPw(false)}>
             <TouchableOpacity activeOpacity={1} style={{ backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.lg }}>
-              <Text style={{ fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.sm }}>Reset Password</Text>
-              <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.lg }}>Enter a new password for {selectedClient?.fullName}</Text>
+              <Text style={{ fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.sm }}>{pwForConvert ? 'Make Permanent' : 'Reset Password'}</Text>
+              <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.lg }}>{pwForConvert ? `Choose a sign-in password for ${selectedClient?.fullName}` : `Enter a new password for ${selectedClient?.fullName}`}</Text>
               <Input label="New Password *" value={resetPw} onChangeText={setResetPw} icon="lock-closed-outline" placeholder="Minimum 8 characters" secureTextEntry />
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
-                <View style={{ flex: 1 }}><Button title="Reset Password" onPress={submitResetPassword} loading={formLoading} icon="key-outline" /></View>
+                <View style={{ flex: 1 }}><Button title={pwForConvert ? 'Make Permanent' : 'Reset Password'} onPress={submitResetPassword} loading={formLoading} icon="key-outline" /></View>
                 <View style={{ flex: 1 }}><Button title="Cancel" onPress={() => setShowResetPw(false)} variant="outline" /></View>
               </View>
             </TouchableOpacity>

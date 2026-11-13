@@ -125,6 +125,8 @@ export default function TransactionsScreen() {
 
   // PIN-gated submit — check backend if PIN is required
   const handleCreateWithPin = async () => {
+    // A reversal whose PIN box was closed must not run when this PIN is entered.
+    setPendingReverse(null);
     if (!priId || !ctrId || !amount || !description) { Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Fill all required fields' }); return; }
     try {
       const status = await api.getTransactionPinStatus();
@@ -472,7 +474,7 @@ export default function TransactionsScreen() {
 
       {/* PIN Modal — Beautiful 4-box design */}
       <Modal visible={showPinModal} transparent animationType="fade">
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: spacing.lg }} activeOpacity={1} onPress={() => setShowPinModal(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: spacing.lg }} activeOpacity={1} onPress={() => { setShowPinModal(false); setPendingReverse(null); }}>
           <TouchableOpacity activeOpacity={1} style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, alignItems: 'center' }}>
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(91,156,255,0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
               <Ionicons name="lock-closed" size={28} color="#4F46E5" />
@@ -498,7 +500,7 @@ export default function TransactionsScreen() {
               <Text style={{ color: colors.textTertiary, fontSize: 11, textAlign: 'center' }}>Contact your administrator if you don't know the PIN</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={{ width: '100%', paddingVertical: 14, backgroundColor: colors.surfaceAlt, borderRadius: 12, alignItems: 'center', marginTop: 20 }} onPress={() => setShowPinModal(false)}>
+            <TouchableOpacity style={{ width: '100%', paddingVertical: 14, backgroundColor: colors.surfaceAlt, borderRadius: 12, alignItems: 'center', marginTop: 20 }} onPress={() => { setShowPinModal(false); setPendingReverse(null); }}>
               <Text style={{ color: colors.textTertiary, fontWeight: '600' as any, fontSize: 15 }}>Cancel</Text>
             </TouchableOpacity>
           </TouchableOpacity>

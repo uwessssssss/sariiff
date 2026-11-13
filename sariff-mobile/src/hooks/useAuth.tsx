@@ -70,6 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Wire session expired callback — forces logout when token refresh fails
     api.setSessionExpiredCallback(() => {
       pendingDtoRef.current = null;
+      // The screens cache under fixed keys ("client_dashboard", ...): an expired session must
+      // not leave this account's balances for the next person who signs in on this phone.
+      cacheClear().catch(() => {});
+      resetBaseCurrency();
       setState({
         isLoading: false,
         isAuthenticated: false,
@@ -105,6 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear old auth first so stale tokens don't interfere with OTP flow
     pendingDtoRef.current = null;
     await api.clearAuth();
+    // A new sign-in starts with nothing cached from whoever used this phone before.
+    try { await cacheClear(); } catch {}
 
     // Also reset current auth state before a fresh login
     setState((s) => ({

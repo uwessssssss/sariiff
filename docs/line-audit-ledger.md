@@ -221,3 +221,18 @@ Enums, entity defaults and every record default were read; DTO and interface bod
 | Id | Bug | Fix |
 |---|---|---|
 | LO1 | Signing out on one office device ended EVERY session of the bureau. Both apps sign out by themselves after a few idle minutes (3 on the phone), so an idle counter tablet logged the back office out mid-work | The apps send their own refresh token and only that session ends; without a token the old behaviour stays |
+
+## Mobile (14,621 lines) — in progress
+
+There is no React Native test harness in the repo (CI type-checks the app and runs the shared logic tests in tests/app-logic), so mobile fixes below are found by reading and are NOT proven by a failing test. Each was checked against the code paths named.
+
+| Id | Bug | Fix |
+|---|---|---|
+| M1 | The posting form loaded only the first 500 clients, and offered switched-off bank accounts, wallets and archived clients | Every client, page by page; only active accounts |
+| M2 | Screens cache data (dashboard balances) under keys not tied to the account. Sign-out cleared the cache, but session expiry and a new sign-in did not, so the next person on the phone could see the previous account's figures | Cleared on expiry and on every sign-in |
+| M3 | Closing the PIN box after starting a reversal left the reversal pending; entering the PIN for the next NEW transaction then started that old reversal instead of saving the transaction | Cleared when the box closes and when a new transaction starts |
+| M4 | Making a walk-in client permanent set the password "Change@123" for every client (and the server texted it). Anyone with a client's code and phone number could sign in as them. The web asks staff for the password | The phone asks for the password too |
+| M5 | The client search was sent unencoded: "+" in a phone number arrived as a space and "&" cut the query | Encoded |
+| (LO1) | Sign-out sent no token, so it ended every device's session | Sends this phone's refresh token |
+
+Files read so far: services/api/core.ts, auth.ts, clients.ts, accounts.ts, reports.ts, alerts.ts; hooks/useAuth.tsx; utils/moneyflow.ts, cache.ts; components/InactivityWrapper.tsx; screens/office/TransactionsScreen.tsx and ClientsScreen.tsx (logic; style sheets not audited). Not yet read: the rest.
