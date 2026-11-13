@@ -144,7 +144,7 @@ public partial class TransactionService
                 CounterAmount = transaction.CounterAmount,
                 CounterCurrency = transaction.CounterCurrency,
                 
-                Description = ValidationHelper.Fit($"REVERSAL: {transaction.Description}", 500),   // the column holds 500
+                Description = $"REVERSAL: {transaction.Description}",
                 Notes = $"Reversal of {transaction.Code}. Reason: {dto.Reason ?? "Not specified"}",
                 ExchangeRate = transaction.ExchangeRate,
                 
@@ -193,7 +193,7 @@ public partial class TransactionService
             transaction.DeletedAt = DateTime.UtcNow;
             transaction.DeleteReason = dto.Reason;
             transaction.UpdatedAt = DateTime.UtcNow;
-            transaction.Description = ValidationHelper.Fit($"[REVERSED] {transaction.Description}", 500);
+            transaction.Description = $"[REVERSED] {transaction.Description}";
             transaction.Notes = (transaction.Notes ?? "") + $" [Reversed by: {reversalCode}]";
 
             await _context.SaveChangesAsync();

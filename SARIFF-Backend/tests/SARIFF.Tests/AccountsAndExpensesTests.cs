@@ -151,7 +151,9 @@ public class ExpenseTests
         var fuel = await svc.CreateCategoryAsync(b.Co, new CreateExpenseCategoryDto("Fuel", "Generator diesel"));
         Assert.True(fuel.Success, fuel.Message);
         Assert.Equal("Category already exists", (await svc.CreateCategoryAsync(b.Co, new CreateExpenseCategoryDto("Fuel", null))).Message);
-        Assert.Contains("invalid characters", (await svc.CreateCategoryAsync(b.Co, new CreateExpenseCategoryDto("Fuel#2", null))).Message);
+        // Business names may hold digits and signs ("Fuel #2"); script is still refused (line audit, AC1).
+        Assert.True((await svc.CreateCategoryAsync(b.Co, new CreateExpenseCategoryDto("Fuel #2", null))).Success);
+        Assert.Contains("invalid content", (await svc.CreateCategoryAsync(b.Co, new CreateExpenseCategoryDto("<script>x</script>", null))).Message);
         Assert.Contains("invalid content", (await svc.CreateCategoryAsync(b.Co, new CreateExpenseCategoryDto("Water", "<script>x</script>"))).Message);
 
         await svc.CreateAsync(b.Co, b.UserId, Pay(b, 250, AccountType.Cash, b.Cash.Id));

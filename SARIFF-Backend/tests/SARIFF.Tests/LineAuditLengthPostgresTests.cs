@@ -26,7 +26,8 @@ public class LineAuditLengthPostgresTests : IClassFixture<PostgresDatabase>
         var b = await CreateAsync(db: db);
         b.Cash.Balance = 10_000; await db.SaveChangesAsync();
         var tx = b.Transactions();
-        var posted = await tx.CreateAsync(b.Co, b.UserId, Posting(TransactionType.Credit, AccountType.Cash, b.Cash.Id, AccountType.Client, b.Amina.Id, 100, description: Long));
+        // Cash to bank: client postings are reversed from the client statement instead.
+        var posted = await tx.CreateAsync(b.Co, b.UserId, Posting(TransactionType.Credit, AccountType.Cash, b.Cash.Id, AccountType.Bank, b.Bank.Id, 100, description: Long));
         Assert.True(posted.Success, posted.Message);
 
         // "REVERSAL: " + 500 characters = 510, in a 500-character column: the reversal failed,
