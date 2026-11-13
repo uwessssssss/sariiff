@@ -260,5 +260,6 @@ Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, c
 | Id | Bug | Fix |
 |---|---|---|
 | W1 | Tabs share one stored sign-in, but the "one refresh at a time" guard is per tab. When two tabs hit an expired token together both spent the same refresh token; since AU2 (refresh tokens are single-use, atomically) the second was refused, and that tab cleared the stored sign-in, including the token the first tab had just saved: every tab signed out. A regression caused by AU2, proven failing first in tests/app-logic/tabs.test.js | A refused refresh first waits up to 3 s for another tab's new token |
+| W2 | The idle sign-out timer ran per tab while the sign-in is shared: an office tab left in the background signed out after 3 minutes, ending the shared session and clearing the stored sign-in, so the tab in use was signed out too. Found by reading; the timer lives in a React provider the logic harness cannot run, so NOT proven by a test | Last activity is shared between tabs |
 
-Read in full: lib/api/core.ts. Not yet read: the rest.
+Read in full: lib/api/core.ts, providers/AuthProvider.tsx (sign-in, refresh, idle timer, device id). Query strings in every lib/api file checked: searches are encoded. Not yet read: the rest.

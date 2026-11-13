@@ -364,23 +364,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const IDLE_MS =
       user.roleNum === UserRole.Client ? 15 * 60 * 1000 : 3 * 60 * 1000;
     const CHECK_MS = 15 * 1000; // re-check every 15s
+    // Activity is shared by every tab: tabs share one sign-in, and an untouched background
+    // tab used to sign out (ending the shared session) while the person worked in another.
+    const KEY = "sariff_last_active";
     let lastActive = Date.now();
+    let lastWritten = 0;
+    const sharedLastActive = () => {
+      try {
+        const v = Number(localStorage.getItem(KEY));
+        return Number.isFinite(v) ? Math.max(lastActive, v) : lastActive;
+      } catch {
+        return lastActive;
+      }
+    };
+    const idleFor = () => Date.now() - sharedLastActive();
 
     const markActive = () => {
       lastActive = Date.now();
+      if (lastActive - lastWritten > 5000) {
+        lastWritten = lastActive;
+        try { localStorage.setItem(KEY, String(lastActive)); } catch {}
+      }
     };
+    markActive();
 
     const interval = setInterval(() => {
-      if (Date.now() - lastActive >= IDLE_MS) {
+      if (idleFor() >= IDLE_MS) {
         logout();
       }
     }, CHECK_MS);
 
     const onVisibility = () => {
-      if (
-        document.visibilityState === "visible" &&
-        Date.now() - lastActive >= IDLE_MS
-      ) {
+      if (document.visibilityState === "visible" && idleFor() >= IDLE_MS) {
         logout();
       }
     };
