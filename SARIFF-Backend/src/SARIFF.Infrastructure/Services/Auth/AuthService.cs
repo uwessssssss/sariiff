@@ -124,7 +124,7 @@ public partial class AuthService : IAuthService
         }
 
         // === DEVICE TRUST CHECK — Skip OTP on trusted devices ===
-        if (!string.IsNullOrEmpty(request.DeviceId))
+        if (IsTrustableDeviceId(request.DeviceId))
         {
             var trustedDevice = await _context.TrustedDevices
                 .FirstOrDefaultAsync(d => d.UserId == superAdmin.Id 
@@ -222,7 +222,7 @@ public partial class AuthService : IAuthService
         }
 
         // === DEVICE TRUST CHECK — Skip OTP on trusted devices ===
-        if (!string.IsNullOrEmpty(request.DeviceId))
+        if (IsTrustableDeviceId(request.DeviceId))
         {
             var trustedDevice = await _context.TrustedDevices
                 .FirstOrDefaultAsync(d => d.UserId == company.Id 
@@ -515,7 +515,7 @@ public partial class AuthService : IAuthService
         await LogLoginAttempt(companyId, userId, otp.Role, ipAddress, userAgent, true, null);
 
         // === SAVE TRUSTED DEVICE — Skip OTP next time from this device ===
-        if (!string.IsNullOrEmpty(request.DeviceId) && userId is { } trustedUserId)
+        if (IsTrustableDeviceId(request.DeviceId) && userId is { } trustedUserId)
         {
             var existingTrust = await _context.TrustedDevices
                 .FirstOrDefaultAsync(d => d.UserId == trustedUserId && d.DeviceId == request.DeviceId);
@@ -680,6 +680,13 @@ public partial class AuthService : IAuthService
     }
 
     // ==================== HELPERS ====================
+
+    /// <summary>
+    /// A device id may stand in for the SMS code only if it is long enough to be a random secret
+    /// (16+ characters, as the phone login requires). The phone app fell back to the constant
+    /// "unknown-device", which anyone with the password could send.
+    /// </summary>
+    private static bool IsTrustableDeviceId(string? deviceId) => deviceId is { Length: >= 16 and <= 200 };
 
     // OTP rules. The web and mobile login screens describe these to users,
     // so keep their copy in sync if you change them.

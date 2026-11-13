@@ -247,3 +247,9 @@ Backend, found while reading the mobile expense form:
 | EX7 | A cash expense was paid from the till of the expense's currency, whatever till was chosen: "Cash USD" with the currency left at KES quietly paid from the shilling till (proven failing first, af8fece) | Refused unless the chosen till holds that currency |
 
 Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, clients.ts, invoices.ts; hooks/useAuth.tsx; utils/moneyflow.ts, cache.ts; components/InactivityWrapper.tsx; screens/office/TransactionsScreen.tsx, ClientsScreen.tsx, exchange/hooks/useExchangeScreenState.tsx. Read at logic-line level only (API calls, number parsing, totals): Accounts, Expenses, Reports, Invoices, Reconciliation, both dashboards, statements, alerts, analytics, profile. Not yet read: exchange sections, auth screens (Login, Otp, PhoneLogin), components/ui, utils/notifications and dates, navigation, types.
+
+## Trusted devices (found reading the mobile sign-in) — AU4
+
+| Id | Bug | Fix |
+|---|---|---|
+| AU4 | A trusted device skips the office/super-admin SMS code, but the server trusted a device id of any length. The phone app made its id with Math.random, kept it in plain storage, and fell back to the constant "unknown-device" when storage failed; the web also used Math.random. A bureau that once trusted "unknown-device" let anyone with its password skip the code (proven failing first) | The server trusts only ids of 16 to 200 characters; both apps make them from secure random bytes (the phone in the encrypted store) and send none rather than a constant; old Math.random ids on the web are replaced (one more SMS code each) |

@@ -24,17 +24,22 @@ import {
 } from "@/lib/api";
 
 // Generate/retrieve persistent device ID for trusted device feature
-function getWebDeviceId(): string {
+// A trusted device skips the SMS code, so its id is a secret: secure random bytes, never
+// Math.random (predictable). Without storage (private mode) there is simply no trusted device.
+function getWebDeviceId(): string | undefined {
   const key = "sariff_device_id";
-  let id = typeof window !== "undefined" ? localStorage.getItem(key) : null;
-  if (!id) {
-    id = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-    });
-    if (typeof window !== "undefined") localStorage.setItem(key, id);
+  try {
+    let id = localStorage.getItem(key);
+    if (!id || id.length < 32 || id.includes("-")) { // dashes: an old Math.random id, replaced
+      const bytes = new Uint8Array(24);
+      crypto.getRandomValues(bytes);
+      id = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+      localStorage.setItem(key, id);
+    }
+    return id;
+  } catch {
+    return undefined;
   }
-  return id;
 }
 
 // ==============================================
