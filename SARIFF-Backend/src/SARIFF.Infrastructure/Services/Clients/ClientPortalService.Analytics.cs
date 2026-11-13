@@ -171,6 +171,10 @@ public partial class ClientPortalService
 
         client.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
         await _context.SaveChangesAsync();
+        // Every session opened with the old password ends, this one included: the client signs
+        // in again with the new password. (They used to live on, so changing a password
+        // someone else knew did not sign that person out.)
+        await Sessions.EndForUserAsync(_context, client.Id, UserRole.Client);
 
         // A new password ends trusted-device sign-in on the phone login (it may be why it changed).
         if (client.ClientIdentityId is { } identityId)
@@ -191,6 +195,6 @@ public partial class ClientPortalService
         _context.Set<ClientAlert>().Add(alert);
         await _context.SaveChangesAsync();
 
-        return new ApiResponse<bool>(true, "Password changed successfully", true);
+        return new ApiResponse<bool>(true, "Password changed. Sign in again with your new password.", true);
     }
 }

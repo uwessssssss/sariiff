@@ -83,7 +83,14 @@ public partial class SuperAdminService
                 if (filter.UserId.HasValue)
                     query = query.Where(l => l.UserId == filter.UserId);
                 if (!string.IsNullOrWhiteSpace(filter.Action))
-                    query = query.Where(l => l.Action.ToString() == filter.Action);
+                {
+                    // The action is stored as a number: compare the number. (Comparing its
+                    // text in the database never matched, so this filter returned nothing.)
+                    if (Enum.TryParse<AuditAction>(filter.Action.Trim(), true, out var action) && Enum.IsDefined(typeof(AuditAction), action))
+                        query = query.Where(l => l.Action == action);
+                    else
+                        query = query.Where(l => false);
+                }
                 if (!string.IsNullOrWhiteSpace(filter.EntityType))
                     query = query.Where(l => l.EntityType == filter.EntityType);
                 var (fromUtc, toExclusive) = BureauClock.Range(filter.StartDate, filter.EndDate);
@@ -131,6 +138,11 @@ public partial class SuperAdminService
             if (!response.Success || response.Data == null)
                 return new ApiResponse<byte[]>(false, "Error exporting logs", null!);
 
+            // The IP address is on the log row, not in the list DTO.
+            var ids = response.Data.Items.Select(l => l.Id).ToList();
+            var ips = await _context.AuditLogs.AsNoTracking().Where(l => ids.Contains(l.Id))
+                .Select(l => new { l.Id, l.IpAddress }).ToDictionaryAsync(l => l.Id, l => l.IpAddress);
+
             var csv = new StringBuilder();
             csv.AppendLine("Timestamp (EAT),User,Company,Action,Entity,Details,IP Address");
 
@@ -139,7 +151,7 @@ public partial class SuperAdminService
                 csv.AppendLine(string.Join(",",
                     CsvText.Cell(BureauClock.ToLocal(log.CreatedAt).ToString("yyyy-MM-dd HH:mm:ss")), CsvText.Cell(log.UserName ?? "System"),
                     CsvText.Cell(log.CompanyName ?? "Platform"), CsvText.Cell(log.Action), CsvText.Cell(log.EntityType),
-                    CsvText.Cell(log.NewValues ?? ""), CsvText.Cell("")));
+                    CsvText.Cell(log.NewValues ?? ""), CsvText.Cell(ips.GetValueOrDefault(log.Id) ?? "")));
             }
 
             return new ApiResponse<byte[]>(true, "Export complete", Encoding.UTF8.GetBytes(csv.ToString()));

@@ -327,6 +327,8 @@ public class ClientService : IClientService
         client.LockedUntil = null;
         client.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        // Whoever was signed in with the old password is signed out (it may be why it was reset).
+        await Sessions.EndForUserAsync(_context, client.Id, UserRole.Client);
 
         // A new password ends trusted-device sign-in on the phone login (it may be why it changed).
         if (client.ClientIdentityId is { } identityId)
@@ -399,6 +401,7 @@ public class ClientService : IClientService
         client.IsDeleted = true;
         client.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        await Sessions.EndForUserAsync(_context, client.Id, UserRole.Client);
 
         return new ApiResponse<bool>(true, "Client deleted successfully", true);
     }
@@ -418,6 +421,8 @@ public class ClientService : IClientService
         client.IsActive = false;
         client.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
+        // Signed out now: an open portal session otherwise kept working until its token ran out.
+        await Sessions.EndForUserAsync(_context, client.Id, UserRole.Client);
 
         var message = "Client archived successfully.";
         var outstanding = await OutstandingBalancesAsync(companyId, client);

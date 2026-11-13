@@ -381,3 +381,35 @@ public class SignInPostgresTests : IClassFixture<PostgresDatabase>
         Assert.False((await auth.RefreshTokenAsync(new RefreshTokenDto(client.RefreshToken), SignInWorld.Ip)).Success);
     }
 }
+
+/// <summary>Super-admin audit log, against real PostgreSQL (the filter runs in the database).</summary>
+public class AuditLogPostgresTests : IClassFixture<PostgresDatabase>
+{
+    private readonly PostgresDatabase _pg;
+    public AuditLogPostgresTests(PostgresDatabase pg) => _pg = pg;
+
+    [PostgresFact]
+    public async Task The_audit_log_filters_by_action_and_the_export_carries_the_ip_address()
+    {
+        await using var db = _pg.NewContext();
+        var co = Guid.NewGuid();
+        db.AuditLogs.AddRange(
+            new AuditLog { CompanyId = co, Action = AuditAction.Update, EntityType = "Client", EntityId = Guid.NewGuid(), NewValues = "renamed", IpAddress = "41.90.1.2" },
+            new AuditLog { CompanyId = co, Action = AuditAction.Create, EntityType = "Client", EntityId = Guid.NewGuid(), NewValues = "created", IpAddress = "41.90.1.3" });
+        await db.SaveChangesAsync();
+        var admin = new SuperAdminService(db, NullLogger<SuperAdminService>.Instance);
+
+        var updates = await admin.GetAuditLogsExtendedAsync(1, 50, new AuditLogFilterDto(co, null, "Update", null, null, null, null));
+        var anyCase = await admin.GetAuditLogsExtendedAsync(1, 50, new AuditLogFilterDto(co, null, "update", null, null, null, null));
+        var unknown = await admin.GetAuditLogsExtendedAsync(1, 50, new AuditLogFilterDto(co, null, "Explode", null, null, null, null));
+
+        Assert.True(updates.Success, updates.Message);
+        Assert.Equal(AuditAction.Update, Assert.Single(updates.Data!.Items).Action);
+        Assert.Single(anyCase.Data!.Items);
+        Assert.Empty(unknown.Data!.Items);
+
+        var csv = System.Text.Encoding.UTF8.GetString((await admin.ExportAuditLogsAsync(new AuditLogFilterDto(co, null, null, null, null, null, null))).Data!);
+        Assert.Contains("41.90.1.2", csv);
+        Assert.Contains("41.90.1.3", csv);
+    }
+}

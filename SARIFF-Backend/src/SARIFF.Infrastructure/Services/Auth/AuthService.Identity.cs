@@ -88,13 +88,13 @@ public partial class AuthService : IClientIdentityService
         if (otp == null)
             return new ApiResponse<IdentityTokenDto>(false, "This code has expired or was replaced. Request a new code.", null);
 
-        otp.AttemptCount++;
-        var matches = otp.AttemptCount <= OtpMaxAttempts && CryptographicOperations.FixedTimeEquals(
+        var withinLimit = await CountOtpAttemptAsync(otp);
+        var matches = withinLimit && CryptographicOperations.FixedTimeEquals(
             Encoding.UTF8.GetBytes(otp.Code), Encoding.UTF8.GetBytes(HashOtp(phone, dto.Code.Trim())));
 
         if (!matches)
         {
-            if (otp.AttemptCount >= OtpMaxAttempts) otp.IsUsed = true;
+            if (!withinLimit || otp.AttemptCount >= OtpMaxAttempts) otp.IsUsed = true;
             if (identity != null)
             {
                 identity.FailedOtpAttempts++;
@@ -138,6 +138,26 @@ public partial class AuthService : IClientIdentityService
         await _context.SaveChangesAsync();
         await LogLoginAttempt(null, identity.Id, UserRole.ClientIdentity, ipAddress, userAgent, true, null);
         return new ApiResponse<IdentityTokenDto>(true, "Phone verified", await IdentityTokenAsync(identity, trusted));
+    }
+
+    /// <summary>
+    /// Counts one guess against a code; false when the code has no guesses left. The count is
+    /// one database statement, so guesses sent in parallel can't all read "0 so far" and slip
+    /// past the limit (before Nov 2026 twenty parallel guesses counted as one or two).
+    /// </summary>
+    private async Task<bool> CountOtpAttemptAsync(OtpCode otp)
+    {
+        if (!_context.Database.IsRelational())   // the in-memory test database has no UPDATE ... WHERE
+        {
+            if (otp.AttemptCount >= OtpMaxAttempts) return false;
+            otp.AttemptCount++;
+            return true;
+        }
+        var counted = await _context.OtpCodes
+            .Where(o => o.Id == otp.Id && !o.IsUsed && o.AttemptCount < OtpMaxAttempts)
+            .ExecuteUpdateAsync(u => u.SetProperty(o => o.AttemptCount, o => o.AttemptCount + 1));
+        await _context.Entry(otp).ReloadAsync();
+        return counted > 0;
     }
 
     public async Task<ApiResponse<IdentityTokenDto>> DeviceLoginAsync(IdentityDeviceLoginDto dto, string ipAddress, string? userAgent)

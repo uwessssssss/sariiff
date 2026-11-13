@@ -107,6 +107,9 @@ public partial class AuthService : IAuthService
         // Verify password
         if (!BCrypt.Net.BCrypt.Verify(request.Password, superAdmin.PasswordHash))
         {
+            // A lock that has run out starts the count again. (It used to stay at 5, so the
+            // first typo after waiting out a lock locked the account for another 30 minutes.)
+            if (superAdmin.LockedUntil.HasValue) { superAdmin.LockedUntil = null; superAdmin.FailedLoginAttempts = 0; }
             superAdmin.FailedLoginAttempts++;
             if (superAdmin.FailedLoginAttempts >= 5)
                 superAdmin.LockedUntil = DateTime.UtcNow.AddMinutes(30);
@@ -194,6 +197,9 @@ public partial class AuthService : IAuthService
         // Verify password
         if (!BCrypt.Net.BCrypt.Verify(request.Password, company.PasswordHash))
         {
+            // A lock that has run out starts the count again. (It used to stay at 5, so the
+            // first typo after waiting out a lock locked the account for another 30 minutes.)
+            if (company.LockedUntil.HasValue) { company.LockedUntil = null; company.FailedLoginAttempts = 0; }
             company.FailedLoginAttempts++;
             if (company.FailedLoginAttempts >= 5)
                 company.LockedUntil = DateTime.UtcNow.AddMinutes(30);
@@ -291,6 +297,9 @@ public partial class AuthService : IAuthService
         // Verify password
         if (!BCrypt.Net.BCrypt.Verify(request.Password, client.PasswordHash))
         {
+            // A lock that has run out starts the count again. (It used to stay at 5, so the
+            // first typo after waiting out a lock locked the account for another 30 minutes.)
+            if (client.LockedUntil.HasValue) { client.LockedUntil = null; client.FailedLoginAttempts = 0; }
             client.FailedLoginAttempts++;
             if (client.FailedLoginAttempts >= 5)
                 client.LockedUntil = DateTime.UtcNow.AddMinutes(30);
@@ -461,7 +470,8 @@ public partial class AuthService : IAuthService
 
         if (otp.Role == UserRole.SuperAdmin)
         {
-            var superAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Code == request.Code && u.Role == UserRole.SuperAdmin);
+            // Still active: an admin switched off after the password step must not get in on the code.
+            var superAdmin = await _context.Users.FirstOrDefaultAsync(u => u.Code == request.Code && u.Role == UserRole.SuperAdmin && u.IsActive);
             if (superAdmin == null)
                 return new ApiResponse<TokenResponseDto>(false, "User not found", null);
 

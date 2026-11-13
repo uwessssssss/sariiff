@@ -246,6 +246,10 @@ public partial class SuperAdminService
     {
         if (dto.MonthlyFee < 0)
             return new ApiResponse<bool>(false, "Monthly fee can't be negative", false);
+        if (!Enum.IsDefined(typeof(SubscriptionPlan), dto.Plan))
+            return new ApiResponse<bool>(false, "Unknown subscription plan", false);
+        if (dto.Status.HasValue && !Enum.IsDefined(typeof(SubscriptionStatus), dto.Status.Value))
+            return new ApiResponse<bool>(false, "Unknown subscription status", false);
         try
         {
             var company = await _context.Companies.FindAsync(companyId);
@@ -257,7 +261,9 @@ public partial class SuperAdminService
             if (dto.ExpiresAt.HasValue)
                 company.SubscriptionExpiresAt = dto.ExpiresAt;
 
-            company.SubscriptionStatus = dto.Status ?? SubscriptionStatus.Active;
+            // No status given: keep the one it has. (It used to become Active, so editing the
+            // fee of a cancelled or suspended bureau quietly switched its subscription back on.)
+            company.SubscriptionStatus = dto.Status ?? company.SubscriptionStatus;
             await _context.SaveChangesAsync();
             CompanyAccessCache.Invalidate(companyId);
 
@@ -355,6 +361,9 @@ public partial class SuperAdminService
             company.FailedLoginAttempts = 0;
             company.LockedUntil = null;
             await _context.SaveChangesAsync();
+            // Sign the bureau out everywhere and forget its trusted devices: sessions opened
+            // with the old password otherwise kept working.
+            await Sessions.EndForOfficeAsync(_context, companyId);
 
             // Log audit
             _context.AuditLogs.Add(new AuditLog

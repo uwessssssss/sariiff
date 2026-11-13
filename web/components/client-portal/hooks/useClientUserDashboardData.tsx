@@ -24,7 +24,7 @@ export function useClientUserDashboardData(prev: { userName: ClientUserDashboard
       setPasswordLoading(true);
       const result = await changeClientPassword(passwordForm);
       if (result.success) {
-        toast.success("Password changed successfully!");
+        toast.success("Password changed. Sign in again with your new password.");
         setShowPasswordModal(false);
         setPasswordForm({
           currentPassword: "",

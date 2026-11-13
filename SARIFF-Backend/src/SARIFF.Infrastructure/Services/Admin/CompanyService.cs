@@ -45,6 +45,16 @@ public class CompanyService : ICompanyService
         if (!Enum.IsDefined(typeof(Currency), baseCurrency))
             return new ApiResponse<CompanyResponseDto>(false, "Unsupported base currency", null);
 
+        // A prefix typed in by hand must be 2–4 letters or digits and not one the sign-in
+        // page reads as something else: "SA-…" is a super admin and "CL-…" / "…-CL-…" a
+        // client, so a bureau given one of those could never sign in.
+        if (!string.IsNullOrWhiteSpace(dto.CodePrefix))
+        {
+            var typed = dto.CodePrefix.Trim().ToUpperInvariant();
+            if (!System.Text.RegularExpressions.Regex.IsMatch(typed, "^[A-Z0-9]{2,4}$") || typed is "SA" or "CL")
+                return new ApiResponse<CompanyResponseDto>(false, "The code prefix must be 2 to 4 letters or digits, and can't be SA or CL (those are reserved).", null);
+        }
+
         if (await _context.Companies.AnyAsync(c => c.WhatsAppNumber == dto.WhatsAppNumber))
             return new ApiResponse<CompanyResponseDto>(false, "WhatsApp number already registered", null);
 
@@ -147,10 +157,12 @@ public class CompanyService : ICompanyService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
-            query = query.Where(c => c.Name.Contains(search) || 
-                                    c.OwnerName.Contains(search) || 
-                                    c.Code.Contains(search) ||
-                                    c.WhatsAppNumber.Contains(search));
+            // Ignore case: "amana" finds "Amana Forex" (PostgreSQL's LIKE is case-sensitive).
+            var term = search.Trim().ToLower();
+            query = query.Where(c => c.Name.ToLower().Contains(term) ||
+                                    c.OwnerName.ToLower().Contains(term) ||
+                                    c.Code.ToLower().Contains(term) ||
+                                    c.WhatsAppNumber.Contains(term));
         }
 
         var totalCount = await query.CountAsync();
@@ -234,6 +246,9 @@ public class CompanyService : ICompanyService
 
         company.IsActive = false;
         await _context.SaveChangesAsync();
+        // Takes effect on the next request, not when the 30-second access cache runs out.
+        CompanyAccessCache.Invalidate(id);
+        await Sessions.EndForOfficeAsync(_context, id);
 
         return new ApiResponse<bool>(true, "Company deactivated", true);
     }
@@ -244,13 +259,16 @@ public class CompanyService : ICompanyService
         if (company == null)
             return new ApiResponse<bool>(false, "Company not found", false);
 
-        if (string.IsNullOrEmpty(dto.NewPassword) || dto.NewPassword.Length < 8)
-            return new ApiResponse<bool>(false, "Password must be at least 8 characters", false);
+        var pwdCheck = ValidationHelper.ValidatePassword(dto.NewPassword);
+        if (!pwdCheck.IsValid)
+            return new ApiResponse<bool>(false, pwdCheck.Error!, false);
 
         company.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
         company.FailedLoginAttempts = 0;
         company.LockedUntil = null;
         await _context.SaveChangesAsync();
+        // Same as the admin screen's reset: sign the bureau out and forget its trusted devices.
+        await Sessions.EndForOfficeAsync(_context, id);
 
         return new ApiResponse<bool>(true, "Password reset successfully", true);
     }
