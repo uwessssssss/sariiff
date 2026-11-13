@@ -5,7 +5,7 @@ import { ChangePasswordDto, ClientAlertDto, ClientAnalyticsDto, ClientDashboardD
 import { ClientUserDashboardProps, ClientView } from "../helpers";
 import { localDate } from "@/lib/dates";
 import { toast } from "sonner";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 /** ClientUserDashboard: state (part 1 of 2 of useClientUserDashboard). */
 export function useClientUserDashboardState(prev: { userName: ClientUserDashboardProps["userName"]; onLogout: ClientUserDashboardProps["onLogout"] }) {
@@ -119,7 +119,11 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
       setLoading(false);
     }
   }, []);
+  // Each keystroke in the search and each filter change starts a request; an older one that
+  // answers last must not replace the list for what is typed now.
+  const txnSeq = useRef(0);
   const fetchTransactions = useCallback(async () => {
+    const seq = ++txnSeq.current;
     try {
       setLoadingTransactions(true);
       const filters: Partial<PortalTransactionFilters> = {};
@@ -144,16 +148,18 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
         pageSize,
         filters,
       );
+      if (seq !== txnSeq.current) return;
       if (result.success && result.data) {
         setTransactions(result.data.items);
         setTotalCount(result.data.totalCount);
         setTotalPages(Math.ceil(result.data.totalCount / pageSize));
       }
     } catch (err) {
+      if (seq !== txnSeq.current) return;
       console.error("Failed to fetch transactions", err);
       toast.error("Failed to fetch transactions");
     } finally {
-      setLoadingTransactions(false);
+      if (seq === txnSeq.current) setLoadingTransactions(false);
     }
   }, [currentPage, currencyFilter, typeFilter, searchQuery, filterPeriod]);
   const fetchAlerts = useCallback(async () => {

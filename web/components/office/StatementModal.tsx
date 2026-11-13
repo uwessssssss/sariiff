@@ -9,7 +9,7 @@
  * The screen shows that check explicitly, and the PDF/print carry it too.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   X,
   Download,
@@ -146,6 +146,8 @@ export function renderStatementPdf(o: {
   lines: Line[];
   fmt: (n: number) => string;
   money: (n: number) => string;
+  /** Set when a search or money-in/out filter hides lines: the totals are still the whole period's. */
+  note?: string;
 }) {
   const { bureau, title, subtitle, code, periodLabel, head, fmt } = o;
   const shown = o.lines;
@@ -183,6 +185,11 @@ export function renderStatementPdf(o: {
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   if (subtitle) doc.text(subtitle, 14, 48);
+  if (o.note) {
+    doc.setTextColor(180, 83, 9);
+    doc.text(o.note, W - 14, 48, { align: "right" });
+    doc.setTextColor(100, 116, 139);
+  }
   doc.text(`Generated ${new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}`, W - 14, 42, { align: "right" });
 
   const boxes: [string, string, [number, number, number]][] = [
@@ -281,7 +288,12 @@ export function StatementModal(props: StatementModalProps) {
   const periodLabel =
     preset === "all" ? "All time" : start && end ? `${longDate(start)} – ${longDate(end)}` : start ? `From ${longDate(start)}` : end ? `Up to ${longDate(end)}` : "All time";
 
+  // Switching currency or period quickly starts a second load before the first answers;
+  // only the latest one may fill the screen (else KES lines could show under the USD tab).
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    const stale = () => seq !== loadSeq.current;
     setLoading(true);
     setError(null);
     try {
@@ -294,6 +306,7 @@ export function StatementModal(props: StatementModalProps) {
               ? await getMpesaAgentStatement(accountId!, start, end)
               : await getCashAccountStatement(cashCurrency ?? currency, start, end);
 
+      if (stale()) return;
       if (!res?.success || !res.data) {
         setError(res?.message || "The statement couldn't be loaded.");
         setLines([]);
@@ -340,10 +353,11 @@ export function StatementModal(props: StatementModalProps) {
         }),
       );
     } catch {
+      if (stale()) return;
       setError("The statement couldn't be loaded. Check your connection and try again.");
       setLines([]);
     } finally {
-      setLoading(false);
+      if (!stale()) setLoading(false);
     }
   }, [kind, accountId, cashCurrency, currency, start, end, isAsset]);
 
@@ -385,7 +399,10 @@ export function StatementModal(props: StatementModalProps) {
 
   // ---------------------------------------------------------------- PDF
   const buildPdf = () =>
-    renderStatementPdf({ bureau, title, subtitle, code, periodLabel, head, lines: shown, fmt, money });
+    renderStatementPdf({
+      bureau, title, subtitle, code, periodLabel, head, lines: shown, fmt, money,
+      note: shown.length === lines.length ? undefined : `Filtered: ${shown.length} of ${entries(lines.length)} shown; totals are for the whole period`,
+    });
 
   const fileName = `${title.replace(/[^\w-]+/g, "_")}_${code}_statement.pdf`;
   const downloadPdf = () => {

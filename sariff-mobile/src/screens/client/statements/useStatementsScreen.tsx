@@ -36,8 +36,12 @@ export function useStatementsScreen() {
     if (typeFilter === "debit") return 0;
     return undefined;
   };
+  // Tapping KES then USD quickly sends two requests; only answers for the filters now on
+  // screen may fill the list (a late KES page showed under the USD chip).
+  const listSeq = useRef(0);
   const loadTransactions = useCallback(
     async (pageNum = 1, append = false) => {
+      const seq = append ? listSeq.current : ++listSeq.current;
       try {
         const res = await api.getClientTransactions(
           pageNum,
@@ -45,6 +49,7 @@ export function useStatementsScreen() {
           getCurrencyParam(),
           getTypeParam(),
         );
+        if (seq !== listSeq.current) return;
         if (res.success && res.data) {
           setTransactions((prev) =>
             append ? [...prev, ...(res.data.items || [])] : (res.data.items || []),
@@ -72,9 +77,11 @@ export function useStatementsScreen() {
     if (summaryCurrency === null || summaryCurrency === undefined) return;
     const now = new Date();
     const first = localDate(new Date(now.getFullYear(), now.getMonth(), 1));
+    let current = true;   // a late answer for the previous currency must not replace this one
     api.getClientPortalStatement(first, localDate(), summaryCurrency)
-      .then((r: any) => setSummary(r?.success ? { ...r.data, currency: summaryCurrency } : null))
-      .catch(() => setSummary(null));
+      .then((r: any) => { if (current) setSummary(r?.success ? { ...r.data, currency: summaryCurrency } : null); })
+      .catch(() => { if (current) setSummary(null); });
+    return () => { current = false; };
   }, [summaryCurrency]);
   const SummaryHeader = summary ? (
     <View style={styles.sumCard} accessible accessibilityLabel={`This month in ${currencyCode(summary.currency)}: opening ${formatCurrency(summary.openingBalance, summary.currency)}, in ${formatCurrency(summary.totalCredits, summary.currency)}, out ${formatCurrency(summary.totalDebits, summary.currency)}, closing ${formatCurrency(summary.closingBalance, summary.currency)}`}>

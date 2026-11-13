@@ -1,5 +1,5 @@
 import { parseAmount, anyBadAmount } from "../../utils/amount";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -74,7 +74,9 @@ export default function AccountsScreen() {
   useEffect(() => { (async () => { await load(); setLoading(false); })(); }, []);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
+  const stmtSeq = useRef(0);   // only the latest statement request may fill the sheet
   const viewStatement = async (type: string, idOrCurrency: string | number, name: string) => {
+    const seq = ++stmtSeq.current;
     setStmtTitle(name); setStatement(null); setStmtLoading(true); setModal('statement');
     try {
       let res;
@@ -85,6 +87,7 @@ export default function AccountsScreen() {
       } else {
         res = await api.getMpesaStatement(idOrCurrency as string);
       }
+      if (seq !== stmtSeq.current) return;
       if (res.success && res.data) {
         setStatement(res.data);
       } else {
@@ -96,9 +99,10 @@ export default function AccountsScreen() {
         }
       }
     } catch (e: any) {
+      if (seq !== stmtSeq.current) return;
       setStatement({ error: e.message || 'Failed to load statement' });
     }
-    setStmtLoading(false);
+    if (seq === stmtSeq.current) setStmtLoading(false);
   };
 
   const handleCreateBank = async () => {

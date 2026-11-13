@@ -108,23 +108,29 @@ export default function ClientsScreen() {
       } }]);
   };
 
+  // Only the latest statement request may fill the sheet: on a slow line, client A's answer
+  // (or the KES one, after tapping USD) could land after client B's and show the wrong account.
+  const stmtSeq = useRef(0);
   const openClientDetail = async (client: ClientDto) => {
+    const seq = ++stmtSeq.current;
     setSelectedClient(client);
     setShowDetail(true);
     setStmtCurrency(base);
+    setStatement(null);
     try {
       const res = await api.getClientStatement(client.id, undefined, undefined, base);
-      if (res.success) setStatement(res.data);
+      if (res.success && seq === stmtSeq.current) setStatement(res.data);
     } catch {}
   };
 
   const loadStatementCurrency = async (cur: number) => {
     if (!selectedClient) return;
+    const seq = ++stmtSeq.current;
     setStmtCurrency(cur);
     setStatement(null);
     try {
       const res = await api.getClientStatement(selectedClient.id, undefined, undefined, cur);
-      if (res.success) setStatement(res.data);
+      if (res.success && seq === stmtSeq.current) setStatement(res.data);
     } catch {}
   };
 
