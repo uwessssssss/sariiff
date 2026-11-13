@@ -10,9 +10,7 @@ export function CompaniesView({ vm }: { vm: SuperAdminDashboardVM }) {
   return (
     <>
       {activeTab === "companies" && (() => {
-        const rows = (companies?.items ?? []).filter(
-          (c) => baseFilter === "all" || (c.baseCurrency ?? 0) === Number(baseFilter),
-        );
+        const rows = companies?.items ?? [];
         const total = companies?.totalCount ?? 0;
         const iconBtn = "rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900";
         return (
@@ -61,7 +59,10 @@ export function CompaniesView({ vm }: { vm: SuperAdminDashboardVM }) {
               </select>
               <select
                 value={baseFilter}
-                onChange={(e: any) => setBaseFilter(e.target.value)}
+                onChange={(e: any) => {
+                  setBaseFilter(e.target.value);
+                  setCompaniesPage(1);
+                }}
                 aria-label="Home currency"
                 className="h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-700 outline-none focus:border-blue-600"
               >

@@ -6,7 +6,7 @@ import { currencyCode, formatMoney } from "@/lib/api";
 import { type ReportsVM } from "../useReports";
 
 export function AccountsView({ vm }: { vm: ReportsVM }) {
-  const { accountSummary, base, baseCode, loading, reportType } = vm;
+  const { accountSummary, base, loading, reportType } = vm;
   if (loading) return null;
   return (
     <>
@@ -124,7 +124,7 @@ export function AccountsView({ vm }: { vm: ReportsVM }) {
                       Phone
                     </th>
                     <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-[#334155]">
-                      Balance ({baseCode})
+                      Balance
                     </th>
                   </tr>
                 </thead>

@@ -212,7 +212,6 @@ export function useOfficeSettings({
     setIsSaving(true);
     try {
       const result = await updateMyCompanySettings({
-        name: officeName.trim() || undefined,
         email: officeEmail.trim() || undefined,
         address: officeAddress.trim() || undefined,
       });

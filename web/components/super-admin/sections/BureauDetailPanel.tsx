@@ -131,7 +131,8 @@ export function BureauDetailPanel({ vm }: { vm: SuperAdminDashboardVM }) {
                         <td className="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-slate-700">{formatCurrency(h.cash, h.code)}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-slate-700">{formatCurrency(h.bank, h.code)}</td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-right tabular-nums text-slate-700">
-                          {h.isBase ? formatCurrency(h.mobile, h.code) : <span className="text-slate-500">—</span>}
+                          {/* each wallet's own currency: a KES M-Pesa wallet at a Ugandan bureau shows in the KES row (it was hidden behind a dash, yet counted in Total held) */}
+                          {h.isBase || h.mobile ? formatCurrency(h.mobile, h.code) : <span className="text-slate-500">—</span>}
                         </td>
                         <td className="px-3 py-2.5 whitespace-nowrap text-right font-semibold tabular-nums text-slate-900">{formatCurrency(h.cash + h.bank + h.mobile, h.code)}</td>
                         <td className={`py-2.5 pl-3 pr-4 whitespace-nowrap text-right tabular-nums ${h.owed ? "text-amber-700" : "text-slate-500"}`}>{formatCurrency(h.owed, h.code)}</td>

@@ -80,9 +80,8 @@ export function DeleteModal({ vm }: { vm: OfficeSettingsVM }) {
                       Warning
                     </p>
                     <p className="text-sm text-amber-700 mt-1">
-                      Deleting this category will remove it permanently. Any
-                      expenses associated with this category may need to be
-                      reassigned.
+                      Only a category with no expenses can be deleted; the system
+                      refuses a category that already has expenses recorded.
                     </p>
                   </div>
                 </div>

@@ -508,6 +508,8 @@ export const getCompanies = (params: {
   pageSize?: number;
   search?: string;
   status?: string;
+  /** Home currency (0 KES, 2 UGX); "all" or omitted = every country */
+  baseCurrency?: string;
 }) => {
   const queryParams = new URLSearchParams();
   if (params.page) queryParams.append("page", String(params.page));
@@ -515,6 +517,8 @@ export const getCompanies = (params: {
   if (params.search) queryParams.append("search", params.search);
   if (params.status && params.status !== "all")
     queryParams.append("status", params.status);
+  if (params.baseCurrency && params.baseCurrency !== "all")
+    queryParams.append("baseCurrency", params.baseCurrency);
   return apiRequest<PagedResult<CompanyStats>>(
     `/admin/companies?${queryParams}`
   );

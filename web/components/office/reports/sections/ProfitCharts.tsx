@@ -53,7 +53,7 @@ export function ProfitCharts({ vm }: { vm: ReportsVM }) {
                 stroke="#64748B"
                 fontSize={12}
                 tickFormatter={(v: any) =>
-                  `${(v / 1000).toFixed(0)}k`
+                  Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`
                 }
               />
               <Tooltip

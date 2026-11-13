@@ -53,6 +53,13 @@ public partial class SuperAdminService
                 }
             }
 
+            // Country (home currency) filter: applied here, before paging, so it covers every bureau.
+            if (baseCurrency.HasValue)
+            {
+                var home = baseCurrency.Value;
+                query = query.Where(c => c.BaseCurrency == home);
+            }
+
             var totalCount = await query.CountAsync();
             var companies = await query
                 .OrderByDescending(c => c.CreatedAt)

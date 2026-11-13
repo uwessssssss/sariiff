@@ -28,7 +28,7 @@ export function ExchangeView({ vm }: { vm: ReportsVM }) {
                           <div className="flex items-center gap-2 mb-3">
                             <Scale className="w-5 h-5 text-emerald-100" />
                             <span className="text-sm font-medium text-emerald-100">
-                              Current Rates
+                              Current Rates ({baseCode} per USD)
                             </span>
                           </div>
                           <div className="space-y-2">
@@ -118,11 +118,11 @@ export function ExchangeView({ vm }: { vm: ReportsVM }) {
                               .map(([c, v]) => (
                                 <div key={c} className="space-y-1">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-blue-50 text-sm">{CURRENCY_CODES[Number(c)]} bought:</span>
+                                    <span className="text-blue-50 text-sm">{CURRENCY_CODES[Number(c)]} sold to clients:</span>
                                     <span className="text-lg font-semibold">{money(v.bought, Number(c))}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-blue-50 text-sm">{CURRENCY_CODES[Number(c)]} sold:</span>
+                                    <span className="text-blue-50 text-sm">{CURRENCY_CODES[Number(c)]} bought from clients:</span>
                                     <span className="text-lg font-semibold">{money(v.sold, Number(c))}</span>
                                   </div>
                                 </div>
@@ -269,7 +269,8 @@ export function ExchangeView({ vm }: { vm: ReportsVM }) {
                                         : (txn.exchangeRate || 0).toFixed(2)}
                                     </td>
                                     <td className="px-4 py-3 text-sm text-right font-semibold text-emerald-700">
-                                      {baseCode} {(txn.profit || 0).toLocaleString()}
+                                      {/* a purchase books no profit (average cost): a dash, not "KES 0" */}
+                                      {txn.profit ? `${txn.profit < 0 ? "−" : ""}${baseCode} ${Math.abs(txn.profit).toLocaleString()}` : "—"}
                                     </td>
                                   </tr>
                                 ))

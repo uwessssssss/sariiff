@@ -2,7 +2,7 @@
 
 import { AnimatePresence } from "framer-motion";
 import { CheckCircle2, Loader2 } from "lucide-react";
-import { Modal } from "../helpers";
+import { Modal, PLATFORM_CURRENCY } from "../helpers";
 import { type SuperAdminDashboardVM } from "../useSuperAdminDashboard";
 
 export function SubscriptionForm({ vm }: { vm: SuperAdminDashboardVM }) {
@@ -52,7 +52,7 @@ export function SubscriptionForm({ vm }: { vm: SuperAdminDashboardVM }) {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                Monthly fee (KES)
+                Monthly fee ({PLATFORM_CURRENCY})
               </label>
               <input
                 type="number"

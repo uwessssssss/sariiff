@@ -94,9 +94,12 @@ export function useSuperAdminDashboardState(prev: { userName: NonNullable<SuperA
       pageSize: 10,
       search: searchTerm,
       status: companyStatus,
+      // The country filter is applied by the server across every page (it used to
+      // filter only the 10 rows already loaded).
+      baseCurrency: baseFilter,
     });
     if (res.success) setCompanies(paged(res.data));
-  }, [companiesPage, searchTerm, companyStatus]);
+  }, [companiesPage, searchTerm, companyStatus, baseFilter]);
   const fetchSystemHealth = useCallback(async () => {
     const res = await api.getSystemHealth();
     if (res.success) setSystemHealth(normalise(res.data, SHAPES.health));

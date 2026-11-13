@@ -69,10 +69,11 @@ export function ReportFilters({ vm }: { vm: ReportsVM }) {
             className="w-full px-4 py-3 border border-slate-200 focus:border-blue-500 outline-none bg-white rounded-lg"
           >
             <option value="all">All Currencies</option>
-            <option value="KES">KES only</option>
-            <option value="USD">USD only</option>
+            {/* only the currencies this bureau trades */}
+            {currencyOk("KES") && <option value="KES">KES only</option>}
+            {currencyOk("USD") && <option value="USD">USD only</option>}
             {currencyOk("UGX") && <option value="UGX">UGX only</option>}
-            <option value="EUR">EUR only</option>
+            {currencyOk("EUR") && <option value="EUR">EUR only</option>}
           </select>
         </div>
 

@@ -94,17 +94,23 @@ export function OverviewView({ vm }: { vm: SuperAdminDashboardVM }) {
                                 </tr>
                               </thead>
                               <tbody>
-                                {(monthly.length ? monthly : total).map((m) => (
-                                  <tr key={m.currency} className="border-b border-slate-100 last:border-0">
-                                    <td className="px-5 py-3 font-medium text-slate-900">{m.currencyCode || codeOf(m.currency)}</td>
+                                {/* Every currency with volume this month OR ever: a currency with no trades
+                                    this month used to vanish from the table, all-time figure included. */}
+                                {[...new Set([...total, ...monthly].map((x) => x.currency))].sort((x, y) => x - y).map((cur) => {
+                                  const m = monthly.find((x) => x.currency === cur) ?? total.find((x) => x.currency === cur)!;
+                                  const mm = monthly.find((x) => x.currency === cur);
+                                  return (
+                                  <tr key={cur} className="border-b border-slate-100 last:border-0">
+                                    <td className="px-5 py-3 font-medium text-slate-900">{m.currencyCode || codeOf(cur)}</td>
                                     <td className="px-5 py-3 text-right tabular-nums text-slate-900">
-                                      {monthly.length ? formatNumber(Math.round(m.amount)) : "—"}
+                                      {mm ? formatNumber(Math.round(mm.amount)) : "—"}
                                     </td>
                                     <td className="px-5 py-3 text-right tabular-nums text-slate-500">
-                                      {formatNumber(Math.round(totalOf(m.currency)))}
+                                      {formatNumber(Math.round(totalOf(cur)))}
                                     </td>
                                   </tr>
-                                ))}
+                                  );
+                                })}
                               </tbody>
                             </table>
                           )}
