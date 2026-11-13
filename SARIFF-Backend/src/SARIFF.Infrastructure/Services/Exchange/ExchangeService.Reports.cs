@@ -28,7 +28,7 @@ public partial class ExchangeService
             .ToListAsync();
 
         var dailyBreakdown = exchanges
-            .GroupBy(e => e.TransactionDate.Date)
+            .GroupBy(e => BureauClock.ToLocal(e.TransactionDate).Date)   // the bureau's calendar day, not UTC's
             .Select(g => new DailyProfitDto(
                 Date: g.Key,
                 KesProfit: g.Where(e => e.ProfitCurrency == baseCur).Sum(e => e.Profit),

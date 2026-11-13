@@ -24,9 +24,13 @@ public class ExchangeRateService : IExchangeRateService
             return new ApiResponse<ExchangeRateResponseDto>(false, currencyBlock, null);
 
         var baseCur = await _context.BaseCurrencyAsync(companyId);
-        // Validate rates
-        if (dto.BuyRate <= 0 || dto.SellRate <= 0)
-            return new ApiResponse<ExchangeRateResponseDto>(false, "Exchange rates must be positive", null);
+        // Validate rates (same limits as POST /api/exchange/rate)
+        var buyCheck = ValidationHelper.ValidateRate(dto.BuyRate, "Buy rate");
+        if (!buyCheck.IsValid)
+            return new ApiResponse<ExchangeRateResponseDto>(false, buyCheck.Error!, null);
+        var sellCheck = ValidationHelper.ValidateRate(dto.SellRate, "Sell rate");
+        if (!sellCheck.IsValid)
+            return new ApiResponse<ExchangeRateResponseDto>(false, sellCheck.Error!, null);
 
         if (dto.BuyRate >= dto.SellRate)
             return new ApiResponse<ExchangeRateResponseDto>(false, "Buy rate must be less than sell rate", null);
@@ -37,13 +41,12 @@ public class ExchangeRateService : IExchangeRateService
         if (foreign == baseCur)
             return new ApiResponse<ExchangeRateResponseDto>(false, $"{baseCur} is your base currency — pick the foreign currency to quote", null);
 
-        var currentRate = await _context.ExchangeRates
-            .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreign);
-            
-        if (currentRate != null)
+        var activeRates = await _context.ExchangeRates
+            .Where(r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreign).ToListAsync();
+        foreach (var old in activeRates)   // every active one, not just the first found
         {
-            currentRate.IsActive = false;
-            currentRate.EffectiveTo = DateTime.UtcNow;
+            old.IsActive = false;
+            old.EffectiveTo = DateTime.UtcNow;
         }
 
         var newRate = new ExchangeRate
@@ -66,7 +69,9 @@ public class ExchangeRateService : IExchangeRateService
     public async Task<ApiResponse<ExchangeRateResponseDto>> GetCurrentRateAsync(Guid companyId, Currency foreignCurrency = Currency.USD)
     {
         var rate = await _context.ExchangeRates
-            .FirstOrDefaultAsync(r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreignCurrency);
+            .Where(r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreignCurrency)
+            .OrderByDescending(r => r.EffectiveFrom)   // the one trades are priced with
+            .FirstOrDefaultAsync();
             
         if (rate == null) 
             return new ApiResponse<ExchangeRateResponseDto>(false, "No active exchange rate", null);
@@ -86,6 +91,8 @@ public class ExchangeRateService : IExchangeRateService
 
     public async Task<ApiResponse<CurrencyConvertResultDto>> ConvertAsync(Guid companyId, CurrencyConvertDto dto)
     {
+        if (dto.Amount <= 0)
+            return new ApiResponse<CurrencyConvertResultDto>(false, "Amount must be greater than 0", null);
         var baseCur = await _context.BaseCurrencyAsync(companyId);
         // The company base is the base: exactly one side must be it, the other picks the rate.
         if (dto.From == dto.To)
@@ -125,5 +132,6 @@ public class ExchangeRateService : IExchangeRateService
     }
 
     private static ExchangeRateResponseDto MapToResponse(ExchangeRate r) => new(
-        r.Id, r.BuyRate, r.SellRate, r.EffectiveFrom, r.EffectiveTo, r.IsActive);
+        r.Id, r.BuyRate, r.SellRate, r.EffectiveFrom, r.EffectiveTo, r.IsActive,
+        r.ForeignCurrency, r.ForeignCurrency.ToString());   // was left out: every rate read as USD
 }

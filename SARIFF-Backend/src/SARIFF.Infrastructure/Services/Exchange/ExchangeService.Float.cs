@@ -38,6 +38,10 @@ public partial class ExchangeService
         if (!Enum.IsDefined(typeof(Currency), dto.Currency))
             return new ApiResponse<ExchangeFloatDto>(false, "Unsupported currency", null);
 
+        var notesCheck = ValidationHelper.ValidateText(dto.Notes, "Notes", 2000);
+        if (!notesCheck.IsValid)
+            return new ApiResponse<ExchangeFloatDto>(false, notesCheck.Error!, null);
+
         if (dto.PurchaseRate.HasValue)
         {
             if (dto.Currency == baseCur)
@@ -49,7 +53,23 @@ public partial class ExchangeService
 
         // What actually leaves the source account, and in which currency.
         var sourceCurrency = dto.PurchaseRate.HasValue ? baseCur : dto.Currency;
-        var deductAmount = dto.PurchaseRate.HasValue ? dto.Amount * dto.PurchaseRate.Value : dto.Amount;
+        // Money leaves a till in whole cents: 1 × 129.535 is 129.54, not 129.535 (the till
+        // kept the third decimal while the posting was rounded, a cent apart at a midpoint).
+        var deductAmount = dto.PurchaseRate.HasValue
+            ? Math.Round(dto.Amount * dto.PurchaseRate.Value, 2, MidpointRounding.AwayFromZero)
+            : dto.Amount;
+
+        // Foreign currency moved in from a till of that currency is valued at today's buy
+        // rate. With no rate set it used to enter at a cost of ZERO, so its whole sale price
+        // was later booked as profit, which Settle Profit would pay out.
+        decimal? valuationRate = null;
+        if (dto.Currency != baseCur && !dto.PurchaseRate.HasValue)
+        {
+            valuationRate = (await ActiveRateAsync(companyId, dto.Currency))?.BuyRate;
+            if (valuationRate is null or <= 0)
+                return new ApiResponse<ExchangeFloatDto>(false,
+                    $"Set today's {dto.Currency} rate first: the float values these {dto.Currency} at the buy rate.", null);
+        }
 
         var accountCurrency = await GetAccountCurrencyAsync(companyId, dto.SourceType, dto.SourceAccountId);
         if (accountCurrency == null)
@@ -87,8 +107,8 @@ public partial class ExchangeService
             {
                 // Cost basis in KES: the purchase rate if given, otherwise today's
                 // buy rate for that currency (so average cost isn't dragged to zero).
-                var costRate = dto.PurchaseRate ?? (await ActiveRateAsync(companyId, dto.Currency))?.BuyRate ?? 0;
-                AddForeign(float_, other, dto.Currency, dto.Amount, dto.Amount * costRate);
+                var cost = dto.PurchaseRate.HasValue ? deductAmount : dto.Amount * valuationRate!.Value;
+                AddForeign(float_, other, dto.Currency, dto.Amount, cost);
             }
             float_.UpdatedAt = DateTime.UtcNow;
 
@@ -145,6 +165,9 @@ public partial class ExchangeService
 
         if (!Enum.IsDefined(typeof(Currency), dto.Currency))
             return new ApiResponse<ExchangeFloatDto>(false, "Unsupported currency", null);
+        var notesCheck = ValidationHelper.ValidateText(dto.Notes, "Notes", 2000);
+        if (!notesCheck.IsValid)
+            return new ApiResponse<ExchangeFloatDto>(false, notesCheck.Error!, null);
 
         var accountCurrency = await GetAccountCurrencyAsync(companyId, dto.DestinationType, dto.DestinationAccountId);
         if (accountCurrency == null)
@@ -226,6 +249,10 @@ public partial class ExchangeService
         var amountCheck = ValidationHelper.ValidateAmount(dto.Amount, "Settlement amount");
         if (!amountCheck.IsValid)
             return new ApiResponse<ExchangeFloatDto>(false, amountCheck.Error!, null);
+
+        var notesCheck = ValidationHelper.ValidateText(dto.Notes, "Notes", 2000);
+        if (!notesCheck.IsValid)
+            return new ApiResponse<ExchangeFloatDto>(false, notesCheck.Error!, null);
 
         // Exchange profit is booked in KES (older rows may hold USD profit).
         if (dto.Currency != baseCur && dto.Currency != Currency.USD)

@@ -34,13 +34,15 @@ public partial class ExchangeService
         if (foreign == baseCur)
             return new ApiResponse<ExchangeRateResponseDto>(false, $"{baseCur} is your base currency — pick the foreign currency to quote", null);
 
-        // Deactivate the current rate FOR THIS CURRENCY only
-        var currentRate = await _context.ExchangeRates.FirstOrDefaultAsync(
-            r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreign);
-        if (currentRate != null)
+        // Deactivate every active rate FOR THIS CURRENCY only. (Two Set Rate requests at the
+        // same moment can leave two active; only the first found used to be switched off,
+        // so a stale one stayed active for ever.)
+        var activeRates = await _context.ExchangeRates
+            .Where(r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreign).ToListAsync();
+        foreach (var old in activeRates)
         {
-            currentRate.IsActive = false;
-            currentRate.EffectiveTo = DateTime.UtcNow;
+            old.IsActive = false;
+            old.EffectiveTo = DateTime.UtcNow;
         }
 
         var newRate = new ExchangeRate
@@ -62,8 +64,8 @@ public partial class ExchangeService
 
     public async Task<ApiResponse<ExchangeRateResponseDto>> GetCurrentRateAsync(Guid companyId, Currency foreignCurrency = Currency.USD)
     {
-        var rate = await _context.ExchangeRates.FirstOrDefaultAsync(
-            r => r.CompanyId == companyId && r.IsActive && r.ForeignCurrency == foreignCurrency);
+        // The same lookup trades are priced with (newest active), so the screen and the trade agree.
+        var rate = await ActiveRateAsync(companyId, foreignCurrency);
         if (rate == null) return new ApiResponse<ExchangeRateResponseDto>(false, $"No active exchange rate for {foreignCurrency}", null);
         return new ApiResponse<ExchangeRateResponseDto>(true, "Success", MapRateToResponse(rate));
     }

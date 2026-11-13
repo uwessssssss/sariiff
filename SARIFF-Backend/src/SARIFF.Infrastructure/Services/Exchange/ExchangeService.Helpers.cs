@@ -145,10 +145,11 @@ public partial class ExchangeService
     /// <summary>
     /// Live day figures for currencies beyond KES/USD: every currency the float
     /// holds or that was traded today. Opening = recorded opening count when
-    /// there is one, otherwise the current system balance (same rule as KES/USD).
+    /// there is one, otherwise the float as it stood when the day began (same rule as KES/USD).
     /// </summary>
     private async Task<List<CurrencyDaySummaryDto>> LiveOtherCurrencyDayAsync(
-        Guid companyId, List<ExchangeTransaction> todayExchanges, List<DailyExchangeCurrencySummary>? rows)
+        Guid companyId, List<ExchangeTransaction> todayExchanges, List<DailyExchangeCurrencySummary>? rows,
+        Dictionary<Currency, decimal>? movedToday = null)
     {
         var baseCur = await _context.BaseCurrencyAsync(companyId);
         var holdings = await _context.ExchangeFloatBalances
@@ -166,7 +167,7 @@ public partial class ExchangeService
             var balance = holdings.FirstOrDefault(h => h.Currency == cur)?.Balance ?? 0;
             var row = rows?.FirstOrDefault(r => r.Currency == cur);
             return new CurrencyDaySummaryDto(cur, CurrencyInfo.Code(cur),
-                row?.Opening ?? balance,
+                row?.Opening ?? balance - (movedToday?.GetValueOrDefault(cur) ?? 0),   // no count: the float when the day began
                 balance,
                 todayExchanges.Where(e => e.CurrencyGiven == cur).Sum(e => e.AmountGiven),
                 todayExchanges.Where(e => e.CurrencyReceived == cur).Sum(e => e.AmountReceived),

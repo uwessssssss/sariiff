@@ -24,12 +24,17 @@ public partial class ExchangeService
         var existing = await _context.DailyExchangeSummaries
             .FirstOrDefaultAsync(d => d.CompanyId == companyId && d.Date == today && !d.IsDeleted);
 
-        if (existing != null)
+        // A CLOSED day is a stored record. An open one is always built live: once the opening
+        // count was recorded the stored row used to be returned as it was, so the summary
+        // showed 0 exchanges and the morning's float until the day was closed.
+        if (existing is { IsClosed: true })
             return new ApiResponse<DailySummaryDto>(true, "Success",
                 MapToDailySummaryDto(existing, await DayCurrencyRowsAsync(existing.Id), baseCur));
 
         // Build live summary from today's exchanges
         var float_ = await GetOrCreateFloatAsync(companyId);
+        var moved = await MovedSinceAsync(companyId, todayStartUtc);
+        var openingRows = existing != null ? await DayCurrencyRowsAsync(existing.Id) : null;
         var todayExchanges = await _context.ExchangeTransactions.AsNoTracking()
             .Where(e => e.CompanyId == companyId && e.TransactionDate >= todayStartUtc
                         && e.Status == "Completed" && !e.IsDeleted)
@@ -48,14 +53,17 @@ public partial class ExchangeService
             UsdVolumeOut: todayExchanges.Where(e => e.CurrencyReceived == Currency.USD).Sum(e => e.AmountReceived),
             KesProfit: todayExchanges.Where(e => e.ProfitCurrency == baseCur).Sum(e => e.Profit),
             UsdProfit: todayExchanges.Where(e => e.ProfitCurrency == Currency.USD).Sum(e => e.Profit),
-            OpeningKes: float_.LastOpeningKes ?? float_.KesBalance,
-            OpeningUsd: float_.LastOpeningUsd ?? float_.UsdBalance,
+            // The recorded count when there is one; otherwise the float as it stood when the
+            // day began. (It used to show the last count ever recorded, even from days ago,
+            // or else the balance right now, which made opening equal closing.)
+            OpeningKes: existing?.OpeningKes ?? float_.KesBalance - moved.GetValueOrDefault(baseCur),
+            OpeningUsd: existing?.OpeningUsd ?? float_.UsdBalance - moved.GetValueOrDefault(Currency.USD),
             ClosingKes: float_.KesBalance,
             ClosingUsd: float_.UsdBalance,
             KesVariance: null,
             UsdVariance: null,
             IsClosed: false,
-            OtherCurrencies: await LiveOtherCurrencyDayAsync(companyId, todayExchanges, null),
+            OtherCurrencies: await LiveOtherCurrencyDayAsync(companyId, todayExchanges, openingRows, moved),
             BaseCurrency: baseCur
         );
 
@@ -66,8 +74,27 @@ public partial class ExchangeService
     /// Record opening float — cashier physically counts KES/USD at start of day.
     /// Stores the opening snapshot and checks for variance against system balance.
     /// </summary>
+    /// <summary>What moved in the float, per currency, since an instant (in +, out −).</summary>
+    private async Task<Dictionary<Currency, decimal>> MovedSinceAsync(Guid companyId, DateTime sinceUtc) =>
+        (await _context.FloatMovements.AsNoTracking()
+            .Where(m => m.CompanyId == companyId && !m.IsDeleted && m.MovementDate >= sinceUtc)
+            .GroupBy(m => m.Currency)
+            .Select(g => new { Currency = g.Key, Sum = g.Sum(m => m.Amount) })
+            .ToListAsync())
+        .ToDictionary(x => x.Currency, x => x.Sum);
+
+    /// <summary>A physical count is never negative, in any currency; notes have a limit.</summary>
+    private static string? CountProblem(decimal home, decimal usd, List<CurrencyCountDto>? others, string? notes)
+    {
+        if (home < 0 || usd < 0 || (others?.Any(c => c.Count < 0) ?? false)) return "Counts cannot be negative";
+        if (others?.Any(c => !Enum.IsDefined(typeof(Currency), c.Currency)) ?? false) return "Unsupported currency";
+        return ValidationHelper.ValidateText(notes, "Notes", 2000).Error;
+    }
+
     public async Task<ApiResponse<DailySummaryDto>> RecordOpeningFloatAsync(Guid companyId, Guid userId, OpeningFloatDto dto)
     {
+        if (CountProblem(dto.KesCount, dto.UsdCount, dto.OtherCounts, dto.Notes) is { } problem)
+            return new ApiResponse<DailySummaryDto>(false, problem, null);
         var baseCur = await _context.BaseCurrencyAsync(companyId);
         var today = BureauClock.TodayLocal;            // the summary's date: the bureau's calendar day
         var float_ = await GetOrCreateFloatAsync(companyId);
@@ -134,23 +161,27 @@ public partial class ExchangeService
     /// </summary>
     public async Task<ApiResponse<DailySummaryDto>> RecordClosingFloatAsync(Guid companyId, Guid userId, ClosingFloatDto dto)
     {
+        if (CountProblem(dto.KesCount, dto.UsdCount, dto.OtherCounts, dto.Notes) is { } problem)
+            return new ApiResponse<DailySummaryDto>(false, problem, null);
         var baseCur = await _context.BaseCurrencyAsync(companyId);
         var today = BureauClock.TodayLocal;            // the summary's date: the bureau's calendar day
         var todayStartUtc = BureauClock.TodayStartUtc;  // ...which starts at this UTC instant
+        var moved = await MovedSinceAsync(companyId, todayStartUtc);
 
         var summary = await _context.DailyExchangeSummaries
             .FirstOrDefaultAsync(d => d.CompanyId == companyId && d.Date == today && !d.IsDeleted);
 
         if (summary == null)
         {
-            // No opening recorded — auto-create with current float as opening
+            // No opening recorded: the day opened on the float as it stood when the day began
+            // (the balance now minus today's movements), not on the balance at closing time.
             var floatForOpening = await GetOrCreateFloatAsync(companyId);
             summary = new DailyExchangeSummary
             {
                 CompanyId = companyId,
                 Date = today,
-                OpeningKes = floatForOpening.KesBalance,
-                OpeningUsd = floatForOpening.UsdBalance,
+                OpeningKes = floatForOpening.KesBalance - moved.GetValueOrDefault(baseCur),
+                OpeningUsd = floatForOpening.UsdBalance - moved.GetValueOrDefault(Currency.USD),
                 IsClosed = false
             };
             _context.DailyExchangeSummaries.Add(summary);
@@ -196,7 +227,7 @@ public partial class ExchangeService
         var counts = (dto.OtherCounts ?? new List<CurrencyCountDto>())
             .GroupBy(c => c.Currency).ToDictionary(g => g.Key, g => g.Last().Count);
         var rows = await DayCurrencyRowsAsync(summary.Id);
-        var live = await LiveOtherCurrencyDayAsync(companyId, todayExchanges, rows);
+        var live = await LiveOtherCurrencyDayAsync(companyId, todayExchanges, rows, moved);
         var currencies = live.Select(l => l.Currency)
             .Concat(counts.Keys.Where(c => c != baseCur && c != Currency.USD))
             .Distinct().ToList();
@@ -213,7 +244,7 @@ public partial class ExchangeService
                     DailyExchangeSummaryId = summary.Id,
                     Date = today,
                     Currency = cur,
-                    Opening = holding?.Balance ?? 0   // no opening count → system balance
+                    Opening = (holding?.Balance ?? 0) - moved.GetValueOrDefault(cur)   // no opening count → the float at the start of the day
                 };
                 _context.DailyExchangeCurrencySummaries.Add(row);
                 rows.Add(row);

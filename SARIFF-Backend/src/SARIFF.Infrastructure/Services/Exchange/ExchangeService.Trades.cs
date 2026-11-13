@@ -37,6 +37,16 @@ public partial class ExchangeService
 
         if (!Enum.IsDefined(typeof(ExchangeDirection), dto.Direction))
             return new ApiResponse<ExchangeResponseDto>(false, "Invalid exchange direction", null);
+        // Cash or From Account, nothing else: an unknown type number was treated as a cash
+        // exchange but skipped the "does the float hold enough" check.
+        if (!Enum.IsDefined(typeof(ExchangeType), dto.ExchangeType))
+            return new ApiResponse<ExchangeResponseDto>(false, "Invalid exchange type", null);
+        var notesCheck = ValidationHelper.ValidateText(dto.Notes, "Notes", 2000);
+        if (!notesCheck.IsValid)
+            return new ApiResponse<ExchangeResponseDto>(false, notesCheck.Error!, null);
+        var idCheck = ValidationHelper.ValidateText(dto.ClientIdNumber, "ID number", 50);
+        if (!idCheck.IsValid)
+            return new ApiResponse<ExchangeResponseDto>(false, idCheck.Error!, null);
 
         var foreign = dto.ForeignCurrency ?? Currency.USD;
         if (!Enum.IsDefined(typeof(Currency), foreign))
@@ -90,7 +100,7 @@ public partial class ExchangeService
                 }
                 else
                 {
-                    clientName = dto.ClientName ?? "Walk-in Client";
+                    clientName = string.IsNullOrWhiteSpace(dto.ClientName) ? "Walk-in Client" : dto.ClientName.Trim();
                 }
             }
 
@@ -351,13 +361,15 @@ public partial class ExchangeService
         if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(e => e.TransactionDate < v); }
         if (!string.IsNullOrWhiteSpace(search))
         {
-            var s = search.ToLower();
+            var s = search.Trim().ToLower();
             // Get matching client IDs first to avoid complex join in EF
             var clientIds = await _context.Users
                 .Where(u => u.CompanyId == companyId && u.FullName.ToLower().Contains(s))
                 .Select(u => u.Id).ToListAsync();
 
+            // ClientName holds the walk-in customer's name (registered clients are matched by id below).
             query = query.Where(e => e.Code.ToLower().Contains(s) ||
+                                     (e.ClientName != null && e.ClientName.ToLower().Contains(s)) ||
                                      (e.ClientIdNumber != null && e.ClientIdNumber.ToLower().Contains(s)) ||
                                      e.ClientId.HasValue && clientIds.Contains(e.ClientId.Value));
         }
@@ -435,6 +447,10 @@ public partial class ExchangeService
     public async Task<ApiResponse<bool>> VoidExchangeAsync(Guid companyId, Guid userId, Guid exchangeId, string reason)
     {
         var baseCur = await _context.BaseCurrencyAsync(companyId);
+        var reasonCheck = ValidationHelper.ValidateText(reason, "Void reason", 500, required: true);
+        if (!reasonCheck.IsValid)
+            return new ApiResponse<bool>(false, reasonCheck.Error!, false);
+        reason = reason.Trim();
         using var dbTransaction = await _context.Database.BeginTransactionAsync();
 
         try
@@ -457,6 +473,13 @@ public partial class ExchangeService
             // Original: float received CurrencyGiven and paid out CurrencyReceived.
             var givenFloatBefore = FloatBalance(float_, other, exchange.CurrencyGiven, baseCur);
             var receivedFloatBefore = FloatBalance(float_, other, exchange.CurrencyReceived, baseCur);
+
+            // Voiding a cash exchange hands the customer back what they gave. If the float no
+            // longer holds it (it was sold on, or withdrawn), there is nothing to hand back:
+            // the void used to go through anyway and leave the float below zero.
+            if (exchange.ExchangeType == ExchangeType.Cash && givenFloatBefore < exchange.AmountGiven)
+                return new ApiResponse<bool>(false,
+                    $"The float holds {exchange.CurrencyGiven} {givenFloatBefore:N2}, not the {exchange.CurrencyGiven} {exchange.AmountGiven:N2} this void gives back. Fund the float first.", false);
             if (bureauBought)
             {
                 RemoveForeign(float_, other, foreign, exchange.AmountGiven);
