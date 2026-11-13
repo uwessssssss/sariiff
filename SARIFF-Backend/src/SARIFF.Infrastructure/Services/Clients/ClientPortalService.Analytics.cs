@@ -150,8 +150,9 @@ public partial class ClientPortalService
         if (dto.NewPassword != dto.ConfirmPassword)
             return new ApiResponse<bool>(false, "New passwords do not match", false);
 
-        if (dto.NewPassword.Length < 8)
-            return new ApiResponse<bool>(false, "Password must be at least 8 characters", false);
+        var pwdCheck = ValidationHelper.ValidatePassword(dto.NewPassword);
+        if (!pwdCheck.IsValid)
+            return new ApiResponse<bool>(false, pwdCheck.Error!, false);
 
         var client = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == clientId && u.CompanyId == companyId && 

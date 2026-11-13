@@ -142,7 +142,7 @@ public class LineAuditClientsTests
         // offset to the database, which PostgreSQL refuses (a server error).
         var list = (await Clients(w).GetAllAsync(w.Co.Id, 0, 1_000_000)).Data!;
         Assert.Equal(1, list.Page);
-        Assert.True(list.PageSize <= 200, $"page size {list.PageSize}");
+        Assert.True(list.PageSize <= 500, $"page size {list.PageSize}");
 
         var alerts = (await new ClientPortalService(w.Db).GetAlertsAsync(w.Co.Id, w.Client.Id, 0, 1_000_000, false)).Data!;
         Assert.Equal(1, alerts.Page);

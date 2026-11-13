@@ -45,6 +45,9 @@ public class ClientService : IClientService
         if (validationError != null)
             return new ApiResponse<ClientResponseDto>(false, validationError, null);
 
+        if (!Enum.IsDefined(dto.ClientType))
+            return new ApiResponse<ClientResponseDto>(false, "Client type must be Permanent or Temporary", null);
+
         if (dto.ClientType == ClientType.Permanent)
         {
             var pwdCheck = ValidationHelper.ValidatePassword(dto.Password);
@@ -72,10 +75,10 @@ public class ClientService : IClientService
             {
                 CompanyId = companyId,
                 Code = code,
-                FullName = dto.FullName,
+                FullName = dto.FullName.Trim(),
                 WhatsAppNumber = dto.WhatsAppNumber,
                 Email = dto.Email,
-                IdPassport = dto.IdPassport,
+                IdPassport = string.IsNullOrWhiteSpace(dto.IdPassport) ? null : dto.IdPassport.Trim(),
                 Role = UserRole.Client,
                 ClientType = dto.ClientType,
                 PasswordHash = dto.ClientType == ClientType.Permanent ? BCrypt.Net.BCrypt.HashPassword(dto.Password) : null,
@@ -155,10 +158,14 @@ public class ClientService : IClientService
 
     public async Task<ApiResponse<PagedResult<ClientResponseDto>>> GetAllAsync(Guid companyId, int page, int pageSize, string? search = null, string? filter = null)
     {
+        // Page 0 was a negative OFFSET (PostgreSQL refuses it); pageSize had no cap.
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 500);   // the mobile transaction form asks for 500
         var query = _context.Users.Where(u => u.CompanyId == companyId && u.Role == UserRole.Client && !u.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
+            search = search.Trim();
             var searchLower = search.ToLower();
             query = query.Where(u => 
                 u.FullName.ToLower().Contains(searchLower) || 
@@ -251,7 +258,7 @@ public class ClientService : IClientService
             var nameCheck = ValidationHelper.ValidateName(dto.FullName, "Full name");
             if (!nameCheck.IsValid)
                 return new ApiResponse<ClientResponseDto>(false, nameCheck.Error!, null);
-            client.FullName = dto.FullName;
+            client.FullName = dto.FullName.Trim();
         }
         if (dto.Email != null)
         {
@@ -260,11 +267,45 @@ public class ClientService : IClientService
                 return new ApiResponse<ClientResponseDto>(false, emailCheck.Error!, null);
             client.Email = dto.Email;
         }
-        if (dto.IdPassport != null) client.IdPassport = dto.IdPassport;
+        if (dto.IdPassport != null)
+        {
+            var idCheck = ValidationHelper.ValidateText(dto.IdPassport, "ID/Passport", 50);
+            if (!idCheck.IsValid)
+                return new ApiResponse<ClientResponseDto>(false, idCheck.Error!, null);
+            client.IdPassport = string.IsNullOrWhiteSpace(dto.IdPassport) ? null : dto.IdPassport.Trim();
+        }
+        // Both edit forms send the number; it was never read, and the edit still said "updated".
+        var cutPhoneLogin = false;
+        if (!string.IsNullOrWhiteSpace(dto.WhatsAppNumber) && dto.WhatsAppNumber.Trim() != client.WhatsAppNumber)
+        {
+            var phone = dto.WhatsAppNumber.Trim();
+            var phoneCheck = ValidationHelper.ValidatePhone(phone, "WhatsApp number");
+            if (!phoneCheck.IsValid)
+                return new ApiResponse<ClientResponseDto>(false, phoneCheck.Error!, null);
+            if (await _context.Users.AnyAsync(u => u.Id != client.Id && u.CompanyId == companyId && u.WhatsAppNumber == phone && !u.IsDeleted))
+                return new ApiResponse<ClientResponseDto>(false, "Client with this WhatsApp number already exists", null);
+            // The phone login was proved on the old number: whoever gets that number next
+            // must not open this account. The client links again from the new number.
+            if (client.ClientIdentityId != null)
+            {
+                client.ClientIdentityId = null;
+                client.IdentityLinkedAt = null;
+                cutPhoneLogin = true;
+            }
+            client.WhatsAppNumber = phone;
+        }
+        var deactivated = dto.IsActive == false && client.IsActive;
         if (dto.IsActive.HasValue) client.IsActive = dto.IsActive.Value;
         client.UpdatedAt = DateTime.UtcNow;
 
+        if (cutPhoneLogin)
+            foreach (var session in await _context.UserSessions
+                         .Where(x => x.UserId == client.Id && x.ClientIdentityId != null && !x.IsRevoked).ToListAsync())
+                session.IsRevoked = true;
         await _context.SaveChangesAsync();
+        // Same as Archive: a deactivated client is signed out now, not when the token runs out.
+        if (deactivated)
+            await Sessions.EndForUserAsync(_context, client.Id, UserRole.Client);
 
         return new ApiResponse<ClientResponseDto>(true, "Client updated successfully", await MapToResponseAsync(companyId, client));
     }
@@ -280,8 +321,9 @@ public class ClientService : IClientService
         if (client.ClientType == ClientType.Permanent)
             return new ApiResponse<bool>(false, "Client is already permanent", false);
 
-        if (string.IsNullOrEmpty(dto.Password) || dto.Password.Length < 8)
-            return new ApiResponse<bool>(false, "Password must be at least 8 characters", false);
+        var pwdCheck = ValidationHelper.ValidatePassword(dto.Password);
+        if (!pwdCheck.IsValid)
+            return new ApiResponse<bool>(false, pwdCheck.Error!, false);
 
         client.ClientType = ClientType.Permanent;
         client.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
@@ -319,8 +361,9 @@ public class ClientService : IClientService
         if (client.ClientType != ClientType.Permanent)
             return new ApiResponse<bool>(false, "Cannot reset password for temporary client", false);
 
-        if (string.IsNullOrEmpty(dto.NewPassword) || dto.NewPassword.Length < 8)
-            return new ApiResponse<bool>(false, "Password must be at least 8 characters", false);
+        var pwdCheck = ValidationHelper.ValidatePassword(dto.NewPassword);
+        if (!pwdCheck.IsValid)
+            return new ApiResponse<bool>(false, pwdCheck.Error!, false);
 
         client.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
         client.FailedLoginAttempts = 0;
@@ -616,6 +659,7 @@ public class ClientService : IClientService
 
         if (!string.IsNullOrWhiteSpace(search))
         {
+            search = search.Trim();
             var s = search.ToLower();
             query = query.Where(u => 
                 u.FullName.ToLower().Contains(s) || 

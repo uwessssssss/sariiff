@@ -17,6 +17,8 @@ public partial class ClientPortalService
     public async Task<ApiResponse<PagedResult<ClientAlertDto>>> GetAlertsAsync(
         Guid companyId, Guid clientId, int page, int pageSize, bool unreadOnly)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
         var query = _context.Set<ClientAlert>()
             .Where(a => a.ClientId == clientId && a.CompanyId == companyId && !a.IsDeleted);
 

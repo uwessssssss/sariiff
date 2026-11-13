@@ -74,3 +74,30 @@ All 14 proven: each had a failing test in LineAuditExchangeTests before its fix.
 | X15 | The converter accepted zero and negative amounts | Refused |
 
 Noted, not changed (needs the owner's decision): exchanges can still be made after the day is closed, and those trades appear in no daily summary; an exchange from a client's account may take the float below zero (by design: no cash moves); voided exchanges are hidden from the exchange list; a large-transaction threshold of 0 flags every exchange.
+
+## Backend: Services/Clients (2,755 lines) and the client controllers (441) — complete
+
+| File | Lines | Status | Findings |
+|---|---|---|---|
+| ClientService.cs | 735 | READ, FIXED | CL1–CL7 |
+| StatementHelper.cs | 682 | READ | none confirmed (see notes) |
+| ClientAlertHelper.cs | 125 | READ | none |
+| BalanceAlertService.cs | 216 | READ (12 Nov bug hunt, fixed then: undefined currency/direction) | none new |
+| ClientPortalService.cs and its 7 parts | 997 | READ (12 Nov bug hunt, ledger rewritten then) | CL3 (password), CL7 (alerts paging) |
+| ClientController.cs | 132 | READ | CL7 (no paging cap; now in the service) |
+| ClientPortalController.cs | 255 | READ | none |
+| BalanceAlertController.cs | 54 | READ | none (see notes) |
+
+All 7 proven: each test failed in CI before its fix (commits 133c7e6 and 6be4942).
+
+| Id | Bug | Fix |
+|---|---|---|
+| CL1 | Editing a client's phone number did nothing: both edit forms send it, the service never read it, and still answered "Client updated successfully". When added, it must also be checked (format, another client's number) and cut a phone login proved on the old number | Saved, checked, and the old number's phone login is cut |
+| CL2 | Deactivating a client through edit left their portal sessions open (Archive ended them) | Ended, as Archive does |
+| CL3 | Convert-to-permanent, office password reset and the client's own password change accepted passwords over 128 characters (create refuses them) | Same rule everywhere |
+| CL4 | Edit stored an ID/passport of any length (create refuses more than 50) | Same limit |
+| CL5 | A client of an undefined type (5) could be created: neither permanent nor walk-in | Refused |
+| CL6 | Names were stored with surrounding spaces, and a search with a space around the word found nobody (list and lookup) | Trimmed |
+| CL7 | Client list and portal alerts had no page cap (pageSize=1000000 loads every client with its totals) and page 0 sent a negative offset, which PostgreSQL refuses (server error) | Page starts at 1; cap 500 for clients (the mobile transaction form asks for 500), 200 for alerts |
+
+Noted, not changed: statements match a cash till by type and currency, so two tills in the same currency would share one statement (checked in Accounts); the stats' "clients with debit" counts positive balances (the web compensates); stats debit/credit totals include reversed pairs (both legs, so they net out in the balance, but inflate the turnover figures); BalanceAlertController answers 200 even when a rule is refused (the body says success=false, and the web reads it); a duplicate alert with the same title and transaction within an hour is dropped on purpose. Found for the mobile audit: the mobile transaction form loads only the first 500 clients, so client 501 onward cannot be picked there.
