@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, type PagedResult, apiRequest } from "./core";
+import { API_BASE_URL, type ApiResponse, type PagedResult, apiRequest, authorizedFetch } from "./core";
 
 // ==============================================
 // Company Types (for Super Admin)
@@ -283,11 +283,7 @@ export async function updateSubscription(
 }
 export async function exportAuditLogs(): Promise<Blob | null> {
   try {
-    const authStr = localStorage.getItem("sariff_auth");
-    const token = authStr ? JSON.parse(authStr)?.token : null;
-    const res = await fetch(`${API_BASE_URL}/api/admin/audit-logs/export`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const res = await authorizedFetch(`${API_BASE_URL}/api/admin/audit-logs/export`);
     if (!res.ok) return null;
     return await res.blob();
   } catch {

@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, type PagedResult, apiRequest, getStoredAuth } from "./core";
+import { API_BASE_URL, type ApiResponse, type PagedResult, apiRequest, authorizedFetch } from "./core";
 import { AccountType, ClientType, Currency, ReconciliationStatus, TransactionType } from "./enums";
 import type { CurrencyBalanceDto } from "./clients";
 
@@ -197,14 +197,7 @@ export async function getClientTransactionById(
 export async function downloadTransactionReceipt(
   transactionId: string,
 ): Promise<Blob> {
-  const auth = getStoredAuth();
-  const headers: Record<string, string> = {};
-  if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-
-  const response = await fetch(
-    `${API_BASE_URL}${PORTAL_BASE}/transactions/${transactionId}/receipt`,
-    { headers },
-  );
+  const response = await authorizedFetch(`${API_BASE_URL}${PORTAL_BASE}/transactions/${transactionId}/receipt`);
   if (!response.ok) {
     throw new Error(`Failed to download receipt (${response.status})`);
   }
@@ -220,15 +213,7 @@ export async function exportTransactionsCsv(
   if (endDate) params.append("endDate", endDate);
   if (currency !== undefined) params.append("currency", currency.toString());
 
-  const auth = getStoredAuth();
-  const headers: Record<string, string> = {};
-  if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-  // Auth headers extracted from JWT by backend
-
-  const response = await fetch(
-    `${API_BASE_URL}${PORTAL_BASE}/transactions/export?${params}`,
-    { headers },
-  );
+  const response = await authorizedFetch(`${API_BASE_URL}${PORTAL_BASE}/transactions/export?${params}`);
   if (!response.ok) {
     throw new Error(`Failed to export transactions (${response.status})`);
   }
@@ -258,15 +243,7 @@ export async function downloadStatementPdf(
   params.append("endDate", endDate);
   if (currency !== undefined) params.append("currency", currency.toString());
 
-  const auth = getStoredAuth();
-  const headers: Record<string, string> = {};
-  if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-  // Auth headers extracted from JWT by backend
-
-  const response = await fetch(
-    `${API_BASE_URL}${PORTAL_BASE}/statement/text?${params}`,
-    { headers },
-  );
+  const response = await authorizedFetch(`${API_BASE_URL}${PORTAL_BASE}/statement/text?${params}`);
   if (!response.ok) {
     throw new Error(`Failed to download statement PDF (${response.status})`);
   }

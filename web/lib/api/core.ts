@@ -235,6 +235,26 @@ export async function apiRequest<T>(
     data: null,
   };
 }
+/**
+ * fetch with the stored sign-in, refreshed once on 401 (as apiRequest does). For file
+ * downloads (receipts, PDFs, CSV): they called fetch directly, so after the one-hour token
+ * every download failed until the user signed out and back in.
+ */
+export async function authorizedFetch(url: string, init: RequestInit = {}): Promise<Response> {
+  const auth = getStoredAuth();
+  const withToken = (t?: string): RequestInit => ({
+    ...init,
+    headers: { ...((init.headers as Record<string, string>) || {}), ...(t ? { Authorization: `Bearer ${t}` } : {}) },
+  });
+  const response = await fetch(url, withToken(auth?.token));
+  if (response.status !== 401 || !auth?.refreshToken) return response;
+  const latest = getStoredAuth();
+  const refreshed =
+    latest?.token && latest.token !== auth.token
+      ? { accessToken: latest.token }
+      : (await refreshAuthOnce(auth.refreshToken)) ?? (await tokenFromAnotherTab(auth.token));
+  return refreshed ? fetch(url, withToken(refreshed.accessToken)) : response;
+}
 /** Up to ~3 s: has another tab stored a newer token than the one this request used? */
 async function tokenFromAnotherTab(oldToken: string): Promise<{ accessToken: string } | null> {
   for (let i = 0; i < 6; i++) {
@@ -273,20 +293,25 @@ export async function refreshToken(
     if (result.success && result.data?.accessToken) {
       // Backend returns flat TokenResponseDto — map to StoredAuth shape
       const data = result.data;
+      // Keep what sign-in stored (user id, phone, email, the must-change-password flag): a
+      // refresh rebuilt the user with id = company id and an empty phone, so after the first
+      // hour a page reload showed a different user record.
+      const prev = getStoredAuth()?.user;
       setStoredAuth({
         token: data.accessToken,
         refreshToken: data.refreshToken || refreshTokenValue,
         user: {
-          id: data.companyId || "",
+          ...(prev ?? {}),
+          id: prev?.id || data.companyId || "",
           fullName: data.name,
-          whatsAppNumber: "",
+          whatsAppNumber: prev?.whatsAppNumber ?? "",
           role: data.role,
           companyId: data.companyId,
           companyName: data.name,
           ownerName: data.ownerName,
           userCode: data.code,
-          mustChangePassword: false,
-        },
+          mustChangePassword: prev?.mustChangePassword ?? false,
+        } as UserInfoDto,
         expiresAt: data.expiresAt || "",
       });
       return { accessToken: data.accessToken };

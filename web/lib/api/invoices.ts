@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, type PagedResult, apiRequest, getStoredAuth } from "./core";
+import { API_BASE_URL, type ApiResponse, type PagedResult, apiRequest, authorizedFetch } from "./core";
 import { Currency } from "./enums";
 
 // ==============================================
@@ -109,13 +109,7 @@ export async function deleteInvoice(id: string): Promise<ApiResponse<boolean>> {
   });
 }
 export async function downloadInvoicePdf(id: string): Promise<Blob> {
-  const auth = getStoredAuth();
-  const headers: Record<string, string> = {};
-  if (auth?.token) headers["Authorization"] = `Bearer ${auth.token}`;
-
-  const response = await fetch(`${API_BASE_URL}/api/invoice/${id}/pdf`, {
-    headers,
-  });
+  const response = await authorizedFetch(`${API_BASE_URL}/api/invoice/${id}/pdf`);
   if (!response.ok) {
     throw new Error(`Failed to download invoice PDF (${response.status})`);
   }
