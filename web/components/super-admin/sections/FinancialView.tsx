@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, DollarSign, Plus, TrendingUp } from "lucide-react";
-import { PLATFORM_CURRENCY, StatCard, codeOf, formatCurrency, formatDate, formatNumber } from "../helpers";
+import { PLATFORM_CURRENCY, daysUntil, StatCard, codeOf, formatCurrency, formatDate, formatNumber } from "../helpers";
 import { type SuperAdminDashboardVM } from "../useSuperAdminDashboard";
 
 export function FinancialView({ vm }: { vm: SuperAdminDashboardVM }) {
@@ -17,7 +17,6 @@ export function FinancialView({ vm }: { vm: SuperAdminDashboardVM }) {
                   const plans = f?.revenueByPlan ?? [];
                   const maxPlan = Math.max(1, ...plans.map((p) => p.revenue));
                   const followUps = dashboard?.expiringSubscriptions ?? [];
-                  const now = Date.now();
                   return (
                     <div className="space-y-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -137,8 +136,7 @@ export function FinancialView({ vm }: { vm: SuperAdminDashboardVM }) {
                           </div>
                           <ul className="divide-y divide-slate-100">
                             {followUps.map((c) => {
-                              const exp = c.subscriptionExpiresAt ? new Date(c.subscriptionExpiresAt).getTime() : now;
-                              const days = Math.round((exp - now) / 86400000);
+                              const days = daysUntil(c.subscriptionExpiresAt) ?? 0;
                               return (
                                 <li key={c.id} className="flex items-center gap-3 px-5 py-3">
                                   <div className="min-w-0 flex-1">

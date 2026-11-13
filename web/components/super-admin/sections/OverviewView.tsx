@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, Building2, DollarSign, RefreshCw, Users } from "lucide-react";
-import { PLATFORM_CURRENCY, StatCard, codeOf, compactMoney, formatCurrency, formatDate, formatNumber, getStatusColor } from "../helpers";
+import { PLATFORM_CURRENCY, daysUntil, StatCard, codeOf, compactMoney, formatCurrency, formatDate, formatNumber, getStatusColor } from "../helpers";
 import { type SuperAdminDashboardVM } from "../useSuperAdminDashboard";
 
 export function OverviewView({ vm }: { vm: SuperAdminDashboardVM }) {
@@ -24,7 +24,6 @@ export function OverviewView({ vm }: { vm: SuperAdminDashboardVM }) {
                   const active = dashboard.topCompaniesByTransactions?.length
                     ? dashboard.topCompaniesByTransactions
                     : dashboard.topCompaniesByVolume || [];
-                  const now = Date.now();
                   return (
                     <div className="space-y-6">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -211,8 +210,7 @@ export function OverviewView({ vm }: { vm: SuperAdminDashboardVM }) {
                           ) : (
                             <ul className="divide-y divide-slate-100">
                               {dashboard.expiringSubscriptions.map((c) => {
-                                const exp = c.subscriptionExpiresAt ? new Date(c.subscriptionExpiresAt).getTime() : now;
-                                const days = Math.round((exp - now) / 86400000);
+                                const days = daysUntil(c.subscriptionExpiresAt) ?? 0;
                                 const overdue = days < 0;
                                 return (
                                   <li key={c.id} className="flex items-center gap-3 px-5 py-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, CheckCircle2, ChevronLeft, ChevronRight, CreditCard, Eye, Key, Plus, Search } from "lucide-react";
-import { PLATFORM_CURRENCY, codeOf, compactMoney, formatCurrency, formatNumber, getStatusColor } from "../helpers";
+import { PLATFORM_CURRENCY, daysUntil, codeOf, compactMoney, formatCurrency, formatNumber, getStatusColor } from "../helpers";
 import { type SuperAdminDashboardVM } from "../useSuperAdminDashboard";
 
 export function CompaniesView({ vm }: { vm: SuperAdminDashboardVM }) {
@@ -14,7 +14,6 @@ export function CompaniesView({ vm }: { vm: SuperAdminDashboardVM }) {
           (c) => baseFilter === "all" || (c.baseCurrency ?? 0) === Number(baseFilter),
         );
         const total = companies?.totalCount ?? 0;
-        const now = Date.now();
         const iconBtn = "rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900";
         return (
           <div className="space-y-5">
@@ -97,8 +96,7 @@ export function CompaniesView({ vm }: { vm: SuperAdminDashboardVM }) {
                       </tr>
                     )}
                     {rows.map((c) => {
-                      const exp = c.subscriptionExpiresAt ? new Date(c.subscriptionExpiresAt).getTime() : null;
-                      const days = exp !== null ? Math.round((exp - now) / 86400000) : null;
+                      const days = daysUntil(c.subscriptionExpiresAt);
                       const vols = c.monthlyVolumeByCurrency ?? [];
                       return (
                         <tr

@@ -93,6 +93,17 @@ export const paged = <T,>(d: any): T => {
   return { totalCount: 0, page: 1, pageSize: 0, totalPages: 0, ...base, items: asArray(base.items) } as T;
 };
 export const PLATFORM_CURRENCY = "KES";
+/**
+ * Calendar days from today to a subscription's expiry, in local dates (0 = expires today).
+ * Rounding the milliseconds said "Expired 1 day ago" or "Renews in 1d" on the expiry day itself.
+ */
+export const daysUntil = (iso?: string | null, now: Date = new Date()): number | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const day = (x: Date) => Date.UTC(x.getFullYear(), x.getMonth(), x.getDate());
+  return Math.round((day(d) - day(now)) / 86400000);
+};
 /** Per-currency holdings for the bureau details modal. The API sends KES and
  *  USD in dedicated fields, everything else in otherCurrencyHoldings, and
  *  mobile money per wallet currency (mobileMoneyByCurrency). */
