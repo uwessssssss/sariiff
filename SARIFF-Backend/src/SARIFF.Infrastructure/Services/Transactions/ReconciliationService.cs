@@ -13,10 +13,51 @@ public class ReconciliationService : IReconciliationService
 
     public ReconciliationService(AppDbContext context) => _context = context;
 
+    private static bool IsTill(AccountType t) => t is AccountType.Cash or AccountType.Bank or AccountType.Mpesa;
+
+    /// <summary>
+    /// The side of a posting that is reconciled: the till's own amount and currency. When a
+    /// client hands over USD 100 and the shilling bank account takes KES 13,000, the bank is
+    /// reconciled against KES 13,000, not "USD 100". (Till-to-till in two currencies: the
+    /// first side.)
+    /// </summary>
+    public static (decimal Amount, Currency Currency) TillLeg(Transaction t) =>
+        IsTill(t.SourceAccountType) || !IsTill(t.DestAccountType)
+            ? (t.Amount, t.Currency)
+            : (t.CounterAmount ?? t.Amount, t.CounterCurrency ?? t.Currency);
+
+    /// <summary>This account's own side of a posting.</summary>
+    private static (decimal Amount, Currency Currency) LegOf(Transaction t, AccountType type, Guid id) =>
+        t.SourceAccountType == type && t.SourceAccountId == id
+            ? (t.Amount, t.Currency)
+            : (t.CounterAmount ?? t.Amount, t.CounterCurrency ?? t.Currency);
+
+    /// <summary>The recorded actual amount, in the terms of the side being looked at.</summary>
+    private static decimal? ActualFor(Transaction t, decimal legAmount)
+    {
+        if (t.ActualAmount is not { } actual) return null;
+        var recorded = TillLeg(t).Amount;
+        return recorded == legAmount || recorded == 0
+            ? actual
+            : Math.Round(actual * legAmount / recorded, 2, MidpointRounding.AwayFromZero);
+    }
+
     public async Task<ApiResponse<ReconciliationResponseDto>> CreateAsync(Guid companyId, CreateReconciliationDto dto)
     {
-        // A counted till (cash, bank, mobile money) can't hold less than nothing.
-        if (dto.AccountType != AccountType.Client && dto.ActualBalance < 0)
+        // Only the bureau's own tills are counted, and the till must exist. (An unknown id or
+        // a client used to be saved as a count against an expected balance of zero.)
+        if (!IsTill(dto.AccountType))
+            return new ApiResponse<ReconciliationResponseDto>(false, "Only cash, bank and mobile money accounts can be counted", null);
+        var exists = dto.AccountType switch
+        {
+            AccountType.Cash => await _context.CashAccounts.AnyAsync(c => c.CompanyId == companyId && c.Id == dto.AccountId && !c.IsDeleted),
+            AccountType.Bank => await _context.BankAccounts.AnyAsync(b => b.CompanyId == companyId && b.Id == dto.AccountId && !b.IsDeleted),
+            _ => await _context.MpesaAgents.AnyAsync(m => m.CompanyId == companyId && m.Id == dto.AccountId && !m.IsDeleted),
+        };
+        if (!exists)
+            return new ApiResponse<ReconciliationResponseDto>(false, "Account not found", null);
+        // A counted till can't hold less than nothing.
+        if (dto.ActualBalance < 0)
             return new ApiResponse<ReconciliationResponseDto>(false, "The counted balance can't be negative", null);
         var expectedBalance = await GetExpectedBalanceInternalAsync(companyId, dto.AccountType, dto.AccountId);
         var variance = dto.ActualBalance - expectedBalance;
@@ -173,16 +214,18 @@ public class ReconciliationService : IReconciliationService
                 ? await GetUserNameAsync(t.ReconciledByUserId.Value)
                 : null;
 
+            var leg = LegOf(t, accountType, accountId);
+            var legActual = ActualFor(t, leg.Amount);
             items.Add(new TransactionReconciliationDto(
                 t.Id,
                 t.Code,
                 t.Reference,
                 t.TransactionDate,
                 t.TransactionType,
-                t.Amount,
-                t.ActualAmount,
-                t.Variance,
-                t.Currency,
+                leg.Amount,
+                legActual,
+                legActual.HasValue ? legActual.Value - leg.Amount : null,
+                leg.Currency,
                 t.Description,
                 t.ReconciliationStatus,
                 t.ReconciledAt,
@@ -236,9 +279,10 @@ public class ReconciliationService : IReconciliationService
             var debitOnThisLeg = isSource == (t.TransactionType == TransactionType.Debit);
             var sign = (debitOnThisLeg ? 1 : -1) * (accountType == AccountType.Client ? -1 : 1);
             
-            expectedBalance += t.Amount * sign;
-            if (t.ActualAmount.HasValue)
-                actualBalance += t.ActualAmount.Value * sign;
+            var legAmount = LegOf(t, accountType, accountId).Amount;
+            expectedBalance += legAmount * sign;
+            if (ActualFor(t, legAmount) is { } legActual)
+                actualBalance += legActual * sign;
         }
 
         return new ApiResponse<AccountReconciliationBalanceDto>(true, "Success", new AccountReconciliationBalanceDto(
@@ -248,9 +292,9 @@ public class ReconciliationService : IReconciliationService
             pending.Count,
             matched.Count,
             unmatched.Count,
-            pending.Sum(t => t.Amount),
-            matched.Sum(t => t.Amount),
-            unmatched.Sum(t => t.Amount)
+            pending.Sum(t => LegOf(t, accountType, accountId).Amount),
+            matched.Sum(t => LegOf(t, accountType, accountId).Amount),
+            unmatched.Sum(t => LegOf(t, accountType, accountId).Amount)
         ));
     }
 
@@ -263,7 +307,7 @@ public class ReconciliationService : IReconciliationService
         Guid userId, 
         ReconcileTransactionDto dto)
     {
-        if (dto.Status == ReconciliationStatus.Pending)
+        if (dto.Status == ReconciliationStatus.Pending || !Enum.IsDefined(typeof(ReconciliationStatus), dto.Status))
             return new ApiResponse<TransactionReconciliationDto>(false, "Status must be Matched or Unmatched", null);
         if (dto.ActualAmount < 0)
             return new ApiResponse<TransactionReconciliationDto>(false, "The actual amount can't be negative", null);
@@ -276,7 +320,7 @@ public class ReconciliationService : IReconciliationService
 
         // Update reconciliation fields
         transaction.ActualAmount = dto.ActualAmount;
-        transaction.Variance = dto.ActualAmount - transaction.Amount;
+        transaction.Variance = dto.ActualAmount - TillLeg(transaction).Amount;
         transaction.ReconciliationStatus = dto.Status;
         transaction.ReconciledAt = DateTime.UtcNow;
         transaction.ReconciledByUserId = userId;
@@ -296,10 +340,10 @@ public class ReconciliationService : IReconciliationService
                 transaction.Reference,
                 transaction.TransactionDate,
                 transaction.TransactionType,
-                transaction.Amount,
+                TillLeg(transaction).Amount,
                 transaction.ActualAmount,
                 transaction.Variance,
-                transaction.Currency,
+                TillLeg(transaction).Currency,
                 transaction.Description,
                 transaction.ReconciliationStatus,
                 transaction.ReconciledAt,
@@ -318,7 +362,7 @@ public class ReconciliationService : IReconciliationService
         Guid userId, 
         BulkReconcileDto dto)
     {
-        if (dto.Status == ReconciliationStatus.Pending)
+        if (dto.Status == ReconciliationStatus.Pending || !Enum.IsDefined(typeof(ReconciliationStatus), dto.Status))
             return new ApiResponse<int>(false, "Status must be Matched or Unmatched", 0);
 
         if (!dto.TransactionIds.Any())
@@ -337,7 +381,7 @@ public class ReconciliationService : IReconciliationService
         foreach (var transaction in transactions)
         {
             // For bulk: ActualAmount = Amount (assuming match), Variance = 0
-            transaction.ActualAmount = transaction.Amount;
+            transaction.ActualAmount = TillLeg(transaction).Amount;
             transaction.Variance = 0;
             transaction.ReconciliationStatus = dto.Status;
             transaction.ReconciledAt = now;

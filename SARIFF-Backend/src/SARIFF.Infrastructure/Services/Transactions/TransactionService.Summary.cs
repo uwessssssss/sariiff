@@ -34,7 +34,10 @@ public partial class TransactionService
         {
             if (IsAssetAccount(t.SourceAccountType))
                 Add(t.Currency, t.Amount, moneyIn: t.TransactionType == TransactionType.Debit);
-            if (IsAssetAccount(t.DestAccountType))
+            // A posting whose two sides are the same till (money into or out of the exchange
+            // float) counts once, above: it used to show as the same amount in AND out.
+            var sameAccount = t.SourceAccountType == t.DestAccountType && t.SourceAccountId == t.DestAccountId;
+            if (!sameAccount && IsAssetAccount(t.DestAccountType))
                 Add(t.CounterCurrency ?? t.Currency, t.CounterAmount ?? t.Amount,
                     moneyIn: t.TransactionType == TransactionType.Credit); // dest leg is the opposite type
         }

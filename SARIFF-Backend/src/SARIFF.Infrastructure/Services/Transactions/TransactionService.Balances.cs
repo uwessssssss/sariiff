@@ -53,7 +53,10 @@ public partial class TransactionService
                             .Select(b => (decimal?)b.Balance)
                             .FirstOrDefaultAsync()) ?? 0m
                         : null,
-            AccountType.Expense => 0m, // Expense categories don't track running balance
+            // Expense categories keep no balance, but the category must be one of this bureau's.
+            // (Any id used to be accepted: cash could leave a till against nothing.)
+            AccountType.Expense => await _context.ExpenseCategories.AnyAsync(c => c.Id == accountId && c.CompanyId == companyId && !c.IsDeleted)
+                ? 0m : null,
             _ => null
         };
     }

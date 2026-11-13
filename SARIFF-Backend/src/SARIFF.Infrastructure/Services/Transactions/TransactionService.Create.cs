@@ -34,6 +34,33 @@ public partial class TransactionService
         var descCheck = ValidationHelper.ValidateText(dto.Description, "Description", 500);
         if (!descCheck.IsValid)
             return new ApiResponse<TransactionResponseDto>(false, descCheck.Error!, null);
+        var notesCheck = ValidationHelper.ValidateText(dto.Notes, "Notes", 2000);
+        if (!notesCheck.IsValid)
+            return new ApiResponse<TransactionResponseDto>(false, notesCheck.Error!, null);
+
+        // The type arrives as a number: anything but Debit or Credit was treated as a Credit.
+        if (!Enum.IsDefined(typeof(TransactionType), dto.TransactionType))
+            return new ApiResponse<TransactionResponseDto>(false, "Unknown transaction type", null);
+
+        // Two currencies need both amounts; one currency moves one amount.
+        // (Without the first check USD 100 → KES posted as KES 100. Without the second, a
+        // "counter amount" in the same currency moved 100 on one side and 90 on the other.)
+        var twoCurrencies = dto.CounterCurrency.HasValue && dto.CounterCurrency != dto.Currency;
+        if (twoCurrencies && !dto.CounterAmount.HasValue)
+            return new ApiResponse<TransactionResponseDto>(false,
+                $"This posting is in two currencies ({dto.Currency} and {dto.CounterCurrency}): enter the amount on the other side too.", null);
+        if (!twoCurrencies && dto.CounterAmount.HasValue && dto.CounterAmount.Value != dto.Amount)
+            return new ApiResponse<TransactionResponseDto>(false,
+                "Both sides of a posting in one currency move the same amount. Choose the second currency, or leave the counter amount out.", null);
+
+        // Back-dating is normal book-keeping; a date in the future or before 2000 is a typo.
+        if (dto.TransactionDate is { } when)
+        {
+            if (when > DateTime.UtcNow.AddDays(1))
+                return new ApiResponse<TransactionResponseDto>(false, "A transaction can't be dated in the future", null);
+            if (when < new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc))
+                return new ApiResponse<TransactionResponseDto>(false, "That transaction date is too far in the past", null);
+        }
 
         if (dto.SourceAccountId == dto.DestAccountId && dto.SourceAccountType == dto.DestAccountType)
             return new ApiResponse<TransactionResponseDto>(false, "Source and destination accounts cannot be the same", null);

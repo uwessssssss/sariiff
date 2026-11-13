@@ -28,6 +28,12 @@ public partial class TransactionService
         
         try
         {
+            // Lock the transaction row first, so a second reversal of the same transaction waits
+            // here and then sees it already reversed. (The check below used to run before any
+            // lock: six reversals sent at the same moment all passed it and all six posted.)
+            if (_context.Database.IsNpgsql())
+                await _context.Database.ExecuteSqlRawAsync("SELECT 1 FROM \"Transactions\" WHERE \"Id\" = {0} FOR UPDATE", id);
+
             var transaction = await _context.Transactions.FirstOrDefaultAsync(t => t.Id == id && t.CompanyId == companyId && !t.IsDeleted);
             if (transaction == null)
                 return new ApiResponse<bool>(false, "Transaction not found", false);
@@ -168,6 +174,21 @@ public partial class TransactionService
             // DeletedAt is set as a "reversed" flag
             // Description gets [REVERSED] prefix so it's clear in the statement
             // ============================================================
+            // Reconciliation: the pair cancels out. A reversed posting nobody had ticked off
+            // stayed "pending" for ever while its reversal counted alone.
+            if (transaction.ReconciliationStatus == ReconciliationStatus.Pending)
+            {
+                transaction.ReconciliationStatus = ReconciliationStatus.Matched;
+                transaction.ActualAmount = ReconciliationService.TillLeg(transaction).Amount;
+                transaction.Variance = 0;
+                transaction.ReconciledAt = DateTime.UtcNow;
+                transaction.ReconciledByUserId = userId;
+                transaction.ReconciliationNotes = $"Reversed by {reversalCode}";
+            }
+            reversalTransaction.ActualAmount = transaction.ActualAmount;
+            reversalTransaction.Variance = transaction.Variance;
+            reversalTransaction.ReconciledAt = DateTime.UtcNow;
+
             transaction.DeletedByUserId = userId;
             transaction.DeletedAt = DateTime.UtcNow;
             transaction.DeleteReason = dto.Reason;

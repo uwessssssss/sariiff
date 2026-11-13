@@ -30,7 +30,7 @@ public partial class TransactionService
             if (fromUtc.HasValue) { var v = fromUtc.Value; query = query.Where(t => t.TransactionDate >= v); }
             if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
             if (filter.TransactionType.HasValue) { var v = filter.TransactionType.Value; query = query.Where(t => t.TransactionType == v); }
-            if (filter.Currency.HasValue) { var v = filter.Currency.Value; query = query.Where(t => t.Currency == v); }
+            if (filter.Currency.HasValue) { var v = filter.Currency.Value; query = query.Where(t => t.Currency == v || t.CounterCurrency == v); }   // either side of a two-currency posting
         }
 
         var totalCount = await query.CountAsync();
@@ -71,6 +71,10 @@ public partial class TransactionService
             return new ApiResponse<TransactionResponseDto>(false, "Cannot edit float transactions", null);
 
         // Only allow updating description and notes (not amounts - that would corrupt ledger)
+        var descCheck = ValidationHelper.ValidateText(dto.Description, "Description", 500);
+        if (!descCheck.IsValid) return new ApiResponse<TransactionResponseDto>(false, descCheck.Error!, null);
+        var notesCheck = ValidationHelper.ValidateText(dto.Notes, "Notes", 2000);
+        if (!notesCheck.IsValid) return new ApiResponse<TransactionResponseDto>(false, notesCheck.Error!, null);
         if (dto.Description != null) transaction.Description = dto.Description;
         if (dto.Notes != null) transaction.Notes = dto.Notes;
         transaction.UpdatedAt = DateTime.UtcNow;

@@ -29,6 +29,11 @@ public class InvoiceService : IInvoiceService
         if (!emailCheck.IsValid)
             return new ApiResponse<InvoiceResponseDto>(false, emailCheck.Error!, null);
 
+        // A linked client must be one of this bureau's own (any id used to be stored as given).
+        if (dto.ClientId is { } linkedClient && !await _context.Users.AnyAsync(u =>
+                u.Id == linkedClient && u.CompanyId == companyId && u.Role == UserRole.Client && !u.IsDeleted))
+            return new ApiResponse<InvoiceResponseDto>(false, "Client not found", null);
+
         if (dto.Items == null || dto.Items.Count == 0)
             return new ApiResponse<InvoiceResponseDto>(false, "Invoice must have at least one item", null);
 
