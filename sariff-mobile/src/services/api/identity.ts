@@ -1,3 +1,4 @@
+import { secureRandomHex } from "../../utils/random";
 import { ApiResponse, TokenResponseDto } from "../../types";
 import * as SecureStore from "expo-secure-store";
 import { API_BASE, apiRequest, getToken, newIdempotencyKey } from "./core";
@@ -24,21 +25,26 @@ export interface IdentityTokenDto {
 export const IDENTITY_DEVICE_KEY = "sariff_identity_device";
  // random secret, never leaves SecureStore except to the server
 export const IDENTITY_PHONE_KEY = "sariff_identity_phone";
-/** This install's device secret for "skip the code on this phone" (created once). */
-export async function getIdentityDeviceSecret(): Promise<string> {
-  let s = await SecureStore.getItemAsync(IDENTITY_DEVICE_KEY);
-  if (!s) {
-    const g: any = globalThis as any;
-    if (g.crypto?.getRandomValues) {
-      const bytes = new Uint8Array(24);
-      g.crypto.getRandomValues(bytes);
-      s = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-    } else {
-      s = Array.from({ length: 48 }, () => Math.floor(Math.random() * 16).toString(16)).join("") + Date.now().toString(16);
+/**
+ * This install's device secret for "skip the code on this phone" (created once).
+ * Undefined when the phone has no secure random source or its encrypted store fails:
+ * then the phone is simply not trusted and signs in with an SMS code.
+ */
+export async function getIdentityDeviceSecret(): Promise<string | undefined> {
+  try {
+    let s = await SecureStore.getItemAsync(IDENTITY_DEVICE_KEY);
+    if (!s) {
+      // Secure bytes only: this secret lets the phone skip the SMS code (it was Math.random
+      // whenever crypto.getRandomValues was missing, which on Hermes is always).
+      const fresh = secureRandomHex(24);
+      if (!fresh) return undefined;
+      s = fresh;
+      await SecureStore.setItemAsync(IDENTITY_DEVICE_KEY, s);
     }
-    await SecureStore.setItemAsync(IDENTITY_DEVICE_KEY, s);
+    return s;
+  } catch {
+    return undefined;
   }
-  return s;
 }
 export const getRememberedIdentityPhone = () => SecureStore.getItemAsync(IDENTITY_PHONE_KEY);
 export const rememberIdentityPhone = (phone: string) => SecureStore.setItemAsync(IDENTITY_PHONE_KEY, phone);

@@ -1,3 +1,4 @@
+import { secureRandomHex } from './random';
 import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -212,11 +213,8 @@ export const getDeviceId = async (): Promise<string | undefined> => {
     const SecureStore = require('expo-secure-store');
     let deviceId: string | null = await SecureStore.getItemAsync(DEVICE_ID_KEY);
     if (!deviceId || deviceId.length < 32) {
-      const g: any = globalThis as any;
-      if (!g.crypto?.getRandomValues) return undefined;   // no secure randomness: no trusted device
-      const bytes = new Uint8Array(24);
-      g.crypto.getRandomValues(bytes);
-      deviceId = Array.from(bytes, (b: number) => b.toString(16).padStart(2, '0')).join('');
+      deviceId = secureRandomHex(24) ?? null;
+      if (!deviceId) return undefined;   // no secure randomness: no trusted device
       await SecureStore.setItemAsync(DEVICE_ID_KEY, deviceId);
       AsyncStorage.removeItem(DEVICE_ID_KEY).catch(() => {});   // the old plain copy
     }
