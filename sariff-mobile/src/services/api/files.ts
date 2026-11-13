@@ -1,4 +1,4 @@
-import { API_BASE, getToken } from "./core";
+import { API_BASE, getToken, refreshAuthOnce } from "./core";
 
 // ==================== FILE DOWNLOADS ====================
 export function getApiBaseUrl() { return API_BASE; }
@@ -13,7 +13,12 @@ export async function downloadFile(endpoint: string): Promise<{ success: boolean
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await fetch(`${API_BASE}${endpoint}`, { headers });
+    let response = await fetch(`${API_BASE}${endpoint}`, { headers });
+    if (response.status === 401 && token) {   // expired sign-in: refresh once, like apiRequest
+      const latest = await getToken();
+      const fresh = latest && latest !== token ? latest : await refreshAuthOnce();
+      if (fresh) response = await fetch(`${API_BASE}${endpoint}`, { headers: { ...headers, Authorization: `Bearer ${fresh}` } });
+    }
     if (!response.ok) return { success: false, error: `Server returned ${response.status}` };
 
     const contentType = response.headers.get('content-type') || '';
@@ -45,11 +50,17 @@ export async function downloadAndShareFile(endpoint: string, filename: string): 
     const token = await getToken();
 
     const fileUri = FileSystem.cacheDirectory + filename;
-    const downloadResult = await FileSystem.downloadAsync(
-      `${API_BASE}${endpoint}`,
-      fileUri,
-      { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-    );
+    const fetchTo = (t: string | null) =>
+      FileSystem.downloadAsync(`${API_BASE}${endpoint}`, fileUri, { headers: t ? { Authorization: `Bearer ${t}` } : {} });
+    let downloadResult = await fetchTo(token);
+    // The sign-in lasts an hour: a receipt or export asked for after that got "Server
+    // returned 401" (this bypassed the refresh every other request gets).
+    if (downloadResult.status === 401 && token) {
+      const latest = await getToken();
+      const fresh = latest && latest !== token ? latest : await refreshAuthOnce();
+      if (!fresh) return { success: false, error: 'Your session has ended. Please sign in again.' };
+      downloadResult = await fetchTo(fresh);
+    }
 
     if (downloadResult.status !== 200) {
       return { success: false, error: `Server returned ${downloadResult.status}` };

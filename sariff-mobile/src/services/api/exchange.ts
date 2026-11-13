@@ -37,14 +37,9 @@ export const getExchangeRateHistory = () => apiRequest<any>('/api/exchange/rate/
 export const getExchangeById = (id: string) => apiRequest<any>(`/api/exchange/transaction/${id}`);
 export const calculateExchange = (direction: number, amount: number, foreignCurrency?: number) =>
   apiRequest<any>('/api/exchange/calculate', { method: 'POST', body: JSON.stringify({ direction, amount, foreignCurrency }) });
-export const getExchangeDailySummaries = (from?: string, to?: string) => {
-  let url = '/api/exchange/daily/summaries';
-  const p: string[] = [];
-  if (from) p.push(`startDate=${from}`);
-  if (to) p.push(`endDate=${to}`);
-  if (p.length) url += `?${p.join('&')}`;
-  return apiRequest<any>(url);
-};
+// The API reads "from" and "to" (it was sent startDate/endDate, so it saw no range at all).
+export const getExchangeDailySummaries = (from: string, to: string) =>
+  apiRequest<any>(`/api/exchange/daily/summaries?from=${from}&to=${to}`);
 export const getExchangeTodaySummary = () => apiRequest<any>('/api/exchange/daily/today');
 export const getExchangeProfitReport = (from: string, to: string) =>
   apiRequest<any>(`/api/exchange/reports/profit?from=${from}&to=${to}`);

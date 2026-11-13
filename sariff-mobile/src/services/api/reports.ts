@@ -9,9 +9,6 @@ export const getExchangeSummary = (date: string) =>
 export const getAccountSummary = () => apiRequest<any>('/api/report/account-summary');
 export const getProfitLoss = (from: string, to: string) =>
   apiRequest<any>(`/api/exchange/reports/profit?from=${from}&to=${to}`);
-// ==================== REPORTS (all types) ====================
-export const getMonthlyReport = (year: number, month: number) =>
-  apiRequest<any>(`/api/report/daily?date=${year}-${String(month).padStart(2,'0')}-01`);
 export const getLargeTransactions = (from: string, to: string, threshold = 500000) =>
   apiRequest<any>(`/api/exchange/reports/large-transactions?from=${from}&to=${to}&threshold=${threshold}`);
 export const getTodayTransactionsSummary = () => apiRequest<any>('/api/transaction/today');

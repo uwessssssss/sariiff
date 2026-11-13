@@ -122,7 +122,7 @@ export async function apiRequest<T>(
           headers,
           signal: controller.signal,
         });
-        return retryResponse.json();
+        return readJson<T>(retryResponse);
       }
       // Refresh failed — clear stale auth, force re-login
       await clearAuth();
@@ -134,8 +134,7 @@ export async function apiRequest<T>(
       };
     }
 
-    const data = await response.json();
-    return data;
+    return await readJson<T>(response);
   } catch (error: any) {
     clearTimeout(timeoutId);
 
@@ -152,6 +151,25 @@ export async function apiRequest<T>(
     return {
       success: false,
       message: error.message || "Network error",
+      data: null as any,
+    };
+  }
+}
+/**
+ * The reply as JSON. Render answers a cold start or an outage with an HTML page (502/503):
+ * response.json() then threw "JSON Parse error: Unexpected character: <", which is what
+ * the screen showed.
+ */
+async function readJson<T>(response: Response): Promise<ApiResponse<T>> {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      success: false,
+      message: response.status >= 500
+        ? "The server is starting up or unavailable. Wait a moment and try again."
+        : `Unexpected reply from the server (${response.status}).`,
       data: null as any,
     };
   }
