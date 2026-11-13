@@ -12,7 +12,7 @@ import { type useReportsData } from "./useReportsData";
 
 /** Reports: effects (part 3 of 3 of useReports). */
 export function useReportsEffects(prev: ReturnType<typeof useReportsState> & ReturnType<typeof useReportsData>) {
-  const { accountSummary, base, baseCode, clientBalances, clientCurrencies, currencyFilter, dailyReport, exchangeSummary, fetchReportData, profitLossData, reportType, searchTerm, selectedDate, setCurrentPage, setDailyShown, setRatesLoaded, transactionTypeFilter, transactions } = prev;
+  const { accountSummary, base, baseCode, clientBalances, clientCurrencies, currencyFilter, dateFrom, dateRange, dateTo, dailyReport, exchangeSummary, fetchReportData, profitLossData, reportType, searchTerm, selectedDate, setCurrentPage, setDailyShown, setRatesLoaded, transactionTypeFilter, transactions } = prev;
   const COLORS = [
     "#3b82f6",
     "#10b981",
@@ -399,7 +399,10 @@ export function useReportsEffects(prev: ReturnType<typeof useReportsState> & Ret
         }
 
         // ========== TRANSACTIONS TABLE (if applicable) ==========
-        if (transactions.length > 0 && reportType === "transactions") {
+        // The rows on screen (search, currency, type and date range applied), all of them: the
+        // PDF listed the first 50 of every transaction ever, whatever the filters said.
+        const shownTxns: any[] = prev.filteredTransactions ?? transactions;
+        if (shownTxns.length > 0 && reportType === "transactions") {
           const finalY = (doc as any).lastAutoTable?.finalY || yPos + 50;
           yPos = finalY + 12;
 
@@ -408,8 +411,7 @@ export function useReportsEffects(prev: ReturnType<typeof useReportsState> & Ret
           doc.setFont("helvetica", "bold");
           doc.text("TRANSACTIONS", 14, yPos);
 
-          const txnData = transactions
-            .slice(0, 50)
+          const txnData = shownTxns
             .map((txn: any) => [
               new Date(txn.transactionDate || txn.date).toLocaleDateString(
                 "en-GB",
@@ -670,6 +672,20 @@ export function useReportsEffects(prev: ReturnType<typeof useReportsState> & Ret
             client.balanceType,
           ]),
         ];
+      } else if (reportType === "transactions") {
+        // The transactions report exported the DAILY summary as its CSV. Now: the rows on screen.
+        const rows: any[] = prev.filteredTransactions ?? transactions;
+        csvData = [
+          ["Date", "Code", "Description", "Direction", "Currency", "Amount"],
+          ...rows.map((t: any) => [
+            t.date ? new Date(t.date).toLocaleString("en-GB") : "",
+            t.code || t.reference || t.id || "",
+            t.description || "",
+            t.type === "debit" ? "IN" : t.type === "credit" ? "OUT" : "TRANSFER",
+            typeof t.currency === "string" ? t.currency : CURRENCY_CODES[t.currency] || "",
+            String(t.amount ?? 0),
+          ]),
+        ];
       } else if (dailyReport) {
         // Per-currency Money In/Out rows (only currencies with activity).
         const csvByCurrency = computeCashflowByCurrency(
@@ -708,7 +724,17 @@ export function useReportsEffects(prev: ReturnType<typeof useReportsState> & Ret
 
       if (csvData.length > 0) {
         const csv = csvData
-          .map((row) => row.map((cell) => `"${cell}"`).join(","))
+          // Quotes doubled (a description with " broke the row) and text that Excel would run as
+          // a formula ("=…", "+…", "@…") prefixed with ' so it opens as text.
+          .map((row) =>
+            row
+              .map((cell) => {
+                let v = String(cell ?? "");
+                if (/^[=+@]/.test(v) || /^-[^0-9.]/.test(v)) v = "'" + v;
+                return `"${v.replace(/"/g, '""')}"`;
+              })
+              .join(","),
+          )
           .join("\n");
         const blob = new Blob([csv], {
           type: format === "csv" ? "text/csv" : "application/vnd.ms-excel",
@@ -741,7 +767,7 @@ export function useReportsEffects(prev: ReturnType<typeof useReportsState> & Ret
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, currencyFilter, transactionTypeFilter, reportType]);
+  }, [searchTerm, currencyFilter, transactionTypeFilter, reportType, dateRange, dateFrom, dateTo]);
 
   return {
     COLORS,

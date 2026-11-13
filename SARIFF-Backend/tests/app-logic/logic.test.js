@@ -64,6 +64,17 @@ t("formatting", "mobile USD keeps cents", M.types.formatCurrency(12.5, USD), "$1
 t("formatting", "currency code for every currency (web)", [KES, USD, UGX, EUR].map(W.api.currencyCode), ["KES", "USD", "UGX", "EUR"]);
 t("formatting", "currency code for every currency (mobile)", [KES, USD, UGX, EUR].map(M.types.currencyCode), ["KES", "USD", "UGX", "EUR"]);
 
+// W24: the reports' "Date Range" (Today by default) filtered nothing. NOW = 01:30 on 9 Nov (Monday) in Nairobi.
+const inR = W.dates.inDateRange;
+t("date range", "an entry at 00:30 Nairobi (21:30 UTC the day before) is today", inR("2026-11-08T21:30:00Z", "today"), true);
+t("date range", "yesterday evening is not today", inR("2026-11-08T17:00:00Z", "today"), false);
+t("date range", "this week starts Monday", inR("2026-11-08T08:00:00Z", "week"), false);
+t("date range", "this month", inR("2026-11-01T06:00:00Z", "month"), true);
+t("date range", "last month is not this month", inR("2026-10-31T06:00:00Z", "month"), false);
+t("date range", "custom range, inclusive", inR("2026-11-03T06:00:00Z", "custom", "2026-11-01", "2026-11-03"), true);
+t("date range", "custom range, outside", inR("2026-11-04T06:00:00Z", "custom", "2026-11-01", "2026-11-03"), false);
+t("date range", "unreadable date is outside", inR("not a date", "today"), false);
+
 // ---------- 5. Totals never mix currencies
 const rows = [{ a: 1000, c: KES }, { a: 2000000, c: UGX }, { a: 500, c: KES }, { a: 0, c: USD }];
 t("totals", "sumByCurrency keeps KES and UGX apart, home first, zero dropped", M.types.sumByCurrency(rows, r => r.a, r => r.c, UGX), [{ currency: UGX, total: 2000000 }, { currency: KES, total: 1500 }]);

@@ -4,13 +4,14 @@ import { Activity, ArrowLeftRight, BarChart3, Building2, TrendingUp, Users, Wall
 import { CURRENCY_CODES, loadKesRates, toKes } from "../helpers";
 import { allPages, apiRequest, getExchangeTodaySummary, getExchangeTransactions } from "@/lib/api";
 import { bureauFlow } from "@/lib/moneyflow";
+import { inDateRange } from "@/lib/dates";
 import { toast } from "sonner";
 import { useCallback, useState } from "react";
 import { type useReportsState } from "./useReportsState";
 
 /** Reports: data (part 2 of 3 of useReports). */
 export function useReportsData(prev: ReturnType<typeof useReportsState>) {
-  const { accountSummary, baseCode, clientBalances, currencyFilter, currentPage, dailyReport, exchangeSummary, fetchAccountSummary, fetchClientBalances, fetchDailyReport, fetchExchangeSummary, fetchTransactions, itemsPerPage, profitLossData, reportType, searchTerm, selectedDate, setCurrentPage, setLoading, setProfitLossData, statistics, transactionTypeFilter, transactions } = prev;
+  const { accountSummary, baseCode, clientBalances, currencyFilter, dateFrom, dateRange, dateTo, currentPage, dailyReport, exchangeSummary, fetchAccountSummary, fetchClientBalances, fetchDailyReport, fetchExchangeSummary, fetchTransactions, itemsPerPage, profitLossData, reportType, searchTerm, selectedDate, setCurrentPage, setLoading, setProfitLossData, statistics, transactionTypeFilter, transactions } = prev;
   // Fetch profit and loss data
   const fetchProfitLoss = useCallback(async () => {
     try {
@@ -296,8 +297,11 @@ export function useReportsData(prev: ReturnType<typeof useReportsState>) {
       currencyFilter === "all" || txn.currency === currencyFilter;
     const matchesType =
       transactionTypeFilter === "all" || txn.type === transactionTypeFilter;
+    // The "Date Range" picker (Today by default) filtered nothing: every transaction ever
+    // was listed and exported under it.
+    const matchesDate = inDateRange(txn.date, dateRange, dateFrom, dateTo);
 
-    return matchesSearch && matchesCurrency && matchesType;
+    return matchesSearch && matchesCurrency && matchesType && matchesDate;
   });
   // Currencies any client holds (KES and USD always shown)
   const clientCurrencies: number[] = (() => {
