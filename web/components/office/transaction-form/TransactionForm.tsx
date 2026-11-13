@@ -1,6 +1,6 @@
 "use client";
 
-import { AccountType, Currency, TransactionType, getCurrencyLabel } from "@/lib/api";
+import { AccountType, TransactionType, getCurrencyLabel } from "@/lib/api";
 import { ArrowDownCircle, ArrowUpCircle, Calendar, DollarSign, FileText, Loader2, Minus, Plus, RefreshCw, Search, User, X } from "lucide-react";
 import { PinModal } from "@/components/ui/PinModal";
 import { SuccessShareModal } from "@/components/ui/SuccessShareModal";
@@ -227,7 +227,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
                       {parseFloat(amount).toLocaleString()}
                     </span>
                     <span className="mx-2">
-                      {counterAccount!.currency === Currency.KES ? "÷" : "×"}
+                      {counterAccount!.currency === base ? "÷" : "×"}
                     </span>
                     <span className="font-mono">
                       {parseFloat(exchangeRate).toLocaleString()}

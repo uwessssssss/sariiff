@@ -230,8 +230,9 @@ export default function ProfileScreen() {
                 <Text style={{ fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: colors.textSecondary, letterSpacing: 0.5, marginBottom: spacing.sm, marginTop: spacing.sm }}>ACCOUNT SUMMARY</Text>
                 {profile.createdAt && <InfoRow icon="calendar-outline" label="Member Since" value={new Date(profile.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} />}
                 {profile.lastLoginAt && <InfoRow icon="time-outline" label="Last Login" value={new Date(profile.lastLoginAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} />}
-                {balanceRowsFrom(profile, true)
-                  .filter((r) => r.currency === 0 || r.totalIn || r.totalOut)
+                {/* Currencies the client used (it always showed KES, "KES 0.00" for a Ugandan client) */}
+                {((rows) => (rows.length ? rows : balanceRowsFrom(profile, true).slice(0, 1)))(
+                  balanceRowsFrom(profile).filter((r) => r.totalIn || r.totalOut))
                   .flatMap((r) => [
                     <InfoRow key={`in-${r.currency}`} icon="swap-horizontal-outline" label={`Total Credited (${r.code})`} value={formatCurrency(r.totalIn, r.currency)} />,
                     <InfoRow key={`out-${r.currency}`} icon="swap-horizontal-outline" label={`Total Debited (${r.code})`} value={formatCurrency(r.totalOut, r.currency)} />,

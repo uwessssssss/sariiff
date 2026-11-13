@@ -65,9 +65,9 @@ export function FloatFundingSheet({ vm }: { vm: ExchangeScreenVM }) {
           options={[
             { value: AccountType.Cash, label: "Cash" },
             { value: AccountType.Bank, label: "Bank" },
-            ...(modal === "fundFloat" || floatCurrency === 0
-              ? [{ value: AccountType.Mpesa, label: "Mobile money" }]
-              : []),
+            // Wallets are listed by their own currency below; this only hid them for
+            // withdrawals in anything but KES (a Ugandan bureau's UGX → MTN wallet).
+            { value: AccountType.Mpesa, label: "Mobile money" },
           ]}
           selected={floatSrcType}
           onSelect={(v: number) => {
