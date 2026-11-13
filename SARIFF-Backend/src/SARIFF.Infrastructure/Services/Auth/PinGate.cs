@@ -96,6 +96,37 @@ public static class PinGate
             : null;
     }
 
+    /// <summary>
+    /// Take one of the bureau's PIN tries BEFORE the PIN is checked; false when none are
+    /// left (locked). A correct PIN gives the tries back (GrantAsync).
+    ///
+    /// The try is taken in one database statement. Before Nov 2026 the count was read,
+    /// checked, and written back after the PIN was compared, so requests sent at the same
+    /// moment all read "0 wrong so far": thirty parallel guesses counted as one or two and
+    /// never locked. A 4-digit PIN has 10,000 values, so that made it guessable in minutes.
+    /// </summary>
+    public static async Task<bool> TryTakeAttemptAsync(AppDbContext db, Company company, DateTime? utcNow = null)
+    {
+        var now = utcNow ?? DateTime.UtcNow;
+        if (!db.Database.IsRelational())   // the in-memory test database has no UPDATE ... WHERE
+        {
+            if (LockedMinutes(company, now) != null) return false;
+            RecordFailure(company, now);
+            await db.SaveChangesAsync();
+            return true;
+        }
+        var windowStart = now - FailureWindow;
+        // No window, or one that has run out: a new window starts with all tries available.
+        await db.Companies
+            .Where(c => c.Id == company.Id && (c.PinFailuresSince == null || c.PinFailuresSince < windowStart))
+            .ExecuteUpdateAsync(u => u.SetProperty(c => c.PinFailuresSince, (DateTime?)now).SetProperty(c => c.PinFailedAttempts, 0));
+        var taken = await db.Companies
+            .Where(c => c.Id == company.Id && c.PinFailedAttempts < MaxFailures)
+            .ExecuteUpdateAsync(u => u.SetProperty(c => c.PinFailedAttempts, c => c.PinFailedAttempts + 1));
+        await db.Entry(company).ReloadAsync();
+        return taken > 0;
+    }
+
     /// <summary>Count one wrong PIN on the bureau (the caller saves).</summary>
     public static void RecordFailure(Company company, DateTime? utcNow = null)
     {

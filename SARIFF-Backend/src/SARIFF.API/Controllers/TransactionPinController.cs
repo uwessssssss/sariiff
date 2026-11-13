@@ -73,11 +73,16 @@ public class TransactionPinController : BaseApiController
         if (PinGate.LockedMinutes(company) is { } mins)
             return Ok(new ApiResponse<bool>(false, $"Too many wrong PINs. Try again in {mins} minute{(mins == 1 ? "" : "s")}.", false));
 
+        // Take a try first, then look at the PIN: parallel guesses can't share one try.
+        if (!await PinGate.TryTakeAttemptAsync(_context, company))
+        {
+            var wait = PinGate.LockedMinutes(company) ?? (int)PinGate.FailureWindow.TotalMinutes;
+            return Ok(new ApiResponse<bool>(false, $"Too many wrong PINs. Try again in {wait} minute{(wait == 1 ? "" : "s")}.", false));
+        }
+
         var valid = !string.IsNullOrEmpty(dto.Pin) && BCrypt.Net.BCrypt.Verify(dto.Pin, company.TransactionPinHash);
         if (!valid)
         {
-            PinGate.RecordFailure(company);
-            await _context.SaveChangesAsync();
             var left = PinGate.MaxFailures - company.PinFailedAttempts;
             return Ok(new ApiResponse<bool>(false,
                 left > 0 ? $"Incorrect PIN. {left} tr{(left == 1 ? "y" : "ies")} left." : "Incorrect PIN. Locked for 15 minutes.", false));
