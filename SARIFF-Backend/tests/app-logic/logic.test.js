@@ -58,6 +58,9 @@ t("formatting", "web negative keeps its minus", W.api.formatMoney(-5000, UGX), "
 t("formatting", "web unknown/empty amount is 0", W.api.formatMoney(undefined, KES), "KES 0");
 t("formatting", "mobile negative keeps its minus", M.types.formatCurrency(-1000, KES).startsWith("-"), true);
 t("formatting", "mobile NaN shows 0", M.types.formatCurrency(NaN, USD).includes("0.00"), true);
+// M19: Ugandan shillings have no cents; the phone showed "USh 1,800,000.00" where the web shows whole shillings.
+t("formatting", "mobile UGX: whole shillings", M.types.formatCurrency(1800000, UGX), "USh 1,800,000");
+t("formatting", "mobile USD keeps cents", M.types.formatCurrency(12.5, USD), "$12.50");
 t("formatting", "currency code for every currency (web)", [KES, USD, UGX, EUR].map(W.api.currencyCode), ["KES", "USD", "UGX", "EUR"]);
 t("formatting", "currency code for every currency (mobile)", [KES, USD, UGX, EUR].map(M.types.currencyCode), ["KES", "USD", "UGX", "EUR"]);
 
