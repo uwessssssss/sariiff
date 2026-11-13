@@ -196,6 +196,31 @@ public class ClientPortalTests
         Assert.Equal(28_000m, month.Income);
     }
 
+    // CL9
+    [Fact]
+    public async Task The_balance_chart_shows_each_months_closing_balance_not_todays_six_times()
+    {
+        // "Balance Growth: 6-month trend" drew today's balance for every month: a flat line.
+        var b = await CreateAsync(Currency.UGX);
+        var lastMonth = BureauClock.MonthStartUtc(BureauClock.TodayLocal).AddDays(-10);
+        Assert.True((await b.Transactions().CreateAsync(b.Co, b.UserId,
+            Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.Cash.Id, 9_000, Currency.KES, date: lastMonth))).Success);
+        Assert.True((await b.Transactions().CreateAsync(b.Co, b.UserId,
+            Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.Cash.Id, 400, Currency.KES, date: DateTime.UtcNow))).Success);
+        var r = await b.Transactions().CreateAsync(b.Co, b.UserId,
+            Posting(TransactionType.Debit, AccountType.Client, b.Baraka.Id, AccountType.Client, b.Amina.Id, 1_000, Currency.KES,
+                counterAmount: 28_000, counterCurrency: Currency.UGX, rate: 28, date: DateTime.UtcNow));
+        Assert.True(r.Success, r.Message);
+
+        var m = (await Portal(b).GetAnalyticsAsync(b.Co, b.Amina.Id, 2)).Data!.MonthlyData;
+        Assert.Equal(2, m.Count);
+        Assert.Equal(400m, Math.Abs(m[1].BalanceKES - m[0].BalanceKES));   // only this month's 400 between them
+
+        decimal Ugx(MonthlyDataDto row) => row.OtherCurrencies.FirstOrDefault(c => c.Currency == Currency.UGX)?.Balance ?? 0m;
+        Assert.Equal(0m, Ugx(m[0]));                                       // no shillings yet last month
+        Assert.Equal(28_000m, Math.Abs(Ugx(m[1])));                         // this month's closing balance
+    }
+
     // ---------- alerts and profile
 
     [Fact]

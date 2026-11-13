@@ -197,6 +197,8 @@ public class CurrencyFlowDto
     public string CurrencyCode { get; set; } = string.Empty;
     public decimal Income { get; set; }
     public decimal Expenses { get; set; }
+    /// <summary>In a month's row: the balance in this currency at the end of that month.</summary>
+    public decimal Balance { get; set; }
 }
 
 public class CategoryBreakdownDto
