@@ -241,4 +241,18 @@ public class LineAuditAccountsTests
         Assert.True(fresh.Success, fresh.Message);
         Assert.Equal(("+254733000888", "otieno@example.com"), (fresh.Data!.WhatsAppNumber, fresh.Data.Email));
     }
+    // EX7
+    [Fact]
+    public async Task A_cash_expense_is_paid_from_the_till_that_was_chosen_or_refused()
+    {
+        var b = await FundedAsync();
+        b.CashUsd.Balance = 1_000; await b.Db.SaveChangesAsync();
+
+        // "Cash USD" picked, currency left at KES: the server looked the till up by currency only
+        // and quietly paid KES 100 from the shilling till instead.
+        var r = await Expenses(b).CreateAsync(b.Co, b.UserId, Pay(b, 100, AccountType.Cash, b.CashUsd.Id));
+
+        Assert.False(r.Success, "paid from a till other than the one chosen");
+        Assert.Equal(1_000_000m, b.Cash.Balance);
+    }
 }
