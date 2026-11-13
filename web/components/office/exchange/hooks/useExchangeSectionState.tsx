@@ -233,6 +233,7 @@ export function useExchangeSectionState() {
   };
   const handleNewExchange = async (data: {
     clientId?: string;
+    client?: ClientLookupDto;
     clientName?: string;
     exchangeType: ExchangeType;
     direction: ExchangeDirection;
@@ -273,8 +274,8 @@ export function useExchangeSectionState() {
         loadData();
 
         // WhatsApp share if client was involved
-        if (data.clientId && clients.length > 0) {
-          const client = clients.find((c) => c.id === data.clientId);
+        if (data.clientId) {
+          const client = data.client ?? clients.find((c) => c.id === data.clientId);
           if (client?.whatsAppNumber) {
             setExchShareModal({
               show: true,

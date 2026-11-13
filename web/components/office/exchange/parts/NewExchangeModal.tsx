@@ -21,6 +21,9 @@ export function NewExchangeModal({
 }) {
   const { base, baseCode } = useBaseCurrency();
   const [clientId, setClientId] = useState("");
+  // The chosen client itself: one found by search is not in the first-200 list the page holds,
+  // and the receipt share needs their name and number.
+  const [pickedClient, setPickedClient] = useState<ClientLookupDto | undefined>();
   // The lookup holds the first 200 clients; typing asks the server for the rest
   // (client 201 onward could never be chosen here).
   const [clientQuery, setClientQuery] = useState("");
@@ -150,6 +153,7 @@ export function NewExchangeModal({
               onChange={(e: any) => {
                 setClientId(e.target.value);
                 const c = shownClients.find((cl) => cl.id === e.target.value);
+                setPickedClient(c);
                 if (c?.idPassport) setClientIdNumber(c.idPassport);
                 if (e.target.value) setClientName(""); // Clear clientName if selecting a client
               }}
@@ -329,6 +333,7 @@ export function NewExchangeModal({
             onClick={() =>
               onSubmit({
                 clientId: clientId || undefined,
+                client: clientId && pickedClient?.id === clientId ? pickedClient : undefined,
                 clientName:
                   !clientId && exchangeType === ExchangeType.Cash
                     ? clientName.trim()

@@ -273,7 +273,7 @@ export function useReconciliationState() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith(".csv")) {
+    if (!file.name.toLowerCase().endsWith(".csv")) {   // banks often name it STATEMENT.CSV
       toast.error("Please upload a CSV file");
       return;
     }
