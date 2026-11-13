@@ -287,6 +287,7 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
+                  autoCapitalize="none"
                   icon="lock-closed-outline"
                 />
               </View>

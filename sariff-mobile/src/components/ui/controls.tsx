@@ -120,6 +120,8 @@ export interface InputProps {
   error?: string;
   multiline?: boolean;
   editable?: boolean;
+  /** "none" for passwords that can be shown, codes and emails. */
+  autoCapitalize?: "none" | "sentences" | "words" | "characters";
 }
 export function Input({
   label,
@@ -132,6 +134,7 @@ export function Input({
   error,
   multiline,
   editable = true,
+  autoCapitalize,
 }: InputProps) {
   return (
     <View style={styles.inputWrapper}>
@@ -170,6 +173,10 @@ export function Input({
           onChangeText={onChangeText}
           secureTextEntry={secureTextEntry}
           keyboardType={keyboardType}
+          // Passwords and emails must arrive as typed: the default capitalised the first
+          // letter on many Android keyboards ("Kibanda#2027" for "kibanda#2027").
+          autoCapitalize={autoCapitalize ?? (secureTextEntry || keyboardType === "email-address" ? "none" : undefined)}
+          autoCorrect={autoCapitalize === "none" || secureTextEntry || keyboardType === "email-address" ? false : undefined}
           multiline={multiline}
           editable={editable}
         />

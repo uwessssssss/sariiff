@@ -31,6 +31,9 @@ export function useClientUserDashboardData(prev: { userName: ClientUserDashboard
           newPassword: "",
           confirmPassword: "",
         });
+        // Every session was ended by the server, this one too: sign out now rather than at
+        // the next click with "Session expired".
+        prev.onLogout();
       } else {
         toast.error(result.message || "Failed to change password");
       }

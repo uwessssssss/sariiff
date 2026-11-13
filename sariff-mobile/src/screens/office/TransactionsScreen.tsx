@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/toastConfig';
 import * as api from '../../services/api';
-import { TransactionDto, TransactionType, AccountType, Currency, formatCurrency, formatDateTime, getAccountTypeLabel, getCurrencyLabel, currencyCode, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
+import { TransactionDto, TransactionType, amountText, AccountType, Currency, formatCurrency, formatDateTime, getAccountTypeLabel, getCurrencyLabel, currencyCode, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
 
 // Any currency pair. With the home currency (KES in Kenya, UGX in Uganda) on one
@@ -212,7 +212,7 @@ export default function TransactionsScreen() {
             const txnCurNum = isClientPri ? res.data?.currency : (res.data?.counterCurrency ?? res.data?.currency);
             // Balance in the transaction's own currency (UGX used to be labelled USD)
             const balCur = txnCurNum ?? clientAcc.currency ?? Currency.KES;
-            const balanceStr = `${currencyCode(balCur)} ${(balAfter ?? clientAcc.balance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            const balanceStr = `${currencyCode(balCur)} ${amountText(balAfter ?? clientAcc.balance ?? 0, balCur)}`;
 
             setTimeout(() => Alert.alert('Share Confirmation?', `Send transaction confirmation to ${clientAcc.name.split(' (')[0]} via WhatsApp?`, [
               { text: 'Skip', style: 'cancel' },
@@ -220,7 +220,7 @@ export default function TransactionsScreen() {
                 clientName: clientAcc.name.split(' (')[0], type: isIncrease ? 'Credit' : 'Debit',
                 // The client's own amount: on a forex entry with the client as the counter
                 // account that is the counter amount, not the primary amount typed.
-                amount: Number(isClientPri ? (res.data?.amount ?? parseAmount(amount)) : (res.data?.counterAmount ?? res.data?.amount ?? parseAmount(amount))).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+                amount: amountText(Number(isClientPri ? (res.data?.amount ?? parseAmount(amount)) : (res.data?.counterAmount ?? res.data?.amount ?? parseAmount(amount))), balCur),
                 currency: cur, balance: balanceStr, code: txnCode, description,
                 date: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
               })) },

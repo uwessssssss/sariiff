@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import * as api from '../../services/api';
-import { Currency, formatCurrency, formatDate, currencyCode, allowedCurrenciesFor, sumByCurrency, formatTotals } from '../../types';
+import { Currency, amountText, formatCurrency, formatDate, currencyCode, allowedCurrenciesFor, sumByCurrency, formatTotals } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
 import { Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ActionBtn, InfoRow } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
@@ -26,7 +26,7 @@ const statusConfig: Record<number, { label: string; color: string; bg: string; i
 function buildInvoiceHtml(inv: any): string {
   const cur = currencyCode(inv.currency) + ' ';
   const fmt = (n: number) =>
-    cur + Math.abs(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    cur + amountText(Math.abs(n || 0), inv.currency);
   const d = (s: string) => (s ? new Date(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
   const stMap: Record<number, { label: string; color: string }> = {
     0: { label: 'DRAFT', color: '#64748B' },

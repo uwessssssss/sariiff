@@ -99,11 +99,14 @@ export default function ProfileScreen() {
       const res = await api.changeClientPassword(currentPassword, newPassword, confirmPassword);
       if (res.success) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Toast.show({ type: 'success', text1: 'Password changed', text2: 'Your password has been updated' });
+        // The server ends every session on a password change, this phone's too: the next
+        // request would have thrown the client out as "Session expired". Say it and sign out.
+        Toast.show({ type: 'success', text1: 'Password changed', text2: 'Sign in again with your new password.' });
         setShowPasswordForm(false);
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        await logout();
       } else {
         Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
       }

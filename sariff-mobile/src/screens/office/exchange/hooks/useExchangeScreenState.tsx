@@ -1,5 +1,5 @@
 import { parseAmount, anyBadAmount } from "../../../../utils/amount";
-import { AccountType, Currency, ExchangeFloatDto, ExchangeRateDto, ExchangeTransactionDto, currencyCode, foreignCurrenciesFor } from "../../../../types";
+import { AccountType, Currency, ExchangeFloatDto, ExchangeRateDto, ExchangeTransactionDto, amountText, currencyCode, foreignCurrenciesFor } from "../../../../types";
 import { Alert, Animated } from "react-native";
 import { ModalType } from "../helpers";
 import Toast from "react-native-toast-message";
@@ -363,8 +363,10 @@ export function useExchangeScreenState() {
     if (res.success) {
       submitSession.current = api.newIdempotencyKey();
       const exchCode = res.data?.code || "";
-      const givenCode = currencyCode(res.data?.currencyGiven ?? (direction === 0 ? fxCurrency : base));
-      const receivedCode = currencyCode(res.data?.currencyReceived ?? (direction === 0 ? base : fxCurrency));
+      const givenCur = res.data?.currencyGiven ?? (direction === 0 ? fxCurrency : base);
+      const receivedCur = res.data?.currencyReceived ?? (direction === 0 ? base : fxCurrency);
+      const givenCode = currencyCode(givenCur);
+      const receivedCode = currencyCode(receivedCur);
       const dirLabel = `${givenCode} → ${receivedCode}`;
       Toast.show({
         type: "success",
@@ -398,13 +400,11 @@ export function useExchangeScreenState() {
                         buildExchangeMessage({
                           clientName: client.fullName,
                           direction: dirLabel,
-                          amountGiven: parseAmount(exchAmount).toLocaleString(
-                            "en-US",
-                            { minimumFractionDigits: 2 },
-                          ),
+                          amountGiven: amountText(res.data?.amountGiven ?? parseAmount(exchAmount), givenCur),
                           currencyGiven: givenCode,
+                          // Was String(n): "15467.5" with no separators in the client's message.
                           amountReceived: res.data?.amountReceived
-                            ? String(res.data.amountReceived)
+                            ? amountText(res.data.amountReceived, receivedCur)
                             : "—",
                           currencyReceived: receivedCode,
                           rate: r,

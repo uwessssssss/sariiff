@@ -2,7 +2,7 @@ import * as api from "../../../services/api";
 import { StyleSheet } from "react-native";
 import Toast from "react-native-toast-message";
 import { borderRadius, colors, fontSize, fontWeight, spacing } from "../../../theme";
-import { currencyCode } from "../../../types";
+import { amountText, currencyCode } from "../../../types";
 
 export type CurrencyFilter = "all" | "kes" | "usd" | "ugx" | "eur";
 export type TypeFilter = "all" | "credit" | "debit";
@@ -15,11 +15,7 @@ export function buildStatementHtml(s: any): string {
       .replace(/>/g, "&gt;");
   const stCur = s?.currency;
   const curOf = (c: any) => currencyCode(c);
-  const money = (n: any, c: any = stCur) =>
-    `${curOf(c)} ${Number(n || 0).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+  const money = (n: any, c: any = stCur) => `${curOf(c)} ${amountText(Number(n || 0), c)}`;
   const d = (v: any) => {
     const dt = new Date(v);
     return isNaN(dt.getTime()) ? esc(v) : dt.toLocaleDateString("en-GB");
@@ -96,11 +92,7 @@ export function buildReceiptHtml(t: any, bureau?: string): string {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
   const curOf = (c: any) => currencyCode(c);
-  const money = (n: any, c: any) =>
-    `${curOf(c)} ${Number(n || 0).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+  const money = (n: any, c: any) => `${curOf(c)} ${amountText(Number(n || 0), c)}`;
   const isIn = t?.type === "Credit";
   const color = isIn ? "#059669" : "#DC2626";
   const sign = isIn ? "+" : "-";
