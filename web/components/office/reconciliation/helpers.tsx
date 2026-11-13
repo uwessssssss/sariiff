@@ -29,8 +29,10 @@ export const getCurrencySymbol = (currency: Currency): string => {
   // Code + space for every currency (UGX/EUR were shown as "$")
   return `${currencyCode(currency)} `;
 };
+// Keeps the sign. It used to print Math.abs(amount), so a variance where the
+// statement was SHORT, or an overdrawn balance, showed as a positive figure.
 export const formatCurrency = (amount: number, currency: Currency): string => {
-  return `${getCurrencySymbol(currency)}${Math.abs(amount).toLocaleString(
+  return `${amount < 0 ? "−" : ""}${getCurrencySymbol(currency)}${Math.abs(amount).toLocaleString(
     "en-US",
     {
       minimumFractionDigits: 2,

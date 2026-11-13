@@ -62,11 +62,7 @@ export function VisualComparison({ vm }: { vm: ReconciliationVM }) {
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{
-                              width: `${Math.min(
-                                100,
-                                (actualBalanceInput / selectedAccount.balance) *
-                                  100,
-                              )}%`,
+                              width: `${selectedAccount.balance > 0 ? Math.min(100, (actualBalanceInput / selectedAccount.balance) * 100) : 100}%`,
                             }}
                             transition={{ duration: 0.5, delay: 0.2 }}
                             className={`h-full rounded-lg ${
