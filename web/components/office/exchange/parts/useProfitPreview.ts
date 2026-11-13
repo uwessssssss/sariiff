@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ExchangeDirection, calculateExchange } from "@/lib/api";
+import { Currency, ExchangeDirection, calculateExchange } from "@/lib/api";
 
 /**
  * The profit the server will book for this trade, asked of the server itself
@@ -18,7 +18,7 @@ export function useProfitPreview(amount: number, direction: ExchangeDirection, f
     if (!(amount > 0) || direction === ExchangeDirection.UsdToKes) return;
     let live = true; // an answer for an earlier amount must not replace this one
     const t = setTimeout(() => {
-      calculateExchange({ amount, direction, foreignCurrency })
+      calculateExchange({ amount, direction, foreignCurrency: foreignCurrency as Currency })
         .then((r) => { if (live && r.success && r.data) setProfit(r.data.estimatedProfit); })
         .catch(() => {});
     }, 300);
