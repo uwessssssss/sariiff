@@ -70,7 +70,10 @@ export default function TransactionsScreen() {
   // View
   const [viewTxn, setViewTxn] = useState<TransactionDto | null>(null);
 
+  // One request per keystroke or filter tap: only the answer for what is on screen now may fill the list.
+  const listSeq = useRef(0);
   const loadTxns = useCallback(async (p = 1, append = false) => {
+    const seq = append ? listSeq.current : ++listSeq.current;
     try {
       const filters: any = {};
       if (searchText.trim()) filters.search = searchText.trim();
@@ -78,6 +81,7 @@ export default function TransactionsScreen() {
       if (filter === 'credit') filters.type = TransactionType.Credit;
       if (filter === 'debit') filters.type = TransactionType.Debit;
       const r = await api.getTransactions(p, 25, Object.keys(filters).length > 0 ? filters : undefined);
+      if (seq !== listSeq.current) return;
       if (r.success && r.data) { setTxns(prev => append ? [...prev, ...(r.data.items || [])] : (r.data.items || [])); setTotalPages(r.data.totalPages || 1); setPage(p); }
     } catch {}
   }, [searchText, filterCurrency, filter]);

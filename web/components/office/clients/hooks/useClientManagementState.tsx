@@ -6,7 +6,7 @@ import { buildCredentialMessage } from "@/lib/whatsapp";
 import { refreshOpenStatement } from "../../StatementModal";
 import { toast } from "sonner";
 import { useAllowedCurrencies, useCountrySamples } from "@/lib/useBaseCurrency";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 /** ClientManagement: state (part 1 of 2 of useClientManagement). */
 export function useClientManagementState() {
@@ -80,7 +80,10 @@ export function useClientManagementState() {
   // ==============================================
   // API Functions
   // ==============================================
+  // One request per keystroke: only the answer for what is typed now may fill the list.
+  const fetchSeq = useRef(0);
   const fetchClients = useCallback(async () => {
+    const seq = ++fetchSeq.current;
     setIsLoading(true);
     try {
       const filter = activeTab === "all" ? undefined : activeTab;
@@ -94,6 +97,7 @@ export function useClientManagementState() {
         normalizedSearch,
         filter,
       );
+      if (seq !== fetchSeq.current) return;
 
       if (result.success && result.data) {
         setClients(result.data.items);
@@ -103,10 +107,11 @@ export function useClientManagementState() {
         toast.error(result.message || "Failed to fetch clients");
       }
     } catch (error) {
+      if (seq !== fetchSeq.current) return;
       console.error("Error fetching clients:", error);
       toast.error("Failed to fetch clients");
     } finally {
-      setIsLoading(false);
+      if (seq === fetchSeq.current) setIsLoading(false);
     }
   }, [currentPage, pageSize, searchTerm, activeTab]);
   const fetchClientStats = useCallback(async () => {

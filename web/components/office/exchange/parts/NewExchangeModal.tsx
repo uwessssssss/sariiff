@@ -31,10 +31,11 @@ export function NewExchangeModal({
   useEffect(() => {
     const term = clientQuery.trim();
     if (term.length < 2) { setFound(null); return; }
+    let live = true;   // an answer for an earlier spelling must not replace this one
     const t = setTimeout(() => {
-      getClientLookup(term).then((r) => { if (r.success && r.data) setFound(r.data); }).catch(() => {});
+      getClientLookup(term).then((r) => { if (live && r.success && r.data) setFound(r.data); }).catch(() => {});
     }, 300);
-    return () => clearTimeout(t);
+    return () => { live = false; clearTimeout(t); };
   }, [clientQuery]);
   const shownClients = found ?? clients;
   const [clientName, setClientName] = useState(""); // NEW: For walk-in clients
