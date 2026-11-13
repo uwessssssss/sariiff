@@ -49,6 +49,8 @@ export interface CreateTransactionDto {
   notes?: string;
   exchangeRate?: number;
   paymentMethod: PaymentMethod;
+  /** Back-dating: omitted means now. */
+  transactionDate?: string;
 }
 export interface TransactionResponseDto {
   id: string;

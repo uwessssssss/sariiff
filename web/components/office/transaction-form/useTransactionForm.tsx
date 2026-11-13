@@ -135,7 +135,7 @@ export function useTransactionForm({ onClose, onSuccess }: TransactionFormProps)
       case AccountType.Cash:
         return cashAccounts.map((a) => ({
           id: a.id,
-          name: a.name || `Cash ${a.currency}`,
+          name: `Cash ${currencyCode(a.currency)}`,   // the API sends no name: this read "Cash 0" / "Cash 1"
           type: AccountType.Cash,
           currency: a.currency,
           balance: a.balance,
@@ -487,6 +487,10 @@ export function useTransactionForm({ onClose, onSuccess }: TransactionFormProps)
         paymentMethod: paymentMethod,
         description: description.trim(),
         notes: notes.trim() || undefined,
+        // The form asks for a "Transaction Date *" but never sent it: a back-dated entry was
+        // recorded today. Today means now; an earlier day is recorded at noon that day (local).
+        transactionDate:
+          dateValue && dateValue !== localDate() ? new Date(`${dateValue}T12:00:00`).toISOString() : undefined,
       };
 
       // One key per submission: pressing again after a timeout can't record it twice.
@@ -515,10 +519,8 @@ export function useTransactionForm({ onClose, onSuccess }: TransactionFormProps)
       const isClientCtr = counterAccountType === AccountType.Client;
       if (isClientPri || isClientCtr) {
         const rawId = isClientPri ? primaryAccountId : counterAccountId;
-        const clientId =
-          rawId.endsWith("_KES") || rawId.endsWith("_USD")
-            ? rawId.slice(0, -4)
-            : rawId;
+        // "_UGX" / "_EUR" accounts were not stripped, so a Ugandan client never got the share.
+        const clientId = getActualClientId(rawId);
         const clientInfo = clients.find((c) => c.id === clientId);
         if (clientInfo?.whatsAppNumber) {
           const txnCode = result.data?.code || "";
@@ -534,11 +536,17 @@ export function useTransactionForm({ onClose, onSuccess }: TransactionFormProps)
             : (result.data?.counterCurrency ?? result.data?.currency ?? undefined);
           const codeOf = (c?: number) => (c === Currency.UGX ? "UGX" : c === Currency.EUR ? "EUR" : c === Currency.USD ? "USD" : c === Currency.KES ? "KES" : cur);
 
+          // The client's own amount: on a forex entry the client side is the converted amount in
+          // its own currency (the message said the typed amount with the other side's currency).
+          const clientAmount: number = isClientPri
+            ? (result.data?.amount ?? primaryAmount)
+            : (result.data?.counterAmount ?? result.data?.amount ?? originalAmount);
+          const clientCode = codeOf(clientCur);
           const msg = buildTransactionMessage({
             clientName: clientInfo.fullName,
             type: isBalanceIncrease ? "Credit" : "Debit",
-            amount: fmt(parseFloat(amount)),
-            currency: cur,
+            amount: fmt(clientAmount),
+            currency: clientCode,
             balance: fmt(balAfter ?? 0),
             balanceCurrency: codeOf(clientCur),
             code: txnCode,
@@ -558,7 +566,7 @@ export function useTransactionForm({ onClose, onSuccess }: TransactionFormProps)
             details: [
               { label: "Reference", value: txnCode },
               { label: "Client", value: clientInfo.fullName },
-              { label: "Amount", value: `${cur} ${fmt(parseFloat(amount))}` },
+              { label: "Amount", value: `${clientCode} ${fmt(clientAmount)}` },
               { label: "Balance", value: `${codeOf(clientCur)} ${fmt(balAfter ?? 0)}` },
               { label: "Description", value: description.trim() },
             ],

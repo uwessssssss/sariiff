@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountType, TransactionType, getCurrencyLabel } from "@/lib/api";
+import { localDate } from "@/lib/dates";
 import { ArrowDownCircle, ArrowUpCircle, Calendar, DollarSign, FileText, Loader2, Minus, Plus, RefreshCw, Search, User, X } from "lucide-react";
 import { PinModal } from "@/components/ui/PinModal";
 import { SuccessShareModal } from "@/components/ui/SuccessShareModal";
@@ -271,6 +272,7 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
             <input
               type="date"
               value={dateValue}
+              max={localDate()}
               onChange={(e: any) => setDateValue(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm rounded-lg"
               required
