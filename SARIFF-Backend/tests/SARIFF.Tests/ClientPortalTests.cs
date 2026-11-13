@@ -204,9 +204,9 @@ public class ClientPortalTests
         var b = await CreateAsync(Currency.UGX);
         var lastMonth = BureauClock.MonthStartUtc(BureauClock.TodayLocal).AddDays(-10);
         Assert.True((await b.Transactions().CreateAsync(b.Co, b.UserId,
-            Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.Cash.Id, 9_000, Currency.KES, date: lastMonth))).Success);
+            Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.CashUsd.Id, 9_000, Currency.USD, date: lastMonth))).Success);
         Assert.True((await b.Transactions().CreateAsync(b.Co, b.UserId,
-            Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.Cash.Id, 400, Currency.KES, date: DateTime.UtcNow))).Success);
+            Posting(TransactionType.Credit, AccountType.Client, b.Amina.Id, AccountType.Cash, b.CashUsd.Id, 400, Currency.USD, date: DateTime.UtcNow))).Success);
         var r = await b.Transactions().CreateAsync(b.Co, b.UserId,
             Posting(TransactionType.Debit, AccountType.Client, b.Baraka.Id, AccountType.Client, b.Amina.Id, 1_000, Currency.KES,
                 counterAmount: 28_000, counterCurrency: Currency.UGX, rate: 28, date: DateTime.UtcNow));
@@ -214,7 +214,7 @@ public class ClientPortalTests
 
         var m = (await Portal(b).GetAnalyticsAsync(b.Co, b.Amina.Id, 2)).Data!.MonthlyData;
         Assert.Equal(2, m.Count);
-        Assert.Equal(400m, Math.Abs(m[1].BalanceKES - m[0].BalanceKES));   // only this month's 400 between them
+        Assert.Equal(400m, Math.Abs(m[1].BalanceUSD - m[0].BalanceUSD));   // only this month's 400 between them
 
         decimal Ugx(MonthlyDataDto row) => row.OtherCurrencies.FirstOrDefault(c => c.Currency == Currency.UGX)?.Balance ?? 0m;
         Assert.Equal(0m, Ugx(m[0]));                                       // no shillings yet last month
