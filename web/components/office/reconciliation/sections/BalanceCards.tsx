@@ -282,7 +282,7 @@ export function BalanceCards({ vm }: { vm: ReconciliationVM }) {
                               : "bg-amber-200 hover:bg-amber-300 text-amber-800"
                           }`}
                         >
-                          Adjust
+                          How to clear
                         </button>
                       )}
                     </div>

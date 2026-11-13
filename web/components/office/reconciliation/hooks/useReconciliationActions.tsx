@@ -11,7 +11,20 @@ import { type useReconciliationState } from "./useReconciliationState";
 export function useReconciliationActions(prev: ReturnType<typeof useReconciliationState>) {
   const { actualBalanceInput, balanceSummary, effectiveActualBalance, fetchAccounts, fetchBalanceSummary, fetchReconciliationHistoryData, fetchTransactions, filteredTransactions, matchSuggestions, reconcileForm, selectedAccount, selectedAccountId, selectedAccountType, selectedTransaction, selectedTransactions, setAdjustmentNote, setIsLoading, setIsSubmitting, setMatchSuggestions, setReconcileForm, setSelectedTransaction, setSelectedTransactions, setShowAdjustmentForm, setShowBulkModal, setShowCompleteModal, setShowReconcileModal, setStatementEntries, transactions } = prev;
   const handleAcceptAllSuggestions = async () => {
-    const highConfidence = matchSuggestions.filter((s) => s.confidence >= 80);
+    // One statement line pays one transaction: take the strongest pair first and never use a
+    // transaction or a statement line twice (two transactions of the same amount on the same
+    // day were both "matched" to one bank line).
+    const usedTxn = new Set<string>();
+    const usedEntry = new Set<string>();
+    const highConfidence = matchSuggestions
+      .filter((s) => s.confidence >= 80)
+      .sort((a, b) => b.confidence - a.confidence)
+      .filter((s) => {
+        if (usedTxn.has(s.transactionId) || usedEntry.has(s.statementEntryId)) return false;
+        usedTxn.add(s.transactionId);
+        usedEntry.add(s.statementEntryId);
+        return true;
+      });
     if (highConfidence.length === 0) {
       toast.info("No high-confidence matches to accept");
       return;
@@ -48,17 +61,17 @@ export function useReconciliationActions(prev: ReturnType<typeof useReconciliati
         }
       } catch (error) {
         console.error("Error auto-matching:", error);
-        toast.error("Failed to load data. Please refresh.");
       }
     }
 
-    setMatchSuggestions((prev) => prev.filter((s) => s.confidence < 80));
+    setMatchSuggestions((prev) => prev.filter((s) => !usedTxn.has(s.transactionId) && !usedEntry.has(s.statementEntryId)));
     await Promise.all([
       fetchTransactions(),
       fetchBalanceSummary(),
       fetchAccounts(),
     ]);
-    toast.success(`✓ Auto-matched ${successCount} transactions`);
+    if (successCount === highConfidence.length) toast.success(`✓ Matched ${successCount} transactions`);
+    else toast.warning(`Matched ${successCount} of ${highConfidence.length}; the rest could not be saved. Refresh and check them.`);
     setIsSubmitting(false);
   };
   // ==================== HANDLERS ====================
@@ -206,6 +219,15 @@ export function useReconciliationActions(prev: ReturnType<typeof useReconciliati
       toast.info("No pending transactions to reconcile");
       return;
     }
+    // One button (or the "a" key) marked every pending transaction matched without comparing
+    // anything. Say exactly that and ask first.
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        `Mark all ${pendingTransactions.length} pending transactions as matched without comparing them to a statement?`,
+      )
+    )
+      return;
 
     setIsSubmitting(true);
     try {
@@ -278,11 +300,12 @@ export function useReconciliationActions(prev: ReturnType<typeof useReconciliati
       setIsSubmitting(false);
     }
   };
-  const handleCreateAdjustment = (amount: number, description: string) => {
-    toast.success(`✓ Adjustment entry created: ${description}`);
+  // This said "✓ Adjustment entry created" and created nothing: the books were unchanged.
+  // There is no adjustment posting in the API, so say what to do instead.
+  const handleCreateAdjustment = (_amount: number, _description: string) => {
+    toast.info("No entry was made. Record the difference as an expense (e.g. bank charges) or as a transaction, then reconcile again.", { duration: 8000 });
     setShowAdjustmentForm(false);
     setAdjustmentNote("");
-    handleRefresh();
   };
   const handleExportReport = () => {
     if (!selectedAccount) {

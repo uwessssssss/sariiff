@@ -6,7 +6,7 @@ import { formatCurrency } from "../helpers";
 import { type ReconciliationVM } from "../useReconciliation";
 
 export function AdjustmentFormPanel({ vm }: { vm: ReconciliationVM }) {
-  const { adjustmentNote, currentVariance, handleCreateAdjustment, selectedAccount, setAdjustmentNote, setShowAdjustmentForm, showAdjustmentForm } = vm;
+  const { adjustmentNote, currentVariance, handleCreateAdjustment, selectedAccount, setShowAdjustmentForm, showAdjustmentForm } = vm;
   return (
     <AnimatePresence>
       {showAdjustmentForm && selectedAccount && (
@@ -32,10 +32,10 @@ export function AdjustmentFormPanel({ vm }: { vm: ReconciliationVM }) {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold">
-                      Create Adjustment Entry
+                      Clearing a variance
                     </h3>
                     <p className="text-amber-100 text-sm">
-                      Balance the variance
+                      What to record
                     </p>
                   </div>
                 </div>
@@ -62,31 +62,13 @@ export function AdjustmentFormPanel({ vm }: { vm: ReconciliationVM }) {
                   </span>
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase mb-2">
-                  Adjustment Description *
-                </label>
-                <textarea
-                  value={adjustmentNote}
-                  onChange={(e: any) => setAdjustmentNote(e.target.value)}
-                  placeholder="e.g., Bank charges not recorded, Interest income, etc."
-                  rows={3}
-                  className="w-full px-4 py-3 border border-slate-200 focus:border-amber-500 focus:outline-none rounded-lg transition-all resize-none"
-                />
-              </div>
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                 <div className="flex items-start gap-2">
                   <Info className="w-4 h-4 text-blue-600 mt-0.5" />
                   <p className="text-sm text-blue-700">
-                    This will create a{" "}
-                    {currentVariance > 0 ? "credit" : "debit"} entry of{" "}
-                    <strong>
-                      {formatCurrency(
-                        Math.abs(currentVariance),
-                        selectedAccount.currency,
-                      )}
-                    </strong>{" "}
-                    to balance your account.
+                    Adjustments are not posted automatically. To clear this difference, record it where it
+                    belongs, then reconcile again: bank charges or fees as an <strong>expense</strong> from
+                    this account; interest or a missing deposit as a <strong>transaction</strong>.
                   </p>
                 </div>
               </div>
@@ -99,14 +81,12 @@ export function AdjustmentFormPanel({ vm }: { vm: ReconciliationVM }) {
                 </button>
                 <button
                   onClick={() => {
-                    if (adjustmentNote.trim())
-                      handleCreateAdjustment(currentVariance, adjustmentNote);
+                    handleCreateAdjustment(currentVariance, adjustmentNote);
                   }}
-                  disabled={!adjustmentNote.trim()}
                   className="flex-1 px-4 py-3 bg-amber-700 text-white font-semibold hover:shadow-md transition-all rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
-                  Create Adjustment
+                  Got it
                 </button>
               </div>
             </div>
