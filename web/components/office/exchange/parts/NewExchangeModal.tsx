@@ -1,10 +1,10 @@
 "use client";
 
 import { Banknote, Loader2, Users, X } from "lucide-react";
-import { ClientLookupDto, Currency, ExchangeDirection, ExchangeRateDto, ExchangeType, formatNumber } from "@/lib/api";
+import { ClientLookupDto, Currency, ExchangeDirection, ExchangeRateDto, ExchangeType, formatNumber, getClientLookup } from "@/lib/api";
 import { ModalWrapper, foreignTradeCurrencies, formatRate } from "../helpers";
 import { useBaseCurrency } from "@/lib/useBaseCurrency";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function NewExchangeModal({
   rates,
@@ -21,6 +21,19 @@ export function NewExchangeModal({
 }) {
   const { base, baseCode } = useBaseCurrency();
   const [clientId, setClientId] = useState("");
+  // The lookup holds the first 200 clients; typing asks the server for the rest
+  // (client 201 onward could never be chosen here).
+  const [clientQuery, setClientQuery] = useState("");
+  const [found, setFound] = useState<ClientLookupDto[] | null>(null);
+  useEffect(() => {
+    const term = clientQuery.trim();
+    if (term.length < 2) { setFound(null); return; }
+    const t = setTimeout(() => {
+      getClientLookup(term).then((r) => { if (r.success && r.data) setFound(r.data); }).catch(() => {});
+    }, 300);
+    return () => clearTimeout(t);
+  }, [clientQuery]);
+  const shownClients = found ?? clients;
   const [clientName, setClientName] = useState(""); // NEW: For walk-in clients
   const [exchangeType, setExchangeType] = useState<ExchangeType>(
     ExchangeType.Cash,
@@ -126,11 +139,17 @@ export function NewExchangeModal({
                 <span className="text-gray-600 text-xs ml-1">(Optional)</span>
               )}
             </label>
+            <input
+              value={clientQuery}
+              onChange={(e: any) => setClientQuery(e.target.value)}
+              placeholder="Find client by name, phone or code"
+              className="mb-2 rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
             <select
               value={clientId}
               onChange={(e: any) => {
                 setClientId(e.target.value);
-                const c = clients.find((cl) => cl.id === e.target.value);
+                const c = shownClients.find((cl) => cl.id === e.target.value);
                 if (c?.idPassport) setClientIdNumber(c.idPassport);
                 if (e.target.value) setClientName(""); // Clear clientName if selecting a client
               }}
@@ -141,7 +160,7 @@ export function NewExchangeModal({
                   ? "Select client or enter name below..."
                   : "Select client..."}
               </option>
-              {clients.map((c) => (
+              {shownClients.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.fullName} ({c.code})
                 </option>

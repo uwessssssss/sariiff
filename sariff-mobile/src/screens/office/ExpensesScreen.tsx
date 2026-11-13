@@ -207,7 +207,7 @@ export default function ExpensesScreen() {
         title={editingId ? 'Edit Expense' : 'Record Expense'} icon="receipt-outline" iconColor="#DC2626" iconBg="rgba(255,107,129,0.12)">
         <FormSection label="Category (long-press to delete)">
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {categories.map(c => (
+            {categories.filter((c: any) => c.isActive !== false || c.id === categoryId).map(c => (
               <TouchableOpacity key={c.id} style={[styles.chip, categoryId === c.id && styles.chipActive]} onPress={() => setCategoryId(c.id)} onLongPress={() => handleDeleteCategory(c.id, c.name)}>
                 <Text style={[styles.chipText, categoryId === c.id && styles.chipTextActive]}>{c.name}</Text>
               </TouchableOpacity>

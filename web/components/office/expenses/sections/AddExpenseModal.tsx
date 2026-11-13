@@ -53,7 +53,8 @@ export function AddExpenseModal({ vm }: { vm: ExpensesAccountVM }) {
                     className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
                   >
                     <option value="">Select category...</option>
-                    {allCategories.map((cat) => (
+                    {/* switched-off categories take no new expenses (the API refuses them) */}
+                    {allCategories.filter((cat) => cat.isActive !== false).map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
                       </option>

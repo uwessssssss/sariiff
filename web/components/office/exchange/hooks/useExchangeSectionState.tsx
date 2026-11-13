@@ -123,7 +123,8 @@ export function useExchangeSectionState() {
       // Build accounts list
       const allAccounts: Account[] = [];
       if (bankRes.success && bankRes.data) {
-        bankRes.data.forEach((b) => {
+        // switched-off accounts are refused for float moves by the API
+        bankRes.data.filter((b) => b.isActive !== false).forEach((b) => {
           allAccounts.push({
             id: b.id,
             name: `${b.bankName} - ${b.accountNumber}`,
@@ -134,7 +135,7 @@ export function useExchangeSectionState() {
         });
       }
       if (mpesaRes.success && mpesaRes.data) {
-        mpesaRes.data.forEach((m) => {
+        mpesaRes.data.filter((m) => m.isActive !== false).forEach((m) => {
           allAccounts.push({
             id: m.id,
             name: `${providerLabel(m.provider)} - ${m.agentName}`,
