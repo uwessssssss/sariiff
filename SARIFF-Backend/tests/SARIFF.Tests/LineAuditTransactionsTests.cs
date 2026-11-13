@@ -240,7 +240,7 @@ public class LineAuditTransactionsPostgresTests : IClassFixture<PostgresDatabase
             await using var own = _pg.NewContext();
             var svc = new TransactionService(own, NoOp<SARIFF.Core.Interfaces.INotificationService>.Create(),
                 new SystemLogService(own, Microsoft.Extensions.Logging.Abstractions.NullLogger<SystemLogService>.Instance),
-                new ClientAlertHelper(own), NoOp<SARIFF.Core.Interfaces.IBalanceAlertService>.Create());
+                new ClientAlertHelper(own), NoOp<IBalanceAlertService>.Create());
             return (await svc.DeleteAsync(co, txn, user, new DeleteTransactionDto("double click"), amina)).Success;
         }));
 
