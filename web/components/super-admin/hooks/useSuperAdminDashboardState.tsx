@@ -1,6 +1,7 @@
 "use client";
 
 import * as api from "@/lib/superadmin-api";
+import { logout as apiLogout } from "@/lib/api";
 import { type AnalyticsOverview, type AuditLog, type CompanyDetail, type CompanyStats, type SuperAdminDashboard as DashboardData, type FinancialOverview, type IPWhitelist, type LoginHistory, type PagedResult, type PaymentHistory, type SecurityAlert, type SecurityOverview, type SystemHealth, type SystemLog } from "@/lib/superadmin-api";
 import { ModalState, SHAPES, SuperAdminDashboardProps, TabId, asArray, normalise, paged } from "../helpers";
 import { toast } from "sonner";
@@ -195,33 +196,23 @@ export function useSuperAdminDashboardState(prev: { userName: NonNullable<SuperA
     setModals((prev) => ({ ...prev, [modal]: false }));
     setFormData({});
   };
-  // FIXED: Working logout with proper redirect
-  const handleLogout = () => {
-    // Close modal first
+  // Sign out: end the session on the server FIRST (it needs the stored refresh token), then
+  // clear the browser. Clearing first sent the logout with no token and no sign-in, so the
+  // server refused it and the super admin's refresh token stayed valid.
+  const handleLogout = async () => {
     closeModal("logout");
-
-    // Clear all auth data first (regardless of onLogout)
-    localStorage.removeItem("sariff_auth");
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
-    sessionStorage.clear();
-
-    // Show success message
-    toast.success("Logged out successfully");
-
-    // Call auth provider's logout if available
-    if (onLogout) {
-      try {
-        onLogout();
-      } catch (e) {
-        console.error("onLogout failed:", e);
-      }
-    }
-
-    // Force redirect after a brief delay (ensures redirect happens)
-    setTimeout(() => {
+    try {
+      if (onLogout) await onLogout();
+      else await apiLogout();
+    } catch (e) {
+      console.error("Sign-out request failed:", e);
+    } finally {
+      localStorage.removeItem("sariff_auth");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      sessionStorage.clear();
       window.location.href = "/login";
-    }, 150);
+    }
   };
   const viewCompanyDetails = async (id: string) => {
     const res = await api.getCompanyDetails(id);

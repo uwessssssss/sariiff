@@ -278,7 +278,7 @@ export const TABS: { id: TabId; label: string; icon: any; color: string }[] = [
 // Props interface
 export interface SuperAdminDashboardProps {
   userName?: string;
-  onLogout?: () => void;
+  onLogout?: () => void | Promise<void>;
   activeTab?: TabId;
 }
 // ==================== SUB-COMPONENTS ====================
