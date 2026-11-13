@@ -260,8 +260,13 @@ public partial class SuperAdminService
 
             company.SubscriptionPlan = dto.Plan;
             company.MonthlyFee = dto.MonthlyFee;
-            if (dto.ExpiresAt.HasValue)
-                company.SubscriptionExpiresAt = dto.ExpiresAt;
+            // The admin screen sends a calendar day ("2026-12-31"): a subscription runs to the END
+            // of that day in East Africa. Stored as midnight UTC it counted as expired from 03:00
+            // that morning. A value with a time of day is kept as sent.
+            if (dto.ExpiresAt is { } expires)
+                company.SubscriptionExpiresAt = expires.TimeOfDay == TimeSpan.Zero
+                    ? BureauClock.DayStartUtc(expires.Date.AddDays(1)).AddTicks(-1)
+                    : expires;
 
             // No status given: keep the one it has. (It used to become Active, so editing the
             // fee of a cancelled or suspended bureau quietly switched its subscription back on.)
