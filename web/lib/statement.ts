@@ -1,5 +1,33 @@
 import { localDate } from "./dates";
 
+/** Splits one CSV line, keeping commas inside quotes ("1,500.00", "Deposit, Moi Avenue"). */
+export function splitCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "", quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (quoted) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cur += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ",") { out.push(cur.trim()); cur = ""; }
+    else cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+/** A statement amount: "1,500.00" → 1500, "(2,000.00)" or "2,000.00-" → -2000, "KES 50" → 50. */
+export function statementAmount(text: string | undefined): number {
+  const t = (text || "").trim();
+  if (!t) return 0;
+  const negative = /^\(.*\)$/.test(t) || /^-/.test(t) || /-$/.test(t) || /DR$/i.test(t);
+  const n = parseFloat(t.replace(/[^0-9.]/g, ""));
+  if (!Number.isFinite(n)) return 0;
+  return negative ? -n : n;
+}
+
 /** One line of a bank or M-Pesa statement the office uploads for reconciliation. */
 export interface StatementEntry {
   id: string;
@@ -18,14 +46,12 @@ export const parseCSVStatement = (csvContent: string): StatementEntry[] => {
   const lines = csvContent.trim().split("\n");
   if (lines.length < 2) return [];
 
-  const headers = lines[0]
-    .toLowerCase()
-    .split(",")
-    .map((h) => h.trim().replace(/"/g, ""));
+  const headers = splitCsvLine(lines[0].toLowerCase());
   const entries: StatementEntry[] = [];
 
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
+    if (!lines[i].trim()) continue;
+    const values = splitCsvLine(lines[i]);
 
     const dateIdx = headers.findIndex(
       (h) => h.includes("date") || h.includes("time"),
@@ -59,25 +85,25 @@ export const parseCSVStatement = (csvContent: string): StatementEntry[] => {
 
     const debitAmt =
       debitIdx >= 0
-        ? parseFloat(values[debitIdx]?.replace(/[^0-9.-]/g, "") || "0")
+        ? statementAmount(values[debitIdx])
         : 0;
     const creditAmt =
       creditIdx >= 0
-        ? parseFloat(values[creditIdx]?.replace(/[^0-9.-]/g, "") || "0")
+        ? statementAmount(values[creditIdx])
         : 0;
     const singleAmt =
       amountIdx >= 0
-        ? parseFloat(values[amountIdx]?.replace(/[^0-9.-]/g, "") || "0")
+        ? statementAmount(values[amountIdx])
         : 0;
 
     let amount = 0;
     let type: "credit" | "debit" = "credit";
 
-    if (debitAmt > 0) {
-      amount = debitAmt;
+    if (debitAmt !== 0) {
+      amount = Math.abs(debitAmt);
       type = "debit";
-    } else if (creditAmt > 0) {
-      amount = creditAmt;
+    } else if (creditAmt !== 0) {
+      amount = Math.abs(creditAmt);
       type = "credit";
     } else if (singleAmt !== 0) {
       amount = Math.abs(singleAmt);
@@ -94,7 +120,7 @@ export const parseCSVStatement = (csvContent: string): StatementEntry[] => {
         reference: refIdx >= 0 ? values[refIdx] : undefined,
         balance:
           balanceIdx >= 0
-            ? parseFloat(values[balanceIdx]?.replace(/[^0-9.-]/g, "") || "0")
+            ? statementAmount(values[balanceIdx])
             : undefined,
         matched: false,
       });
