@@ -7,7 +7,7 @@ TSC="$WEB/node_modules/.bin/tsc"
 [ -x "$TSC" ] || { echo "FAIL  web node_modules missing (run npm ci in $WEB first)"; exit 1; }
 T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/src/web" "$T/src/mob/types" "$T/src/mob/utils"
-cp "$WEB"/lib/{dates,moneyflow,useBaseCurrency,whatsapp,print}.ts "$T/src/web/"
+cp "$WEB"/lib/{dates,moneyflow,useBaseCurrency,whatsapp,print,statement}.ts "$T/src/web/"
 cp -r "$WEB/lib/api" "$T/src/web/api"   # the API client is a folder (one file per area + index)
 cp "$MOB/src/types/index.ts" "$T/src/mob/types/index.ts"
 cp "$MOB"/src/utils/{dates,moneyflow,amount}.ts "$T/src/mob/utils/"
@@ -19,11 +19,12 @@ J
 mkdir -p "$T/out/node_modules/@/lib" "$T/out/node_modules/react"
 echo 'module.exports = require("../../../web/api");' > "$T/out/node_modules/@/lib/api.js"
 echo 'module.exports = { useState: v => [typeof v === "function" ? v() : v, () => {}], useEffect() {}, useMemo: f => f(), useCallback: f => f };' > "$T/out/node_modules/react/index.js"
-cp "$HERE/logic.test.js" "$HERE/dashboard.test.js" "$HERE/tabs.test.js" "$HERE/amount.test.js" "$T/out/"
+cp "$HERE/logic.test.js" "$HERE/dashboard.test.js" "$HERE/tabs.test.js" "$HERE/amount.test.js" "$HERE/statement.test.js" "$T/out/"
 cd "$T/out"
 rc=0
 echo "-- app logic (money flow, currencies, wallets, formatting, totals, dates, printing)"; TZ=Africa/Nairobi node logic.test.js || rc=1
 echo "-- dashboard holdings + clock"; TZ=Africa/Nairobi node dashboard.test.js || rc=1
 echo "-- two tabs, one sign-in (refresh race)"; node tabs.test.js || rc=1
 echo "-- typed amounts on the phone"; node amount.test.js || rc=1
+echo "-- bank statement upload"; TZ=Africa/Nairobi node statement.test.js || rc=1
 exit $rc
