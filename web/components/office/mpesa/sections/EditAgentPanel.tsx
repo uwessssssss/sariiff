@@ -2,11 +2,11 @@
 
 import { Activity, Calendar, Edit3, Hash, Loader2, Phone, Smartphone, Wallet, X, Zap } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { MOBILE_MONEY_PROVIDERS, currencyCode } from "@/lib/api";
+import { MOBILE_MONEY_PROVIDERS, currencyCode, walletCurrency } from "@/lib/api";
 import { type MPesaAccountsVM } from "../useMPesaAccounts";
 
 export function EditAgentPanel({ vm }: { vm: MPesaAccountsVM }) {
-  const { editFormData, handleUpdateAgent, isSubmitting, selectedAgent, setEditFormData, setSelectedAgent, setShowEditAgent, showEditAgent } = vm;
+  const { base, editFormData, handleUpdateAgent, networks, isSubmitting, selectedAgent, setEditFormData, setSelectedAgent, setShowEditAgent, showEditAgent } = vm;
   return (
     <AnimatePresence>
         {showEditAgent && selectedAgent && (
@@ -80,7 +80,7 @@ export function EditAgentPanel({ vm }: { vm: MPesaAccountsVM }) {
                           Opening Balance
                         </p>
                         <p className="text-xs font-semibold text-emerald-700">
-                          {selectedAgent.openingBalance.toLocaleString()}
+                          {currencyCode(selectedAgent.currency)} {selectedAgent.openingBalance.toLocaleString()}
                         </p>
                       </div>
                       <div className="ml-auto text-right">
@@ -215,9 +215,11 @@ export function EditAgentPanel({ vm }: { vm: MPesaAccountsVM }) {
                           onChange={(e: any) => setEditFormData({ ...editFormData, provider: parseInt(e.target.value) })}
                           className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         >
-                          {MOBILE_MONEY_PROVIDERS.map((p) => (
+                          {/* Same list as Add: networks this bureau can hold, each with its
+                              wallet currency, plus the agent's current network. */}
+                          {MOBILE_MONEY_PROVIDERS.filter((p) => p.value === selectedAgent.provider || networks.some((n) => n.value === p.value)).map((p) => (
                             <option key={p.value} value={p.value}>
-                              {p.label}
+                              {p.label} ({currencyCode(walletCurrency(p.value, base))})
                             </option>
                           ))}
                         </select>

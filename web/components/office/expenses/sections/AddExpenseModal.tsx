@@ -6,7 +6,7 @@ import { formatMoney } from "@/lib/api";
 import { type ExpensesAccountVM } from "../useExpensesAccount";
 
 export function AddExpenseModal({ vm }: { vm: ExpensesAccountVM }) {
-  const { allCategories, availableAccounts, base, currencyOk, formData, handleCreateExpense, hasBankAccounts, hasCashAccounts, hasMpesaAccounts, isSubmitting, setFormData, setShowAddExpense, showAddExpense } = vm;
+  const { allCategories, availableAccounts, base, currencyOk, formData, handleCreateExpense, hasBankAccounts, hasCashAccounts, hasMpesaAccounts, isSubmitting, mpesaAgents, setFormData, setShowAddExpense, showAddExpense } = vm;
   return (
     <>
 {showAddExpense && (
@@ -110,20 +110,22 @@ export function AddExpenseModal({ vm }: { vm: ExpensesAccountVM }) {
                           ...formData,
                           currency: parseInt(e.target.value),
                           paymentAccountId: "",
+                          // Mobile money stays chosen only if some wallet holds the new
+                          // currency (M-Pesa holds KES, MTN/Airtel UG hold UGX).
                           paymentAccountType:
-                            // M-Pesa (type 2) is KES-only
-                            parseInt(e.target.value) !== 0 &&
-                            formData.paymentAccountType === 2
+                            formData.paymentAccountType === 2 &&
+                            !mpesaAgents.some((a: any) => a.isActive !== false && (a.currency ?? base) === parseInt(e.target.value))
                               ? 0
                               : formData.paymentAccountType,
                         })
                       }
                       className="w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
                     >
-                      <option value={0}>KES - Kenyan Shilling</option>
-                      <option value={1}>USD - US Dollar</option>
+                      {/* Only the currencies this bureau trades (no KES in a UGX-only bureau, etc.) */}
+                      {currencyOk("KES") && <option value={0}>KES - Kenyan Shilling</option>}
+                      {currencyOk("USD") && <option value={1}>USD - US Dollar</option>}
                       {currencyOk("UGX") && <option value={2}>UGX - Ugandan Shilling</option>}
-                      <option value={3}>EUR - Euro</option>
+                      {currencyOk("EUR") && <option value={3}>EUR - Euro</option>}
                     </select>
                   </div>
                 </div>
@@ -178,7 +180,6 @@ export function AddExpenseModal({ vm }: { vm: ExpensesAccountVM }) {
                             ...formData,
                             paymentAccountType: type,
                             paymentAccountId: "",
-                            ...(type === 2 ? { currency: base } : {}),
                           })
                         }
                         disabled={disabled}

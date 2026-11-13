@@ -60,8 +60,8 @@ export function DeleteAgentPanel({ vm }: { vm: MPesaAccountsVM }) {
                 Are you sure you want to delete this agent?
               </h4>
               <p className="text-sm text-slate-600 text-center mb-4">
-                This will permanently remove the agent and all associated data
-                from the system.
+                Only an agent with no transactions can be deleted. To stop
+                using an agent with history, set it to Inactive instead.
               </p>
 
               {/* Agent Details */}

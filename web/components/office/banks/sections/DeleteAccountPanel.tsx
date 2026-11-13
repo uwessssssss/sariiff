@@ -56,8 +56,8 @@ export function DeleteAccountPanel({ vm }: { vm: BankAccountsVM }) {
                 Are you sure you want to delete this bank account?
               </h4>
               <p className="text-sm text-slate-600 text-center mb-4">
-                This will permanently remove the account and all associated
-                data.
+                Only an account with no transactions can be deleted. To stop
+                using an account with history, set it to Inactive instead.
               </p>
 
               <div className="bg-red-50 border border-red-200 p-4 space-y-2 rounded-xl">

@@ -3,10 +3,11 @@
 import { AlertCircle, Clock, Hash, Loader2, Mail, Phone, Trash2, UserCheck, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ClientType, currencyCode, formatMoney } from "@/lib/api";
+import { clientCurrencyLines } from "../helpers";
 import { type ClientManagementVM } from "../useClientManagement";
 
 export function DeleteConfirmPanel({ vm }: { vm: ClientManagementVM }) {
-  const { handleDeleteClient, isSubmitting, selectedClient, setShowDeleteConfirm, showDeleteConfirm } = vm;
+  const { handleDeleteClient, homeCurrency, isSubmitting, selectedClient, setShowDeleteConfirm, showDeleteConfirm } = vm;
   return (
     <AnimatePresence>
         {showDeleteConfirm && selectedClient && (
@@ -48,7 +49,7 @@ export function DeleteConfirmPanel({ vm }: { vm: ClientManagementVM }) {
                         Delete Client
                       </h2>
                       <p className="text-white text-xs font-medium">
-                        This action is permanent and cannot be undone
+                        This removes the client from your list
                       </p>
                       <div className="flex items-center gap-2 mt-3">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-red-800 border border-white/30 text-xs font-semibold text-white rounded-lg">
@@ -107,18 +108,15 @@ export function DeleteConfirmPanel({ vm }: { vm: ClientManagementVM }) {
               {/* Account Balances */}
               <div className="px-6 py-4 bg-white border-b border-slate-200">
                 <p className="text-xs font-semibold text-slate-500 mb-3">
-                  Account Balances to be Deleted
+                  Current balances (every one must be zero to delete)
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { currency: 0, balance: selectedClient.balanceKES ?? 0 },
-                    { currency: 1, balance: selectedClient.balanceUSD ?? 0 },
-                    ...(selectedClient.otherBalances || []).map((b: any) => ({
-                      currency: b.currency,
-                      balance: b.balance ?? 0,
-                    })),
-                  ]
-                    .filter((b, i) => i < 2 || b.balance !== 0)
+                  {(() => {
+                    // Every currency this client holds (UGX, EUR, ... too), not a
+                    // fixed KES/USD pair that a bureau without KES never uses.
+                    const lines = clientCurrencyLines(selectedClient).map((l) => ({ currency: l.currency, balance: l.balance }));
+                    return lines.length ? lines : [{ currency: homeCurrency, balance: 0 }];
+                  })()
                     .map((b) => (
                       <div key={b.currency} className="rounded-lg bg-slate-50 p-3 border border-slate-200">
                         <p className="text-xs font-semibold text-slate-600 mb-1.5">
@@ -147,29 +145,32 @@ export function DeleteConfirmPanel({ vm }: { vm: ClientManagementVM }) {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-red-800 mb-1">
-                        Warning: Permanent Deletion
+                        Before you delete
                       </h4>
                       <p className="text-xs text-red-700 leading-relaxed">
-                        You are about to permanently delete{" "}
                         <span className="font-semibold text-red-900">
                           {selectedClient.fullName}
-                        </span>
-                        . This will remove:
+                        </span>{" "}
+                        will be removed from the client list and can no longer sign in.
+                        The system refuses the delete if:
                       </p>
                       <ul className="mt-2 space-y-1">
                         <li className="flex items-center gap-2 text-xs text-red-700">
                           <X className="w-3 h-3 text-red-500" />
-                          All account information
+                          Any balance is not zero
                         </li>
                         <li className="flex items-center gap-2 text-xs text-red-700">
                           <X className="w-3 h-3 text-red-500" />
-                          Transaction history
+                          There are transactions in the last 30 days
                         </li>
                         <li className="flex items-center gap-2 text-xs text-red-700">
                           <X className="w-3 h-3 text-red-500" />
-                          Balance records
+                          The client has exchange history
                         </li>
                       </ul>
+                      <p className="mt-2 text-xs text-red-700 leading-relaxed">
+                        Past transactions stay on the books for the audit trail.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -196,7 +197,7 @@ export function DeleteConfirmPanel({ vm }: { vm: ClientManagementVM }) {
                   ) : (
                     <>
                       <Trash2 className="w-4 h-4" />
-                      Delete Permanently
+                      Delete client
                     </>
                   )}
                 </button>

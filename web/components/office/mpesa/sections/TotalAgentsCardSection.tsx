@@ -142,7 +142,7 @@ export function TotalAgentsCardSection({ vm }: { vm: MPesaAccountsVM }) {
             <div className="mt-3 pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500 font-semibold">
-                  Debit - Credit
+                  Opening + money in − money out
                 </span>
                 <Activity className="w-4 h-4 text-blue-600" />
               </div>

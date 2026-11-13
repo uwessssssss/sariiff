@@ -54,8 +54,8 @@ export function DeleteModal({ vm }: { vm: ExpensesAccountVM }) {
                   </h4>
                   <ul className="space-y-2">
                     {[
-                      "Expense record will be permanently deleted",
-                      "Associated transaction will be reversed",
+                      "The expense is removed from the expense list",
+                      "A reversal entry is posted; the original stays on the account statement marked REVERSED",
                       `${expenseToDelete.currency} ${formatNumber(
                         expenseToDelete.amount,
                       )} will be restored to the payment account`,
