@@ -72,4 +72,25 @@ public class LineAuditControllersTests
         var recent = (await b.Transactions().GetRecentAsync(b.Co, 1_000_000)).Data!;
         Assert.True(recent.Count <= 100, $"{recent.Count} rows");
     }
+    // M11
+    [Fact]
+    public async Task The_transaction_search_box_finds_by_code_reference_or_description()
+    {
+        var b = await CreateAsync();
+        var rent = TestDb.Txn(DateTime.UtcNow.AddHours(-2), TransactionType.Credit, 100, Currency.KES, AccountType.Cash, b.Cash.Id, AccountType.Bank, b.Bank.Id, companyId: b.Co);
+        rent.Description = "October rent";
+        var fuel = TestDb.Txn(DateTime.UtcNow.AddHours(-1), TransactionType.Credit, 40, Currency.KES, AccountType.Cash, b.Cash.Id, AccountType.Bank, b.Bank.Id, companyId: b.Co);
+        fuel.Description = "Generator diesel";
+        b.Db.Transactions.AddRange(rent, fuel);
+        await b.Db.SaveChangesAsync();
+        var txns = Signed(new TransactionController(b.Transactions()), b.Co, b.UserId);
+
+        // The phone's search box sends "search"; the API ignored it and listed everything.
+        var r = (OkObjectResult)await txns.GetAll(1, 20, null, null, null, null, " RENT ");
+        var items = ((ApiResponse<PagedResult<TransactionResponseDto>>)r.Value!).Data!.Items;
+        Assert.Equal("October rent", Assert.Single(items).Description);
+
+        var byCode = (OkObjectResult)await txns.GetAll(1, 20, null, null, null, null, fuel.Code);
+        Assert.Single(((ApiResponse<PagedResult<TransactionResponseDto>>)byCode.Value!).Data!.Items);
+    }
 }

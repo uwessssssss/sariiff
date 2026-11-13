@@ -37,7 +37,7 @@ public class TransactionController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, [FromQuery] TransactionType? type = null, [FromQuery] Currency? currency = null)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, [FromQuery] TransactionType? type = null, [FromQuery] Currency? currency = null, [FromQuery] string? search = null)
     {
         if (!CompanyId.HasValue) return Unauthorized();
         var filter = new ReportFilterDto(startDate, endDate, type, currency, null);

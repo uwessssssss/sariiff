@@ -69,7 +69,8 @@ public record ReportFilterDto(
     TransactionType? TransactionType,
     Currency? Currency,
     AccountType? AccountType,
-    ReconciliationStatus? ReconciliationStatus = null
+    ReconciliationStatus? ReconciliationStatus = null,
+    string? Search = null   // code, reference or description
 );
 
 public record DashboardStatsDto(
