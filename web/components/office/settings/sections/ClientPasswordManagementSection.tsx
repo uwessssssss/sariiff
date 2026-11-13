@@ -2,6 +2,7 @@
 
 import { Key, Lock, RefreshCw, Search, User } from "lucide-react";
 import { type OfficeSettingsVM } from "../useOfficeSettings";
+import { formatMoney } from "@/lib/api";
 
 export function ClientPasswordManagementSection({ vm }: { vm: OfficeSettingsVM }) {
   const { filteredClients, getClientName, handleSetPassword, loading, searchTerm, setSearchTerm } = vm;
@@ -59,10 +60,7 @@ export function ClientPasswordManagementSection({ vm }: { vm: OfficeSettingsVM }
                     Phone
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#334155]">
-                    Balance (KES)
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-[#334155]">
-                    Balance (USD)
+                    Balances
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wide text-[#334155]">
                     Actions
@@ -86,15 +84,16 @@ export function ClientPasswordManagementSection({ vm }: { vm: OfficeSettingsVM }
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                       {client.whatsAppNumber || "-"}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-emerald-700">
-                      {(client.balanceKES ?? 0).toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-blue-600">
-                      {(client.balanceUSD ?? 0).toLocaleString("en-US", {
-                        minimumFractionDigits: 2,
-                      })}
+                    {/* Every currency held (it showed KES and USD only: a Ugandan client's UGX was missing) */}
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold text-slate-800">
+                      {(() => {
+                        const held = [
+                          { c: 0, v: client.balanceKES ?? 0 },
+                          { c: 1, v: client.balanceUSD ?? 0 },
+                          ...(((client as any).otherBalances || []) as any[]).map((b) => ({ c: b.currency, v: b.balance ?? 0 })),
+                        ].filter((x) => x.v);
+                        return held.length ? held.map((x) => formatMoney(x.v, x.c)).join(" · ") : "—";
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <button

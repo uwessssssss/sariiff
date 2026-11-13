@@ -1,8 +1,8 @@
 "use client";
 
-import { AlertCircle, Banknote, Bell, Calendar, CheckCircle, ChevronRight, DollarSign, Globe, Loader2, Lock, LogOut, Menu, MessageCircle, Receipt, Shield, Star, User } from "lucide-react";
+import { AlertCircle, Banknote, Bell, Calendar, CheckCircle, ChevronRight, Globe, Loader2, Lock, LogOut, Menu, MessageCircle, Receipt, Shield, Star, User } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ClientType, Currency } from "@/lib/api";
+import { ClientType } from "@/lib/api";
 import { ClientUserDashboardProps, SUPPORT_WHATSAPP, formatCurrency, formatDate, getClientTypeLabel } from "./helpers";
 import { LinkedBureausCard } from "@/components/LinkedBureaus";
 import { SarifMark } from "../SarifMark";
@@ -267,7 +267,9 @@ export function ClientUserDashboard({
                   </div>
                 </div>
 
-                {/* Account Balances */}
+                {/* Account Balances: every currency the client holds, home currency of the
+                    bureau included (a Ugandan client saw "KES Balance 0" and "USD Balance 0"
+                    first and their UGX balance under "Other Currencies"). */}
                 <div className="rounded-xl bg-white  border border-slate-200 hover:border-emerald-200 transition-all ">
                   <div className="p-6 border-b border-slate-200">
                     <h3 className="text-xl font-semibold     text-emerald-700">
@@ -278,77 +280,31 @@ export function ClientUserDashboard({
                     </p>
                   </div>
                   <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-6  bg-emerald-50  border border-emerald-200">
-                      <div className="flex items-center gap-3 mb-3">
-                        <Banknote className="w-8 h-8 text-emerald-600" />
-                        <span className="text-sm font-bold text-emerald-700">
-                          KES Balance
-                        </span>
-                      </div>
-                      <p className="text-2xl font-semibold     text-slate-900 tracking-tight">
-                        {formatCurrency(profile?.balanceKES ?? 0, Currency.KES)}
-                      </p>
-                      <p className="text-xs text-slate-600 mt-2">
-                        Opening:{" "}
-                        {formatCurrency(
-                          profile?.openingBalanceKES ?? 0,
-                          Currency.KES,
-                        )}
-                      </p>
-                    </div>
-
-                    <div className="p-6  bg-violet-50  border border-blue-200">
-                      <div className="flex items-center gap-3 mb-3">
-                        <DollarSign className="w-8 h-8 text-blue-600" />
-                        <span className="text-sm font-bold text-blue-700">
-                          USD Balance
-                        </span>
-                      </div>
-                      <p className="text-2xl font-semibold     text-slate-900 tracking-tight">
-                        {formatCurrency(profile?.balanceUSD ?? 0, Currency.USD)}
-                      </p>
-                      <p className="text-xs text-slate-600 mt-2">
-                        Opening:{" "}
-                        {formatCurrency(
-                          profile?.openingBalanceUSD ?? 0,
-                          Currency.USD,
-                        )}
-                      </p>
-                    </div>
+                    {(() => {
+                      const rows = [
+                        { code: "KES", balance: profile?.balanceKES ?? 0, opening: profile?.openingBalanceKES ?? 0, active: !!(profile?.balanceKES || profile?.totalInKES || profile?.totalOutKES) },
+                        { code: "USD", balance: profile?.balanceUSD ?? 0, opening: profile?.openingBalanceUSD ?? 0, active: !!(profile?.balanceUSD || profile?.totalInUSD || profile?.totalOutUSD) },
+                        ...((profile?.otherBalances || []) as any[]).map((b) => ({
+                          code: b.currencyCode, balance: b.balance ?? 0, opening: b.openingBalance ?? 0,
+                          active: !!(b.balance || b.totalIn || b.totalOut),
+                        })),
+                      ];
+                      const held = rows.filter((r) => r.active);
+                      return (held.length ? held : rows.slice(0, 1)).map((r) => (
+                        <div key={r.code} className="p-6  bg-emerald-50  border border-emerald-200 rounded-lg">
+                          <div className="flex items-center gap-3 mb-3">
+                            <Banknote className="w-8 h-8 text-emerald-600" />
+                            <span className="text-sm font-bold text-emerald-700">{r.code} Balance</span>
+                          </div>
+                          <p className="text-2xl font-semibold text-slate-900 tracking-tight">
+                            {formatCurrency(r.balance, r.code)}
+                          </p>
+                          <p className="text-xs text-slate-600 mt-2">Opening: {formatCurrency(r.opening, r.code)}</p>
+                        </div>
+                      ));
+                    })()}
                   </div>
                 </div>
-
-                {/* Balances in other currencies (UGX, EUR, ...) — only if held */}
-                {(profile?.otherBalances || []).length > 0 && (
-                  <div className="rounded-xl bg-white  border border-blue-200  p-6">
-                    <h3 className="text-sm font-bold text-blue-700   mb-3">
-                      Other Currencies
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {(profile?.otherBalances || []).map((b: any) => (
-                        <div
-                          key={b.currencyCode || b.currency}
-                          className="flex items-center justify-between border border-blue-100 bg-blue-50/50 p-4"
-                        >
-                          <div>
-                            <p className="text-xs font-bold text-blue-600">
-                              {b.currencyCode}
-                            </p>
-                            <p className="text-xs text-slate-600">
-                              In: {(b.totalIn ?? 0).toLocaleString()} · Out:{" "}
-                              {(b.totalOut ?? 0).toLocaleString()}
-                            </p>
-                          </div>
-                          <p
-                            className={`text-xl font-bold ${(b.balance ?? 0) < 0 ? "text-red-600" : "text-slate-900"}`}
-                          >
-                            {formatCurrency(b.balance ?? 0, b.currencyCode)}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Phone login: bureaus linked to this phone (hidden for code+password sign-ins) */}
                 {profile?.clientType === ClientType.Permanent && (
