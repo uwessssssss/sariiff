@@ -5,6 +5,7 @@ import { ModalWrapper, foreignTradeCurrencies, formatRate } from "../helpers";
 import { X } from "lucide-react";
 import { useBaseCurrency } from "@/lib/useBaseCurrency";
 import { useState } from "react";
+import { useProfitPreview } from "./useProfitPreview";
 
 // Calculator Modal
 export function CalculatorModal({
@@ -30,7 +31,6 @@ export function CalculatorModal({
     direction === ExchangeDirection.UsdToKes
       ? currentRate.buyRate
       : currentRate.sellRate;
-  const spread = currentRate.sellRate - currentRate.buyRate;
   const amountNum = parseFloat(amount) || 0;
 
   const receivedAmount =
@@ -40,10 +40,8 @@ export function CalculatorModal({
         : amountNum / (rate || 1)) * 100,
     ) / 100;
 
-  const profit =
-    direction === ExchangeDirection.UsdToKes
-      ? spread * amountNum
-      : spread * receivedAmount;
+  // What the server will book: nothing on a purchase, average-cost profit on a sale.
+  const profit = useProfitPreview(amountNum, direction, foreignCurrency);
 
   return (
     <ModalWrapper onClose={onClose}>
@@ -101,7 +99,7 @@ export function CalculatorModal({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {direction === ExchangeDirection.UsdToKes
                 ? `${fx} amount`
-                : "{baseCode} amount"}
+                : `${baseCode} amount`}
             </label>
             <input
               type="number"
@@ -127,8 +125,12 @@ export function CalculatorModal({
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-200">
               <span className="text-gray-600">Your Profit</span>
-              <span className="font-semibold text-emerald-700">
-                {baseCode} {formatNumber(profit)}
+              <span className={`font-semibold ${profit != null && profit < 0 ? "text-red-600" : "text-emerald-700"}`}>
+                {direction === ExchangeDirection.UsdToKes
+                  ? "None on a purchase (booked when sold)"
+                  : profit == null
+                    ? "…"
+                    : `${baseCode} ${formatNumber(profit)}`}
               </span>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { ExchangeRateDto } from "@/lib/api";
 import { Loader2, X } from "lucide-react";
-import { ModalWrapper, foreignTradeCurrencies } from "../helpers";
+import { ModalWrapper, foreignTradeCurrencies, formatRate } from "../helpers";
 import { useBaseCurrency } from "@/lib/useBaseCurrency";
 import { useState } from "react";
 
@@ -12,12 +12,13 @@ import { useState } from "react";
 
 // Set Rate Modal
 export function SetRateModal({
-  currentRate,
+  rates,
   onClose,
   onSubmit,
   loading,
 }: {
-  currentRate: ExchangeRateDto | null;
+  /** The live rate of every foreign currency that has one (USD, EUR, UGX/KES, ...). */
+  rates: Record<number, ExchangeRateDto>;
   onClose: () => void;
   onSubmit: (buyRate: number, sellRate: number, foreignCurrency: number) => void;
   loading: boolean;
@@ -30,12 +31,17 @@ export function SetRateModal({
   const activeCode =
     FOREIGN_CURRENCIES.find((c) => c.value === foreignCurrency)?.code || "USD";
 
-  const [buyRate, setBuyRate] = useState(
-    currentRate?.buyRate?.toString() || "130",
-  );
-  const [sellRate, setSellRate] = useState(
-    currentRate?.sellRate?.toString() || "140",
-  );
+  // Start from the chosen currency's live rate. It used to start from the USD rate
+  // (or a made-up 130/140) whatever the currency, so switching to EUR and pressing
+  // Set Rate saved the USD figures as the EUR rate — and 130/140 is no rate at all
+  // in a UGX bureau. With no rate yet the boxes start empty.
+  const [buyRate, setBuyRate] = useState(rates[1]?.buyRate?.toString() ?? "");
+  const [sellRate, setSellRate] = useState(rates[1]?.sellRate?.toString() ?? "");
+  const pickCurrency = (c: number) => {
+    setForeignCurrency(c);
+    setBuyRate(rates[c]?.buyRate?.toString() ?? "");
+    setSellRate(rates[c]?.sellRate?.toString() ?? "");
+  };
 
   const spread = parseFloat(sellRate || "0") - parseFloat(buyRate || "0");
   const isValid =
@@ -62,7 +68,7 @@ export function SetRateModal({
                 <button
                   key={c.value}
                   type="button"
-                  onClick={() => setForeignCurrency(c.value)}
+                  onClick={() => pickCurrency(c.value)}
                   className={`rounded-lg px-3 py-2 text-sm font-semibold border transition-colors ${
                     foreignCurrency === c.value
                       ? "bg-blue-600 text-white border-blue-600"
@@ -87,7 +93,7 @@ export function SetRateModal({
               value={buyRate}
               onChange={(e: any) => setBuyRate(e.target.value)}
               className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="130.00"
+              placeholder="0.00"
             />
             <p className="text-xs text-gray-600 mt-1">
               Rate when client sells {activeCode} to you
@@ -103,7 +109,7 @@ export function SetRateModal({
               value={sellRate}
               onChange={(e: any) => setSellRate(e.target.value)}
               className="rounded-lg w-full px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="140.00"
+              placeholder="0.00"
             />
             <p className="text-xs text-gray-600 mt-1">
               Rate when client buys {activeCode} from you
@@ -114,7 +120,7 @@ export function SetRateModal({
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Spread:</span>
                 <span className="font-semibold text-blue-700">
-                  {spread.toFixed(2)} {baseCode}
+                  {formatRate(spread)} {baseCode}
                 </span>
               </div>
               <p className="text-xs text-gray-600 mt-1">

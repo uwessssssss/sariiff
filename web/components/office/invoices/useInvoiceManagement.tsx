@@ -67,6 +67,7 @@ export function useInvoiceManagement() {
     })),
     subtotal: inv.subtotal,
     tax: inv.taxAmount,
+    taxRate: inv.taxRate ?? 0,
     discount: inv.discountAmount,
     total: inv.total,
     status: mapStatus(inv.status, inv.dueDate),

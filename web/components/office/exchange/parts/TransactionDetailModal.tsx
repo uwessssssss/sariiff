@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Copy, Loader2, X } from "lucide-react";
 import { ExchangeResponseDto, ExchangeType, currencyCode, formatCurrency } from "@/lib/api";
-import { ModalWrapper, formatDateTime } from "../helpers";
+import { ModalWrapper, formatDateTime, formatRate } from "../helpers";
 import { toast } from "sonner";
 import { useState } from "react";
 
@@ -30,12 +30,15 @@ export function TransactionDetailModal({
     )}\nReceived: ${formatCurrency(
       transaction.amountReceived,
       transaction.currencyReceived,
-    )}\nRate: ${transaction.exchangeRate}\nProfit: ${formatCurrency(
+    )}\nRate: ${formatRate(transaction.exchangeRate)}\nProfit: ${formatCurrency(
       transaction.profit,
       transaction.profitCurrency,
     )}`;
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard");
+    // Clipboard can be refused (no permission, insecure page): say so instead of a false "Copied".
+    navigator.clipboard.writeText(text).then(
+      () => toast.success("Copied to clipboard"),
+      () => toast.error("Couldn't copy — select and copy the details by hand"),
+    );
   };
 
   return (
@@ -115,7 +118,7 @@ export function TransactionDetailModal({
             <div className="flex justify-between">
               <span className="text-gray-600">Rate</span>
               <span className="font-medium">
-                {transaction.exchangeRate.toFixed(2)}
+                {formatRate(transaction.exchangeRate)}
               </span>
             </div>
             <div className={`flex justify-between p-2 -mx-2 ${transaction.profit < 0 ? "bg-red-50" : transaction.profit > 0 ? "bg-emerald-50" : "bg-slate-50"}`}>

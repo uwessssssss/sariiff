@@ -27,7 +27,7 @@ import { RateHistoryModal } from "./sections/RateHistoryModal";
 
 export function ExchangeSection() {
   const vm = useExchangeSection();
-  const { accounts, actionLoading, alerts, baseCode, clients, currentRate, exchShareModal, exchangeFloat, executeVoid, handleFundFloat, handleNewExchange, handleRecordClosing, handleRecordOpening, handleSetRate, handleSettleProfit, handleVoidTransaction, handleWithdrawFloat, loading, pendingExchange, pendingVoid, ratesByCurrency, selectedTransaction, setExchShareModal, setFloatHistory, setPendingExchange, setPendingVoid, setSelectedTransaction, setShowCalculatorModal, setShowDayCloseModal, setShowFloatHistory, setShowFundFloatModal, setShowNewExchangeModal, setShowPin, setShowRateHistoryModal, setShowSetRateModal, setShowSettleProfitModal, setShowTransactionModal, setShowUsdPositionModal, setShowWithdrawFloatModal, showCalculatorModal, showDayCloseModal, showFundFloatModal, showNewExchangeModal, showPin, showSetRateModal, showSettleProfitModal, showTransactionModal, showUsdPositionModal, showWithdrawFloatModal, todaySummary, usdPosition } = vm;
+  const { accounts, actionLoading, alerts, baseCode, clients, exchShareModal, exchangeFloat, executeVoid, handleFundFloat, handleNewExchange, handleRecordClosing, handleRecordOpening, handleSetRate, handleSettleProfit, handleVoidTransaction, handleWithdrawFloat, loading, pendingExchange, pendingVoid, ratesByCurrency, selectedTransaction, setExchShareModal, setFloatHistory, setPendingExchange, setPendingVoid, setSelectedTransaction, setShowCalculatorModal, setShowDayCloseModal, setShowFloatHistory, setShowFundFloatModal, setShowNewExchangeModal, setShowPin, setShowRateHistoryModal, setShowSetRateModal, setShowSettleProfitModal, setShowTransactionModal, setShowUsdPositionModal, setShowWithdrawFloatModal, showCalculatorModal, showDayCloseModal, showFundFloatModal, showNewExchangeModal, showPin, showSetRateModal, showSettleProfitModal, showTransactionModal, showUsdPositionModal, showWithdrawFloatModal, todaySummary, usdPosition } = vm;
   // ==============================================
   // Loading State
   // ==============================================
@@ -186,7 +186,7 @@ export function ExchangeSection() {
         {/* Set Rate Modal */}
         {showSetRateModal && (
           <SetRateModal
-            currentRate={currentRate}
+            rates={ratesByCurrency}
             onClose={() => setShowSetRateModal(false)}
             onSubmit={handleSetRate}
             loading={actionLoading}

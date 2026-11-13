@@ -21,6 +21,8 @@ export interface Invoice {
   items: InvoiceItem[];
   subtotal: number;
   tax: number;
+  /** Tax rate in percent, as entered (tax above is the amount). */
+  taxRate: number;
   discount: number;
   total: number;
   status: "draft" | "sent" | "paid" | "overdue" | "cancelled";

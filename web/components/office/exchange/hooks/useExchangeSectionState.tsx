@@ -216,7 +216,8 @@ export function useExchangeSectionState() {
     try {
       const res = await setExchangeRate({ buyRate, sellRate, foreignCurrency });
       if (res.success && res.data) {
-        setCurrentRate(res.data);
+        // The Current Rate card is the USD rate: a EUR rate must not land there.
+        if (foreignCurrency === Currency.USD) setCurrentRate(res.data);
         toast.success(
           `${currencyCode(foreignCurrency)} exchange rate updated successfully`,
         );

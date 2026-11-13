@@ -257,16 +257,15 @@ export function NoInvoicesFoundSection({ vm }: { vm: InvoiceManagementVM }) {
                                   dueDate: localDate(new Date(
                                     Date.now() + 30 * 24 * 60 * 60 * 1000,
                                   )),
-                                  currency:
-                                    invoice.currency === "KES"
-                                      ? Currency.KES
-                                      : Currency.USD,
+                                  // Same currency as the original: a UGX or EUR invoice
+                                  // used to come back as a USD one.
+                                  currency: { KES: Currency.KES, USD: Currency.USD, UGX: Currency.UGX, EUR: Currency.EUR }[invoice.currency],
                                   items: invoice.items.map((item) => ({
                                     description: item.description,
                                     quantity: item.quantity,
                                     unitPrice: item.unitPrice,
                                   })),
-                                  taxRate: 0,
+                                  taxRate: invoice.taxRate, // the copy used to drop the tax
                                   discountAmount: invoice.discount,
                                   notes: invoice.notes,
                                 };

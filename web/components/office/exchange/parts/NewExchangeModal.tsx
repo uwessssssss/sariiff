@@ -5,6 +5,7 @@ import { ClientLookupDto, Currency, ExchangeDirection, ExchangeRateDto, Exchange
 import { ModalWrapper, foreignTradeCurrencies, formatRate } from "../helpers";
 import { useBaseCurrency } from "@/lib/useBaseCurrency";
 import { useEffect, useState } from "react";
+import { useProfitPreview } from "./useProfitPreview";
 
 export function NewExchangeModal({
   rates,
@@ -60,7 +61,6 @@ export function NewExchangeModal({
     direction === ExchangeDirection.UsdToKes
       ? currentRate?.buyRate
       : currentRate?.sellRate;
-  const spread = currentRate ? currentRate.sellRate - currentRate.buyRate : 0;
 
   const amountNum = parseFloat(amount) || 0;
   // Mirrors the server: 2dp, half away from zero.
@@ -70,10 +70,8 @@ export function NewExchangeModal({
         ? amountNum * (rate || 0)
         : amountNum / (rate || 1)) * 100,
     ) / 100;
-  const profit =
-    direction === ExchangeDirection.UsdToKes
-      ? spread * amountNum
-      : spread * receivedAmount;
+  // What the server will book: nothing on a purchase, average-cost profit on a sale.
+  const profit = useProfitPreview(amountNum, direction, foreignCurrency);
 
   // UPDATED: Validation logic - Cash can use clientName, Account requires clientId
   const isValid =
@@ -302,8 +300,12 @@ export function NewExchangeModal({
               </div>
               <div className="flex justify-between text-sm border-t border-gray-200 pt-2 mt-2">
                 <span className="text-gray-600">Your Profit:</span>
-                <span className="font-semibold text-blue-600">
-                  {baseCode} {formatNumber(profit)}
+                <span className={`font-semibold ${profit != null && profit < 0 ? "text-red-600" : "text-blue-600"}`}>
+                  {direction === ExchangeDirection.UsdToKes
+                    ? "None on a purchase (booked when sold)"
+                    : profit == null
+                      ? "…"
+                      : `${baseCode} ${formatNumber(profit)}`}
                 </span>
               </div>
             </div>

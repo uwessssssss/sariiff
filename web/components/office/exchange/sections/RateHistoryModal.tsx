@@ -1,6 +1,7 @@
 "use client";
 
-import { ModalWrapper } from "../helpers";
+import { ModalWrapper, formatRate } from "../helpers";
+import { currencyCode } from "@/lib/api";
 import { X } from "lucide-react";
 import { type ExchangeSectionVM } from "../useExchangeSection";
 
@@ -34,6 +35,11 @@ export function RateHistoryModal({ vm }: { vm: ExchangeSectionVM }) {
                       <tr className="">
                         <th className="text-left py-2 px-2 font-semibold uppercase tracking-wide text-[#334155] text-xs">
                           Date
+                        </th>
+                        {/* The history holds every currency's rates (USD, EUR, ...);
+                            without this column a EUR rate read as a USD one. */}
+                        <th className="text-left py-2 px-2 font-semibold uppercase tracking-wide text-[#334155] text-xs">
+                          Currency
                         </th>
                         <th className="text-right py-2 px-2 font-semibold text-emerald-700 uppercase tracking-wide text-[#334155] text-xs">
                           Buy Rate
@@ -69,16 +75,17 @@ export function RateHistoryModal({ vm }: { vm: ExchangeSectionVM }) {
                               })}
                             </span>
                           </td>
+                          <td className="py-2 px-2 text-slate-700">
+                            {r.foreignCurrencyCode || currencyCode(r.foreignCurrency ?? 1)}
+                          </td>
                           <td className="py-2 px-2 text-right text-emerald-700">
-                            {(r.buyRate || 0).toFixed(2)}
+                            {formatRate(r.buyRate || 0)}
                           </td>
                           <td className="py-2 px-2 text-right text-blue-700">
-                            {(r.sellRate || 0).toFixed(2)}
+                            {formatRate(r.sellRate || 0)}
                           </td>
                           <td className="py-2 px-2 text-right text-blue-700">
-                            {((r.sellRate || 0) - (r.buyRate || 0)).toFixed(
-                              2,
-                            )}
+                            {formatRate((r.sellRate || 0) - (r.buyRate || 0))}
                           </td>
                         </tr>
                       ))}

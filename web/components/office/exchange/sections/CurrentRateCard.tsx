@@ -24,13 +24,13 @@ export function CurrentRateCard({ vm }: { vm: ExchangeSectionVM }) {
             <>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-blue-50 text-xs mb-1">Buy Rate</p>
+                  <p className="text-blue-50 text-xs mb-1">Buy Rate ({baseCode} per USD)</p>
                   <p className="text-2xl font-semibold">
                     {currentRate.buyRate.toFixed(2)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-blue-50 text-xs mb-1">Sell Rate</p>
+                  <p className="text-blue-50 text-xs mb-1">Sell Rate ({baseCode} per USD)</p>
                   <p className="text-2xl font-semibold">
                     {currentRate.sellRate.toFixed(2)}
                   </p>

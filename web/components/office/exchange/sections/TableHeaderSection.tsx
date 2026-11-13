@@ -2,7 +2,7 @@
 
 import { AlertTriangle, ChevronLeft, ChevronRight, Eye, RefreshCw, Search } from "lucide-react";
 import { ExchangeType, formatCurrency } from "@/lib/api";
-import { formatDateTime } from "../helpers";
+import { formatDateTime, formatRate } from "../helpers";
 import { type ExchangeSectionVM } from "../useExchangeSection";
 
 export function TableHeaderSection({ vm }: { vm: ExchangeSectionVM }) {
@@ -136,7 +136,7 @@ export function TableHeaderSection({ vm }: { vm: ExchangeSectionVM }) {
                       {formatCurrency(txn.amountReceived, txn.currencyReceived)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap tabular-nums text-sm text-right text-gray-900">
-                      {txn.exchangeRate.toFixed(2)}
+                      {formatRate(txn.exchangeRate)}
                     </td>
                     {/* Buys book no profit (average cost): show a dash, not "KES 0". A sale
                         below cost is a loss and shows red. */}
