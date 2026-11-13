@@ -28,6 +28,33 @@ export function statementAmount(text: string | undefined): number {
   return negative ? -n : n;
 }
 
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/**
+ * A statement date as YYYY-MM-DD. Kenyan and Ugandan banks write the day first:
+ * "13/11/2026", "05-11-26", "07-Nov-2026", "9 Nov 26"; M-Pesa writes "2026-11-08 14:22:10".
+ * Anything else is kept as it was.
+ */
+export function statementDate(text: string | undefined): string {
+  const t = (text || "").trim();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const year = (y: string) => (y.length === 2 ? 2000 + Number(y) : Number(y));
+  const ok = (y: number, m: number, d: number) => {
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+  };
+  let m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m && ok(+m[1], +m[2], +m[3])) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  m = t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})\b/);
+  if (m && ok(year(m[3]), +m[2], +m[1])) return `${year(m[3])}-${pad(+m[2])}-${pad(+m[1])}`;
+  m = t.match(/^(\d{1,2})[\s\/.-]+([A-Za-z]{3})[A-Za-z]*[\s\/.,-]+(\d{2}|\d{4})\b/);
+  if (m) {
+    const mo = MONTHS.indexOf(m[2].toLowerCase()) + 1;
+    if (mo > 0 && ok(year(m[3]), mo, +m[1])) return `${year(m[3])}-${pad(mo)}-${pad(+m[1])}`;
+  }
+  return t;
+}
+
 /** One line of a bank or M-Pesa statement the office uploads for reconciliation. */
 export interface StatementEntry {
   id: string;
@@ -113,7 +140,7 @@ export const parseCSVStatement = (csvContent: string): StatementEntry[] => {
     if (amount > 0) {
       entries.push({
         id: `stmt-${i}`,
-        date: values[dateIdx] || localDate(),
+        date: statementDate(values[dateIdx]) || localDate(),
         description: values[descIdx] || "Unknown",
         amount,
         type,
