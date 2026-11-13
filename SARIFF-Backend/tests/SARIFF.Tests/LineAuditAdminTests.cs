@@ -155,4 +155,20 @@ public class LineAuditAdminTests
         Assert.False((await admin.SetBaseCurrencyAsync(w.Co.Id, new SetBaseCurrencyDto(Currency.EUR))).Success);
         Assert.Equal(Currency.KES, w.Co.BaseCurrency);
     }
+
+    // SB1
+    [Fact]
+    public async Task A_subscription_set_to_expire_today_is_still_running_today()
+    {
+        // The date picker sends a date ("2026-11-13"); stored as midnight UTC, a subscription
+        // "expiring on the 13th" counted as expired from 03:00 that morning in Nairobi.
+        var w = await SignInWorld.MakeAsync(TestDb.InMemory());
+        var admin = new SuperAdminService(w.Db, NullLogger<SuperAdminService>.Instance);
+        var today = BureauClock.TodayLocal;
+
+        Assert.True((await admin.UpdateSubscriptionAsync(w.Co.Id, new UpdateSubscriptionDto(w.Co.SubscriptionPlan, null, 1500, today))).Success);
+
+        Assert.True(w.Co.SubscriptionExpiresAt > DateTime.UtcNow, $"stored {w.Co.SubscriptionExpiresAt:o}");
+        Assert.Equal(today, BureauClock.ToLocal(w.Co.SubscriptionExpiresAt!.Value).Date);
+    }
 }
