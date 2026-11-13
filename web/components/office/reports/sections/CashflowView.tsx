@@ -76,7 +76,7 @@ export function CashflowView({ vm }: { vm: ReportsVM }) {
                       ...Object.entries(accountSummary.cashByCurrency).map(([c, v]) => ({ label: "Cash", c: Number(c), v })),
                       ...Object.entries(accountSummary.bankByCurrency).map(([c, v]) => ({ label: "Bank", c: Number(c), v })),
                     ]
-                      .filter((h) => h.v !== 0 || h.c === 0)
+                      .filter((h) => h.v !== 0 || h.c === base)   // the home currency even at zero (was KES for every bureau)
                       .map((h) => (
                         <div key={`${h.label}-${h.c}`} className="p-4 bg-white border border-slate-200 rounded-xl">
                           <p className="text-sm text-slate-600 mb-1">

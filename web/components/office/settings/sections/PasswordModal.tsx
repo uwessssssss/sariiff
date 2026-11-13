@@ -1,5 +1,6 @@
 "use client";
 
+import { formatMoney } from "@/lib/api";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle, Eye, EyeOff, Lock, RefreshCw, X } from "lucide-react";
 import { type OfficeSettingsVM } from "../useOfficeSettings";
@@ -54,16 +55,16 @@ export function PasswordModal({ vm }: { vm: OfficeSettingsVM }) {
                   {selectedClient.whatsAppNumber || "-"}
                 </p>
                 <p className="text-sm text-slate-700">
-                  <strong>Balance KES:</strong>{" "}
-                  {(selectedClient.balanceKES ?? 0).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                  })}
-                </p>
-                <p className="text-sm text-slate-700">
-                  <strong>Balance USD:</strong>{" "}
-                  {(selectedClient.balanceUSD ?? 0).toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                  })}
+                  <strong>Balances:</strong>{" "}
+                  {/* every currency held (KES and USD only before: a Ugandan client's UGX was missing) */}
+                  {[
+                    { c: 0, v: selectedClient.balanceKES ?? 0 },
+                    { c: 1, v: selectedClient.balanceUSD ?? 0 },
+                    ...(((selectedClient as any).otherBalances || []) as any[]).map((b) => ({ c: b.currency, v: b.balance ?? 0 })),
+                  ]
+                    .filter((x) => x.v)
+                    .map((x) => formatMoney(x.v, x.c))
+                    .join(" · ") || "—"}
                 </p>
               </div>
               <div>
