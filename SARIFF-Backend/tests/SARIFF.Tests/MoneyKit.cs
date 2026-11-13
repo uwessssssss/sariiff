@@ -40,10 +40,12 @@ public sealed class Bureau
 
     private Bureau(AppDbContext db, Company company) { Db = db; Company = company; }
 
-    public static async Task<Bureau> CreateAsync(Currency home = Currency.KES)
+    /// <param name="db">A real (PostgreSQL) database for tests about simultaneous requests; in-memory when omitted.</param>
+    public static async Task<Bureau> CreateAsync(Currency home = Currency.KES, AppDbContext? db = null)
     {
-        var db = TestDb.InMemory();
-        var co = new Company { Name = "Test Bureau", BaseCurrency = home };
+        db ??= TestDb.InMemory();
+        var n = Random.Shared.Next(10_000_000, 99_999_999);   // codes and phones are unique in a shared database
+        var co = new Company { Name = "Test Bureau", BaseCurrency = home, Code = $"TB-{n}", CodePrefix = "TB", WhatsAppNumber = $"+2547{n}", OwnerName = "Test Owner", IsActive = true };
         var b = new Bureau(db, co);
         b.Cash = new CashAccount { CompanyId = co.Id, Currency = home, Code = $"CASH-{home}", IsActive = true };
         b.CashUsd = new CashAccount { CompanyId = co.Id, Currency = Currency.USD, Code = "CASH-USD", IsActive = true };
