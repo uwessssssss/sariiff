@@ -19,7 +19,7 @@ J
 mkdir -p "$T/out/node_modules/@/lib" "$T/out/node_modules/react"
 echo 'module.exports = require("../../../web/api");' > "$T/out/node_modules/@/lib/api.js"
 echo 'module.exports = { useState: v => [typeof v === "function" ? v() : v, () => {}], useEffect() {}, useMemo: f => f(), useCallback: f => f };' > "$T/out/node_modules/react/index.js"
-cp "$HERE/logic.test.js" "$HERE/dashboard.test.js" "$HERE/tabs.test.js" "$HERE/amount.test.js" "$HERE/statement.test.js" "$T/out/"
+cp "$HERE/logic.test.js" "$HERE/dashboard.test.js" "$HERE/tabs.test.js" "$HERE/amount.test.js" "$HERE/statement.test.js" "$HERE/basecurrency.test.js" "$T/out/"
 cd "$T/out"
 rc=0
 echo "-- app logic (money flow, currencies, wallets, formatting, totals, dates, printing)"; TZ=Africa/Nairobi node logic.test.js || rc=1
@@ -27,4 +27,5 @@ echo "-- dashboard holdings + clock"; TZ=Africa/Nairobi node dashboard.test.js |
 echo "-- two tabs, one sign-in (refresh race)"; node tabs.test.js || rc=1
 echo "-- typed amounts on the phone"; node amount.test.js || rc=1
 echo "-- bank statement upload"; TZ=Africa/Nairobi node statement.test.js || rc=1
+echo "-- home currency (offline start, bureau switch)"; node basecurrency.test.js || rc=1
 exit $rc

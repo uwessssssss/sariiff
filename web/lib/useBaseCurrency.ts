@@ -14,6 +14,10 @@ let cached: Currency | null = null;
 let inflight: Promise<Currency> | null = null;
 const listeners = new Set<(c: Currency) => void>();
 
+/** Exported for the logic tests. */
+export function loadBaseCurrency(): Promise<Currency> {
+  return load();
+}
 function load(): Promise<Currency> {
   if (cached !== null) return Promise.resolve(cached);
   if (!inflight) {
