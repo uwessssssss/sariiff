@@ -69,7 +69,7 @@ export default function PhoneLogin() {
         setPhone(remembered);
         setStep("remembered");
       } else setStep("phone");
-    });
+    }).catch(() => { if (alive) setStep("phone"); });   // a failing store must not leave the spinner up
     return () => {
       alive = false;
     };
@@ -82,7 +82,8 @@ export default function PhoneLogin() {
       setStep("phone");
       return;
     }
-    const r = await api.identityDeviceLogin(phone, await api.getIdentityDeviceSecret());
+    const secret = await api.getIdentityDeviceSecret();
+    const r = secret ? await api.identityDeviceLogin(phone, secret) : { success: false as const, data: null };
     setBusy(null);
     if (r.success && r.data) open(r.data);
     else {

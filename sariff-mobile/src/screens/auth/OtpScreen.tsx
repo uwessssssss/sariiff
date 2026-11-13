@@ -73,7 +73,19 @@ export default function OtpScreen() {
   }, [countdown]);
 
   const handleChange = (text: string, index: number) => {
-    const value = text.replace(/\D/g, "").slice(0, 1);
+    const digits = text.replace(/\D/g, "");
+    // A pasted or SMS-autofilled code arrives whole in one box: spread it over the boxes
+    // (each box took only its first digit, so the code from the SMS never fitted).
+    if (digits.length > 1) {
+      const newOtp = [...otp];
+      digits.slice(0, OTP_LENGTH - index).split("").forEach((d, k) => { newOtp[index + k] = d; });
+      setOtp(newOtp);
+      const next = Math.min(index + digits.length, OTP_LENGTH - 1);
+      inputRefs.current[next]?.focus();
+      setFocusedIndex(next);
+      return;
+    }
+    const value = digits.slice(0, 1);
 
     const newOtp = [...otp];
     newOtp[index] = value;
@@ -290,7 +302,9 @@ export default function OtpScreen() {
                   }}
                   style={styles.otpInput}
                   keyboardType="number-pad"
-                  maxLength={1}
+                  maxLength={i === 0 ? OTP_LENGTH : 1}
+                  textContentType={i === 0 ? "oneTimeCode" : "none"}
+                  autoComplete={i === 0 ? "sms-otp" : "off"}
                   value={digit}
                   onChangeText={(text) => handleChange(text, i)}
                   onKeyPress={({ nativeEvent }) =>

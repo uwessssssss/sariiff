@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { resetBaseCurrency } from './useBaseCurrency';
 import { Platform } from "react-native";
-import { UserInfoDto, UnifiedLoginDto, OtpVerifyDto } from "../types";
+import { UserInfoDto, UnifiedLoginDto, OtpVerifyDto, UserRole } from "../types";
 import * as api from "../services/api";
 import {
   registerForPushNotifications,
@@ -145,6 +145,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Direct login (Client — no OTP) — backend returns TokenResponseDto with flat fields
     const data = result.data as any;
+    if (data.accessToken && data.role === UserRole.SuperAdmin) {   // trusted device: no code step
+      await api.storeAuth(data.accessToken, data.refreshToken || "", { id: "", code: "", fullName: "", role: 0 } as UserInfoDto);
+      await api.logout();
+      return { success: false, message: "The super admin dashboard is on the web. Sign in at the Sarif website." };
+    }
     if (data.accessToken) {
       const userInfo: UserInfoDto = {
         id: "", // Not in TokenResponseDto — loaded from profile API later
@@ -198,6 +203,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Backend returns TokenResponseDto with flat fields (accessToken, not token)
       const data = result.data as any;
+      // The platform owner's screens are web-only: signed in here, the super admin landed in
+      // the bureau tabs, where every request is refused. End that session and say where to go.
+      if (data.accessToken && data.role === UserRole.SuperAdmin) {
+        await api.storeAuth(data.accessToken, data.refreshToken || "", { id: "", code: "", fullName: "", role: 0 } as UserInfoDto);
+        await api.logout();
+        pendingDtoRef.current = null;
+        setState((s) => ({ ...s, requiresOtp: false, pendingLogin: null }));
+        return { success: false, message: "The super admin dashboard is on the web. Sign in at the Sarif website." };
+      }
       if (data.accessToken) {
         const userInfo: UserInfoDto = {
           id: "", // Not in TokenResponseDto — loaded from profile API later

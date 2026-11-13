@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, FileText, LayoutDashboard, PieChart, User } from "lucide-react";
-import { ChangePasswordDto, ClientAlertDto, ClientAnalyticsDto, ClientDashboardDto, ClientProfileDto, ClientTransactionDto, Currency, PortalTransactionFilters, QuickStatsDto, TransactionType, downloadTransactionReceipt, exportTransactionsCsv, getClientAlerts, getClientAnalytics, getClientDashboard, getClientTransactions, getStoredAuth, markAlertAsRead, markAllAlertsAsRead } from "@/lib/api";
+import { ChangePasswordDto, ClientAlertDto, ClientAnalyticsDto, ClientDashboardDto, ClientProfileDto, ClientTransactionDto, Currency, PortalTransactionFilters, QuickStatsDto, TransactionType, downloadTransactionReceipt, exportTransactionsCsv, getClientAlerts, getClientAnalytics, getClientDashboard, getClientTransactions, getStoredAuth, allPages, markAlertAsRead, markAllAlertsAsRead } from "@/lib/api";
 import { ClientUserDashboardProps, ClientView } from "../helpers";
 import { localDate } from "@/lib/dates";
 import { toast } from "sonner";
@@ -122,26 +122,36 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
   // Each keystroke in the search and each filter change starts a request; an older one that
   // answers last must not replace the list for what is typed now.
   const txnSeq = useRef(0);
+  // The filters on screen, shared by the list and the statement PDF/print.
+  const txnFilters = (): Partial<PortalTransactionFilters> => {
+    const filters: Partial<PortalTransactionFilters> = {};
+
+    if (currencyFilter !== undefined) filters.currency = currencyFilter;
+    if (typeFilter !== undefined) filters.type = typeFilter;
+    if (searchQuery) filters.search = searchQuery;
+
+    // Date filters based on period
+    if (filterPeriod === "week") {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      filters.startDate = localDate(weekAgo);
+    } else if (filterPeriod === "month") {
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      filters.startDate = localDate(monthAgo);
+    }
+    return filters;
+  };
+  /** Every transaction matching the filters on screen (the PDF and print used only the page shown, at most 50). */
+  const allMatchingTransactions = async (): Promise<ClientTransactionDto[]> => {
+    const r = await allPages<ClientTransactionDto>((p, n) => getClientTransactions(p, n, txnFilters()), 200, 5000);
+    return r.success && r.data ? r.data.items : transactions;
+  };
   const fetchTransactions = useCallback(async () => {
     const seq = ++txnSeq.current;
     try {
       setLoadingTransactions(true);
-      const filters: Partial<PortalTransactionFilters> = {};
-
-      if (currencyFilter !== undefined) filters.currency = currencyFilter;
-      if (typeFilter !== undefined) filters.type = typeFilter;
-      if (searchQuery) filters.search = searchQuery;
-
-      // Date filters based on period
-      if (filterPeriod === "week") {
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        filters.startDate = localDate(weekAgo);
-      } else if (filterPeriod === "month") {
-        const monthAgo = new Date();
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        filters.startDate = localDate(monthAgo);
-      }
+      const filters = txnFilters();
 
       const result = await getClientTransactions(
         currentPage,
@@ -405,7 +415,8 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
       });
 
       // ========== TRANSACTION HISTORY ==========
-      if (transactions && transactions.length > 0) {
+      const rows = await allMatchingTransactions();
+      if (rows.length > 0) {
         yPos += 32;
         doc.setTextColor(17, 24, 39);
         doc.setFontSize(10);
@@ -415,11 +426,11 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
         doc.setFont("helvetica", "normal");
         doc.setTextColor(107, 114, 128);
         doc.setFontSize(9);
-        doc.text(`${transactions.length} transactions`, pageWidth - 14, yPos, {
+        doc.text(`${rows.length} transactions`, pageWidth - 14, yPos, {
           align: "right",
         });
 
-        const txnTableData = transactions.slice(0, 50).map((txn) => {
+        const txnTableData = rows.map((txn) => {
           const isCredit = txn.type === "Credit";
           const currency = txn.currency === Currency.KES ? "KES" : txn.currency === Currency.UGX ? "UGX" : txn.currency === Currency.EUR ? "EUR" : "USD";
           const runningBalance = txn.balanceAfter ?? 0;
@@ -600,5 +611,6 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
     handleDownloadReceipt,
     handleExportCsv,
     handleDownloadStatement,
+    allMatchingTransactions,
   };
 }

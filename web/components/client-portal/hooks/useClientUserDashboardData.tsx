@@ -40,7 +40,7 @@ export function useClientUserDashboardData(prev: { userName: ClientUserDashboard
       setPasswordLoading(false);
     }
   };
-  const handlePrintStatement = () => {
+  const handlePrintStatement = async () => {
     if (!profile) {
       toast.error("Profile data not loaded");
       return;
@@ -157,8 +157,7 @@ export function useClientUserDashboardData(prev: { userName: ClientUserDashboard
             </tr>
           </thead>
           <tbody>
-            ${transactions
-              .slice(0, 50)
+            ${(await prev.allMatchingTransactions())
               .map((txn) => {
                 const isCredit = txn.type === "Credit";
                 const currency = txn.currency === Currency.KES ? "KES" : txn.currency === Currency.UGX ? "UGX" : txn.currency === Currency.EUR ? "EUR" : "USD";

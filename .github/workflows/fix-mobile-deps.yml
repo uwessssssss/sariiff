@@ -34,7 +34,7 @@ jobs:
       - name: Advisories left (most are build tools that never ship in the app)
         run: npm audit --omit=dev || true
       - name: Add packages the app needs but the lock file lacks
-        run: npx expo install react-native-worklets expo-print expo-local-authentication
+        run: npx expo install react-native-worklets expo-print expo-local-authentication expo-crypto
       - name: Expo project health after the fix (a failing check stops the commit)
         run: npx expo-doctor
       - name: Commit package.json + package-lock.json
