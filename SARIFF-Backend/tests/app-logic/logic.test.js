@@ -67,7 +67,7 @@ t("formatting", "currency code for every currency (mobile)", [KES, USD, UGX, EUR
 // ---------- 5. Totals never mix currencies
 const rows = [{ a: 1000, c: KES }, { a: 2000000, c: UGX }, { a: 500, c: KES }, { a: 0, c: USD }];
 t("totals", "sumByCurrency keeps KES and UGX apart, home first, zero dropped", M.types.sumByCurrency(rows, r => r.a, r => r.c, UGX), [{ currency: UGX, total: 2000000 }, { currency: KES, total: 1500 }]);
-t("totals", "no totals → a zero in the home currency", M.types.formatTotals([], UGX).includes("0.00"), true);
+t("totals", "no totals → a zero in the home currency (whole shillings, M19)", M.types.formatTotals([], UGX), "USh 0");
 t("totals", "client balance rows hide empty KES/USD for a UGX client", M.types.balanceRowsFrom({ balanceKES: 0, balanceUSD: 0, otherBalances: [{ currency: UGX, currencyCode: "UGX", balance: 750000 }] }).map(r => r.code), ["UGX"]);
 t("totals", "…but can show them when asked", M.types.balanceRowsFrom({ otherBalances: [] }, true).map(r => r.code), ["KES", "USD"]);
 
