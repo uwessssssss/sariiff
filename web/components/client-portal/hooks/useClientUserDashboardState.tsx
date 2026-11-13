@@ -389,11 +389,13 @@ export function useClientUserDashboardState(prev: { userName: ClientUserDashboar
 
       // One box per currency held (KES, USD always; UGX, EUR, ... when held)
       const pdfBalances = [
-        { code: "KES", balance: kesBalance },
-        { code: "USD", balance: usdBalance },
-        ...(profile.otherBalances || [])
-          .filter((b: any) => (b.balance ?? 0) !== 0)
-          .map((b: any) => ({ code: b.currencyCode, balance: b.balance ?? 0 })),
+        // Currencies the client holds (it always printed "KES 0" and "USD 0", so a Ugandan
+        // client's statement opened with two empty Kenyan/US boxes); KES if there is nothing.
+        ...[
+          { code: "KES", balance: kesBalance },
+          { code: "USD", balance: usdBalance },
+          ...(profile.otherBalances || []).map((b: any) => ({ code: b.currencyCode, balance: b.balance ?? 0 })),
+        ].filter((b, _i, all) => b.balance !== 0 || (all.every((x) => x.balance === 0) && b.code === "KES")),
       ];
       const CURRENCY_NAMES: Record<string, string> = {
         KES: "Kenyan Shilling", USD: "US Dollar", UGX: "Ugandan Shilling", EUR: "Euro",

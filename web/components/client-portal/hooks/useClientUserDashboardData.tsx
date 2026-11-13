@@ -124,24 +124,18 @@ export function useClientUserDashboardData(prev: { userName: ClientUserDashboard
         </div>
 
         <div class="summary-row">
-          <div class="summary-card">
-            <label>KES Balance</label>
-            <div class="value ${escapeHtml(kesBalance >= 0 ? "positive" : "negative")}">${escapeHtml(
-              kesBalance >= 0 ? "" : "-"
-            )}KES ${escapeHtml(Math.abs(kesBalance).toLocaleString())}</div>
-          </div>
-          <div class="summary-card">
-            <label>USD Balance</label>
-            <div class="value ${escapeHtml(usdBalance >= 0 ? "positive" : "negative")}">${escapeHtml(
-              usdBalance >= 0 ? "" : "-"
-            )}USD ${escapeHtml(Math.abs(usdBalance).toLocaleString())}</div>
-          </div>
-          ${(profile.otherBalances || [])
-            .filter((b: any) => (b.balance ?? 0) !== 0)
+          ${[
+            // Currencies the client holds (KES and USD boxes were always printed, empty for a
+            // Ugandan client); KES when there is nothing at all.
+            { code: "KES", balance: kesBalance },
+            { code: "USD", balance: usdBalance },
+            ...(profile.otherBalances || []).map((b: any) => ({ code: b.currencyCode, balance: b.balance ?? 0 })),
+          ]
+            .filter((b, _i, all) => b.balance !== 0 || (all.every((x) => x.balance === 0) && b.code === "KES"))
             .map(
-              (b: any) => `<div class="summary-card">
-            <label>${escapeHtml(b.currencyCode)} Balance</label>
-            <div class="value ${escapeHtml(b.balance >= 0 ? "positive" : "negative")}">${escapeHtml(b.balance >= 0 ? "" : "-")}${escapeHtml(b.currencyCode)} ${escapeHtml(Math.abs(b.balance).toLocaleString())}</div>
+              (b) => `<div class="summary-card">
+            <label>${escapeHtml(b.code)} Balance</label>
+            <div class="value ${b.balance >= 0 ? "positive" : "negative"}">${b.balance >= 0 ? "" : "-"}${escapeHtml(b.code)} ${escapeHtml(Math.abs(b.balance).toLocaleString())}</div>
           </div>`,
             )
             .join("")}
