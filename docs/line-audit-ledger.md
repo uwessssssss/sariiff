@@ -343,3 +343,47 @@ Read in full: lib/api/core.ts, providers/AuthProvider.tsx (sign-in, refresh, idl
 - Phone (14.8k lines): every file read for logic, including services/api, hooks, utils, components (UI kit by logic lines), navigation, types, and every screen. Style blocks not audited.
 - Web (49k lines): read in full: lib/api/*, lib/dates, lib/useBaseCurrency, lib/statement, lib/superadmin-api request helper, providers/AuthProvider, app/login, StatementModal, TransactionDialogs, transaction-form (hook and view), reconciliation (helpers, state, actions, effects, adjustment panel), reports hooks (state/data/effects export parts), invoices hook, expenses state hook, clients state hook, cash data hook, office-shell dashboard hook, settings hook, super-admin state hook, exchange section state and NewExchangeModal, client-portal state/data hooks. Searched by pattern only (not line by line): the remaining section/markup components (about 150 files of JSX), shadcn ui/*.
 - Every API path and query parameter used by both apps cross-checked against the controllers by script (scratchpad routes.py): only unused helpers were wrong (M18).
+
+## Web sections read line by line (13 Nov, final round)
+
+Every file under components/*/sections and exchange/parts read in full (portal 7, banks 4, cash 6, clients 5, mpesa 5, expenses 5, exchange 13, invoices 6, reconciliation 15, reports 11, settings 7, transaction-form 3, super-admin 13), checking each label, figure, currency, sign and date against what the server does.
+
+| Id | Bug | Fix |
+|---|---|---|
+| CL9 | Portal balance chart showed today's balance for all six months, other currencies from today too (proven failing first, d7b18df/33e3657) | Each month's closing balance per currency |
+| W37 | Office notes field did not say the client sees the notes (web and phone). By reading | Says so |
+| W38 | Portal "Print statement" downloads a PDF. By reading | "Download statement" |
+| W39 | Portal transaction copy said "Copied" when the clipboard refused. By reading | Success or error |
+| W40 | Portal analytics growth was green when negative. By reading | Red |
+| W41 | Bank delete: "permanently remove the account and all associated data"; the server soft-deletes only an account with no transactions. By reading | True wording, Inactive for accounts with history |
+| W42 | Mobile money agent delete: same promise. By reading | Same |
+| W43 | Client delete: "permanent", "removes transaction history"; the server refuses non-zero balances, recent or exchange history and keeps postings. Fixed KES/USD boxes in a UGX bureau. By reading | Lists the real rules; every currency held |
+| W44 | Mobile money net movement card said "Debit - Credit"; it includes the opening balance. By reading | "Opening + money in − money out" |
+| W45 | Edit agent: networks without wallet currency, networks the bureau can't hold; opening balance without currency. By reading | Same list as Add, with currency |
+| W46 | Record expense: KES/EUR offered to bureaus that can't hold them; changing currency dropped Mobile money even for an MTN UGX wallet; choosing Mobile money silently changed the currency. Expense delete promised a permanent delete (a reversal is posted). By reading | Allowed currencies; wallet-aware; true wording |
+| W47 | Quick calculator showed the literal "{baseCode} amount". By reading | Template |
+| W48 | New exchange and calculator promised spread x amount profit on purchases (none booked) and the wrong figure on sales (average cost). By reading | Server's own calculation; "None on a purchase" |
+| W49 | Set rate started from the USD rate (or 130/140) whatever currency was picked: saving EUR stored USD figures; a EUR save also landed on the USD card. By reading | Each currency's live rate, empty if none |
+| W50 | Rate history mixed currencies with no currency column. By reading | Currency column |
+| W51 | Rates under 1 (UGX in a KES bureau) shown as 0.03 in the trade table, detail and history. By reading | formatRate (4 decimals) |
+| W52 | Current rate card and exchange report did not say which currency the rate quotes. By reading | "per USD" |
+| W53 | Exchange detail copy said "Copied" when the clipboard refused. By reading | Success or error |
+| W54 | Invoice duplicate turned UGX/EUR invoices into USD and dropped the tax. By reading | Same currency and tax rate |
+| W55 | Reconciliation formatCurrency printed Math.abs: a short statement showed a positive variance, an overdrawn balance as money held. By reading | Keeps the minus |
+| W56 | Reconciliation comparison bar width NaN/negative for a zero or overdrawn balance. By reading | Guarded |
+| RP1 | Reports P&L: exchange profit always 0 (trades carry "date", the filter read transactionDate/createdAt); the 7-day trend was six placeholder zeros (proven failing first, 7222582) | lib/exchangeProfit.ts, real daily figures |
+| SA9 | Bureaus country filter applied to the 10 loaded rows only (proven failing first, 6f37c32: 13, want 1) | Server-side baseCurrency filter |
+| W57 | Reports currency filter offered KES/EUR to bureaus that can't hold them. By reading | Allowed currencies |
+| W58 | Reports mobile money header claimed the home currency for every wallet. By reading | "Balance" (each row shows its currency) |
+| W59 | Exchange report "USD bought" counted what the bureau SOLD (and the reverse). By reading | "sold to clients" / "bought from clients" |
+| W60 | Exchange report profit column showed "KES 0" on purchases. By reading | Dash |
+| W61 | Profit chart axis printed 0k for amounts under 1,000. By reading | Plain number |
+| W62 | Office settings: name editable and saved though every other screen says the administrator sets it; phone editable but never saved. By reading | Both read-only |
+| W63 | Expense category delete promised a permanent wipe; the server refuses a category with expenses. By reading | True wording |
+| W64 | Super admin "Money held": a KES M-Pesa wallet at a Ugandan bureau hidden behind a dash, yet counted in Total held. By reading | Shown |
+| W65 | Super admin overview volume table dropped a currency with no trades this month. By reading | Every currency |
+| W66 | Subscription fee label hard-coded KES. By reading | Platform currency constant |
+
+Open, not changed: PUT /api/dashboard/settings still accepts a company Name from an office user (the web no longer sends it). Whether office users may rename their bureau is a product decision.
+
+Coverage now: every web section/part file read line by line in addition to the hooks and lib listed above; shadcn ui/* not audited (library code).
