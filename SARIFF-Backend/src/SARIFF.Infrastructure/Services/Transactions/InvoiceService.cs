@@ -56,6 +56,17 @@ public class InvoiceService : IInvoiceService
         if (dto.DueDate.Date < BureauClock.TodayLocal)
             return new ApiResponse<InvoiceResponseDto>(false, "Due date cannot be in the past", null);
 
+        // The invoice's own date, when given (the web form asks for it; it used to be dropped).
+        if (dto.InvoiceDate is { } written)
+        {
+            if (written.Date > BureauClock.TodayLocal)
+                return new ApiResponse<InvoiceResponseDto>(false, "An invoice can't be dated in the future", null);
+            if (written.Year < 2000)
+                return new ApiResponse<InvoiceResponseDto>(false, "That invoice date is too far in the past", null);
+            if (dto.DueDate.Date < written.Date)
+                return new ApiResponse<InvoiceResponseDto>(false, "The due date is before the invoice date", null);
+        }
+
         // Money is kept to 2 decimal places, so round each figure once, here, and build the
         // next from the rounded one: lines add up to the subtotal, and subtotal + tax −
         // discount is exactly the total. (Unrounded, 1.5 × 33.33 twice gave lines of 50.00 +
@@ -82,7 +93,10 @@ public class InvoiceService : IInvoiceService
                 ClientEmail = dto.ClientEmail,
                 ClientPhone = dto.ClientPhone,
                 ClientAddress = dto.ClientAddress,
-                InvoiceDate = DateTime.UtcNow,
+                // Noon that local day, so its date reads the same in UTC and in Nairobi/Kampala.
+                InvoiceDate = dto.InvoiceDate is { } d && d.Date != BureauClock.TodayLocal
+                    ? BureauClock.DayStartUtc(d.Date).AddHours(12)
+                    : DateTime.UtcNow,
                 DueDate = dto.DueDate,
                 Currency = dto.Currency,
                 Status = InvoiceStatus.Draft,

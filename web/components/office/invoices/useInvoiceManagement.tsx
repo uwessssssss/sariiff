@@ -167,8 +167,10 @@ export function useInvoiceManagement() {
   };
   // Create invoice via backend
   const handleCreateInvoice = async () => {
-    if (!formData.clientName || !formData.clientEmail) {
-      toast.error("Please fill in client name and email");
+    // Email is optional (the API and the phone app take an invoice without one: a walk-in
+    // customer often has only a phone number).
+    if (!formData.clientName.trim()) {
+      toast.error("Please fill in the client name");
       return;
     }
 
@@ -183,10 +185,12 @@ export function useInvoiceManagement() {
     try {
       const dto: CreateInvoiceDto = {
         clientName: formData.clientName,
-        clientEmail: formData.clientEmail,
+        clientEmail: formData.clientEmail.trim() || undefined,
         clientPhone: formData.clientPhone,
         clientAddress: formData.clientAddress,
         dueDate: formData.dueDate,
+        // "Invoice Date *" was asked for and dropped: every invoice was dated now.
+        invoiceDate: formData.date && formData.date !== localDate() ? formData.date : undefined,
         currency:
           formData.currency === "KES"
             ? Currency.KES

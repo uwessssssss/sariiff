@@ -37,6 +37,8 @@ export interface CreateInvoiceDto {
   discountAmount: number;
   notes?: string;
   terms?: string;
+  /** The invoice's own date (YYYY-MM-DD); omitted means today. */
+  invoiceDate?: string;
 }
 export interface InvoiceResponseDto {
   id: string;
