@@ -313,7 +313,7 @@ public interface ISuperAdminService
     
     // Companies
     Task<ApiResponse<PagedResult<CompanyStatsDto>>> GetAllCompaniesWithStatsAsync(
-        int page, int pageSize, string? search = null, string? status = null);
+        int page, int pageSize, string? search = null, string? status = null, Currency? baseCurrency = null);
     Task<ApiResponse<CompanyDetailDto>> GetCompanyDetailAsync(Guid companyId);
     Task<ApiResponse<CompanyDetailDto>> SetBaseCurrencyAsync(Guid companyId, SetBaseCurrencyDto dto);
     Task<ApiResponse<bool>> UpdateSubscriptionAsync(Guid companyId, UpdateSubscriptionDto dto);

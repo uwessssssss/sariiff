@@ -4,9 +4,9 @@
  * 7-day profit trend).
  */
 
-/** When a trade happened, in ms. */
+/** When a trade happened, in ms. The server sends "date"; the other names are kept for older rows. */
 export function tradeTime(x: any): number {
-  const d = x.transactionDate || x.createdAt;
+  const d = x.date || x.transactionDate || x.createdAt;
   return d ? new Date(d).getTime() : NaN;
 }
 
@@ -14,6 +14,7 @@ export function tradeTime(x: any): number {
 export function exchangeProfitBetween(trades: any[], from: Date, to?: Date): number {
   return (trades || [])
     .filter((x) => {
+      if (x.status === "Voided") return false; // a void takes its profit back
       const t = tradeTime(x);
       return t >= from.getTime() && (!to || t < to.getTime());
     })

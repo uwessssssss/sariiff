@@ -121,9 +121,10 @@ public class AdminController : BaseApiController
         [FromQuery] int page = 1, 
         [FromQuery] int pageSize = 10, 
         [FromQuery] string? search = null,
-        [FromQuery] string? status = null)
+        [FromQuery] string? status = null,
+        [FromQuery] Currency? baseCurrency = null)   // the Bureaus page's country filter
     {
-        var result = await _superAdminService.GetAllCompaniesWithStatsAsync(page, pageSize, search, status);
+        var result = await _superAdminService.GetAllCompaniesWithStatsAsync(page, pageSize, search, status, baseCurrency);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

@@ -171,4 +171,27 @@ public class LineAuditAdminTests
         Assert.True(w.Co.SubscriptionExpiresAt > DateTime.UtcNow, $"stored {w.Co.SubscriptionExpiresAt:o}");
         Assert.Equal(today, BureauClock.ToLocal(w.Co.SubscriptionExpiresAt!.Value).Date);
     }
+
+    // SA9: the Bureaus page filtered by country only the 10 rows it had loaded, so
+    // "Uganda" on page 1 hid the Ugandan bureaus on page 2 and the count stayed at all bureaus.
+    [Fact]
+    public async Task The_bureau_list_country_filter_is_applied_by_the_server_across_all_pages()
+    {
+        var w = await SignInWorld.MakeAsync(TestDb.InMemory());
+        var tag = "Zq" + Random.Shared.Next(100_000, 999_999);
+        Company Bureau(string name, Currency home, int i) => new()
+        {
+            Name = $"{tag} {name}", OwnerName = "Amina Hassan", Code = $"{tag}-{i:00}", CodePrefix = "ZQ",
+            WhatsAppNumber = $"+2547{Random.Shared.Next(10_000_000, 99_999_999)}", PasswordHash = "x",
+            IsActive = true, BaseCurrency = home,
+        };
+        for (var i = 0; i < 12; i++) w.Db.Companies.Add(Bureau($"Kenya {i}", Currency.KES, i));
+        w.Db.Companies.Add(Bureau("Uganda", Currency.UGX, 99));
+        await w.Db.SaveChangesAsync();
+
+        var admin = new SuperAdminService(w.Db, NullLogger<SuperAdminService>.Instance);
+        var page = (await admin.GetAllCompaniesWithStatsAsync(1, 10, tag, null, Currency.UGX)).Data!;
+        Assert.Equal(1, page.TotalCount);
+        Assert.Equal($"{tag} Uganda", Assert.Single(page.Items).Name);
+    }
 }

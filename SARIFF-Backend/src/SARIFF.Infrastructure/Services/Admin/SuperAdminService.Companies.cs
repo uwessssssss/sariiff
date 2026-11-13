@@ -16,7 +16,7 @@ public partial class SuperAdminService
     // ==================== COMPANIES ====================
 
     public async Task<ApiResponse<PagedResult<CompanyStatsDto>>> GetAllCompaniesWithStatsAsync(
-        int page, int pageSize, string? search = null, string? status = null)
+        int page, int pageSize, string? search = null, string? status = null, Currency? baseCurrency = null)
     {
         page = Math.Max(1, page);                 // page 0 was a negative OFFSET: a server error on PostgreSQL
         pageSize = Math.Clamp(pageSize, 1, 200);
