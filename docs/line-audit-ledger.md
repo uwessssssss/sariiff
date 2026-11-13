@@ -239,6 +239,7 @@ There is no React Native test harness in the repo (CI type-checks the app and ru
 | M8 | Float and expense forms offered switched-off bank accounts and wallets; the expense currency was not tied to the chosen account | Only active accounts; choosing an account sets the currency |
 | M9 | The invoices screen loaded the latest 50 invoices, and its "Paid" and "Outstanding" totals were sums of those 50 only | Every invoice, page by page |
 | M10 | The invoice client picker showed the first 200 clients, with no search | A search box that asks the server |
+| M11 | The phone's transaction search box sent `search`, which the API ignored: typing filtered nothing (proven failing first) | The API searches code, reference and description |
 
 Backend, found while reading the mobile expense form:
 

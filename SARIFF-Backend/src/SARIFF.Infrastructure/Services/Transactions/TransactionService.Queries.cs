@@ -31,6 +31,12 @@ public partial class TransactionService
             if (toExclusive.HasValue) { var v = toExclusive.Value; query = query.Where(t => t.TransactionDate < v); }
             if (filter.TransactionType.HasValue) { var v = filter.TransactionType.Value; query = query.Where(t => t.TransactionType == v); }
             if (filter.Currency.HasValue) { var v = filter.Currency.Value; query = query.Where(t => t.Currency == v || t.CounterCurrency == v); }   // either side of a two-currency posting
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                var s = filter.Search.Trim().ToLower();
+                if (s.Length > 100) s = s[..100];
+                query = query.Where(t => t.Code.ToLower().Contains(s) || t.Reference.ToLower().Contains(s) || t.Description.ToLower().Contains(s));
+            }
         }
 
         var totalCount = await query.CountAsync();
