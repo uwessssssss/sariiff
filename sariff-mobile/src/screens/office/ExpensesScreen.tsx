@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -76,10 +77,11 @@ export default function ExpensesScreen() {
     if (!categoryId || !description || !amount || !paymentAccountId) {
       Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Fill all required fields' }); return;
     }
+    if (anyBadAmount(amount) || !(parseAmount(amount) > 0)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     const accType = paymentMethod === 0 ? AccountType.Cash : paymentMethod === 1 ? AccountType.Bank : AccountType.Mpesa;
     const res = await api.createExpense({
-      categoryId, description, vendorPayee: vendor || undefined, amount: parseFloat(amount),
+      categoryId, description, vendorPayee: vendor || undefined, amount: parseAmount(amount),
       currency, paymentMethod, paymentAccountType: accType, paymentAccountId,
       reference: reference || undefined, expenseDate: localDate() + 'T12:00:00Z', // today's LOCAL date (an expense date is a calendar day)
     });
@@ -120,9 +122,10 @@ export default function ExpensesScreen() {
     if (!editingId || !description || !amount) {
       Toast.show({ type: 'error', text1: 'Missing fields' }); return;
     }
+    if (anyBadAmount(amount) || !(parseAmount(amount) > 0)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     const res = await api.updateExpense(editingId, {
-      description, vendorPayee: vendor || undefined, amount: parseFloat(amount), reference: reference || undefined,
+      description, vendorPayee: vendor || undefined, amount: parseAmount(amount), reference: reference || undefined,
     });
     if (res.success) { Toast.show({ type: 'success', text1: 'Expense updated' }); setShowCreate(false); setEditingId(null); resetForm(); load(); }
     else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });

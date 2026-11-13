@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../../../utils/amount";
 import { AccountType, Currency, ExchangeFloatDto, ExchangeRateDto, ExchangeTransactionDto, currencyCode, foreignCurrenciesFor } from "../../../../types";
 import { Alert, Animated } from "react-native";
 import { ModalType } from "../helpers";
@@ -84,7 +85,7 @@ export function useExchangeScreenState() {
   // The rate the server will use: a custom rate when it's a number within ±10% of
   // today's board rate (the API rejects anything else), otherwise the board rate.
   const boardRate = direction === 0 ? rates[fxCurrency]?.buyRate ?? 0 : rates[fxCurrency]?.sellRate ?? 0;
-  const customRateNum = parseFloat(exchCustomRate);
+  const customRateNum = parseAmount(exchCustomRate);
   const customRateGiven = exchCustomRate.trim() !== "" && Number.isFinite(customRateNum) && customRateNum > 0;
   const customRateOutOfBand =
     customRateGiven && boardRate > 0 && (customRateNum < boardRate * 0.9 || customRateNum > boardRate * 1.1);
@@ -183,6 +184,7 @@ export function useExchangeScreenState() {
       Toast.show({ type: "error", text1: "Enter both counts" });
       return;
     }
+    if (anyBadAmount(dailyKesCount, dailyUsdCount, ...Object.values(dailyOtherCounts))) { Toast.show({ type: "error", text1: "Amount not understood", text2: "Type digits only, e.g. 1500 or 1,500.50" }); return; }
     setFormLoading(true);
     try {
       const others = float?.otherBalances || [];
@@ -192,10 +194,10 @@ export function useExchangeScreenState() {
         return;
       }
       const dto = {
-        kesCount: parseFloat(dailyKesCount),
-        usdCount: parseFloat(dailyUsdCount),
+        kesCount: parseAmount(dailyKesCount),
+        usdCount: parseAmount(dailyUsdCount),
         notes: dailyNotes || undefined,
-        otherCounts: others.map((o) => ({ currency: o.currency, count: parseFloat(dailyOtherCounts[o.currency]) || 0 })),
+        otherCounts: others.map((o) => ({ currency: o.currency, count: parseAmount(dailyOtherCounts[o.currency]) || 0 })),
       };
       const res =
         type === "opening"
@@ -261,10 +263,11 @@ export function useExchangeScreenState() {
       Toast.show({ type: "error", text1: "Enter both rates" });
       return;
     }
+    if (anyBadAmount(buyRate, sellRate) || !(parseAmount(buyRate) > 0) || !(parseAmount(sellRate) > 0)) { Toast.show({ type: "error", text1: "Amount not understood", text2: "Type digits only, e.g. 1500 or 1,500.50" }); return; }
     setFormLoading(true);
     const res = await api.setExchangeRate(
-      parseFloat(buyRate),
-      parseFloat(sellRate),
+      parseAmount(buyRate),
+      parseAmount(sellRate),
       rateCurrency,
     );
     if (res.success) {
@@ -282,6 +285,7 @@ export function useExchangeScreenState() {
       Toast.show({ type: "error", text1: "Enter amount" });
       return;
     }
+    if (anyBadAmount(exchAmount, exchCustomRate) || !(parseAmount(exchAmount) > 0)) { Toast.show({ type: "error", text1: "Amount not understood", text2: "Type digits only, e.g. 1500 or 1,500.50" }); return; }
     try {
       const status = await api.getTransactionPinStatus();
       if (status.success && status.data?.isEnabled && status.data?.hasPin) {
@@ -342,15 +346,16 @@ export function useExchangeScreenState() {
       Toast.show({ type: "error", text1: "Enter amount" });
       return;
     }
+    if (anyBadAmount(exchAmount, exchCustomRate) || !(parseAmount(exchAmount) > 0)) { Toast.show({ type: "error", text1: "Amount not understood", text2: "Type digits only, e.g. 1500 or 1,500.50" }); return; }
     setFormLoading(true);
     const exPayload = {
       direction,
       foreignCurrency: fxCurrency,
       exchangeType: exchType,
-      amount: parseFloat(exchAmount),
+      amount: parseAmount(exchAmount),
       clientId: exchClientId || undefined,
       clientName: exchClientName || "Walk-in",
-      customRate: exchCustomRate ? parseFloat(exchCustomRate) : undefined,
+      customRate: exchCustomRate ? parseAmount(exchCustomRate) : undefined,
       notes: exchNotes || undefined,
     };
     // One key per submission: a second press after a timeout can't record it twice.
@@ -393,7 +398,7 @@ export function useExchangeScreenState() {
                         buildExchangeMessage({
                           clientName: client.fullName,
                           direction: dirLabel,
-                          amountGiven: parseFloat(exchAmount).toLocaleString(
+                          amountGiven: parseAmount(exchAmount).toLocaleString(
                             "en-US",
                             { minimumFractionDigits: 2 },
                           ),
@@ -432,22 +437,23 @@ export function useExchangeScreenState() {
       Toast.show({ type: "error", text1: `Enter purchase rate for ${currencyCode(floatCurrency)}` });
       return;
     }
+    if (anyBadAmount(floatAmount, floatPurchaseRate) || !(parseAmount(floatAmount) > 0)) { Toast.show({ type: "error", text1: "Amount not understood", text2: "Type digits only, e.g. 1500 or 1,500.50" }); return; }
     setFormLoading(true);
     let res;
     if (op === "fund") {
       res = await api.fundExchangeFloat({
         currency: floatCurrency,
-        amount: parseFloat(floatAmount),
+        amount: parseAmount(floatAmount),
         sourceType: floatSrcType,
         sourceAccountId: floatSrcId,
         ...(floatCurrency !== base && floatPurchaseRate
-          ? { purchaseRate: parseFloat(floatPurchaseRate) }
+          ? { purchaseRate: parseAmount(floatPurchaseRate) }
           : {}),
       });
     } else {
       res = await api.withdrawExchangeFloat({
         currency: floatCurrency,
-        amount: parseFloat(floatAmount),
+        amount: parseAmount(floatAmount),
         destinationType: floatSrcType,
         destinationAccountId: floatSrcId,
       });

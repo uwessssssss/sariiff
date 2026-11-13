@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Modal, ScrollView, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -91,7 +92,8 @@ export default function ClientsScreen() {
   };
   const createAlert = async () => {
     if (!selectedClient || !alertThreshold) { Toast.show({ type: 'error', text1: 'Enter threshold amount' }); return; }
-    const res = await api.createBalanceAlert({ clientId: selectedClient.id, currency: alertCurrency, direction: 0, threshold: parseFloat(alertThreshold) });
+    if (anyBadAmount(alertThreshold) || !(parseAmount(alertThreshold) > 0)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
+    const res = await api.createBalanceAlert({ clientId: selectedClient.id, currency: alertCurrency, direction: 0, threshold: parseAmount(alertThreshold) });
     if (res.success) { Toast.show({ type: 'success', text1: 'Alert created' }); setAlertThreshold(''); await loadAlerts(selectedClient.id); }
     else Toast.show({ type: 'error', text1: res.message });
   };
@@ -134,14 +136,15 @@ export default function ClientsScreen() {
     if (!fullName.trim() || !phone.trim()) {
       Toast.show({ type: 'error', text1: 'Required', text2: 'Name and phone are required' }); return;
     }
+    if (anyBadAmount(openingKES, openingUSD, openingHome)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     try {
       const res = await api.createClient({
         fullName, whatsAppNumber: phone, email: email || undefined,
         idPassport: idPassport || undefined, clientType,
-        openingBalanceKES: parseFloat(openingKES) || 0,
-        openingBalanceUSD: parseFloat(openingUSD) || 0,
-        openingBalanceHome: parseFloat(openingHome) || 0,
+        openingBalanceKES: parseAmount(openingKES) || 0,
+        openingBalanceUSD: parseAmount(openingUSD) || 0,
+        openingBalanceHome: parseAmount(openingHome) || 0,
         password: password || undefined,
       });
       if (res.success) {

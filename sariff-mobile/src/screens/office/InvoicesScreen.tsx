@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -153,13 +154,14 @@ export default function InvoicesScreen() {
     if (!clientName || items.some(it => !it.description || !it.unitPrice)) {
       Toast.show({ type: 'error', text1: 'Fill all fields' }); return;
     }
+    if (anyBadAmount(taxRate, ...items.flatMap((it: any) => [it.quantity, it.unitPrice]))) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     try {
       const res = await api.createInvoice({
         clientId: clientId || undefined, clientName, clientEmail: clientEmail || undefined,
-        dueDate, currency, taxRate: parseFloat(taxRate) || 0, discountAmount: 0,
+        dueDate, currency, taxRate: parseAmount(taxRate) || 0, discountAmount: 0,
         notes: notes || undefined, items: items.map(it => ({
-          description: it.description, quantity: parseFloat(it.quantity) || 1, unitPrice: parseFloat(it.unitPrice) || 0,
+          description: it.description, quantity: parseAmount(it.quantity) || 1, unitPrice: parseAmount(it.unitPrice) || 0,
         })),
       });
       if (res.success) { Toast.show({ type: 'success', text1: 'Invoice created' }); setShowCreate(false); load(); }
@@ -223,8 +225,8 @@ export default function InvoicesScreen() {
     const n = [...items]; (n[i] as any)[field] = value; setItems(n);
   };
   const removeItem = (i: number) => items.length > 1 && setItems(items.filter((_, idx) => idx !== i));
-  const subtotal = items.reduce((s, it) => s + (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0), 0);
-  const tax = subtotal * (parseFloat(taxRate) || 0) / 100;
+  const subtotal = items.reduce((s, it) => s + (parseAmount(it.quantity) || 0) * (parseAmount(it.unitPrice) || 0), 0);
+  const tax = subtotal * (parseAmount(taxRate) || 0) / 100;
 
   if (loading) return <LoadingScreen message="Loading invoices..." />;
 

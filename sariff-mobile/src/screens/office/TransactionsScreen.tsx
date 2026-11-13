@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Modal, ScrollView, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -179,12 +180,13 @@ export default function TransactionsScreen() {
   const handleCreate = async () => {
     if (!priId || !ctrId || !amount || !description) { Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Fill all required fields' }); return; }
     if (priType === ctrType && priId === ctrId) { Toast.show({ type: 'error', text1: 'Same account', text2: 'Source and destination must differ' }); return; }
-    if (needsFx && (!exchRate || parseFloat(exchRate) <= 0)) { Toast.show({ type: 'error', text1: 'Enter exchange rate' }); return; }
+    if (anyBadAmount(amount, needsFx ? exchRate : '') || !(parseAmount(amount) > 0)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
+    if (needsFx && (!exchRate || !(parseAmount(exchRate) > 0))) { Toast.show({ type: 'error', text1: 'Enter exchange rate' }); return; }
     setFormLoading(true);
     try {
-      const fx = !!needsFx; let fa = parseFloat(amount); const pc = priAcc?.currency ?? currency; const cc = ctrAcc?.currency ?? currency;
-      if (fx && priAcc && ctrAcc) fa = convertAmount(parseFloat(amount), ctrAcc.currency, priAcc.currency, parseFloat(exchRate), base);
-      const txPayload = { transactionType: txnType, sourceAccountType: priType, sourceAccountId: getRealId(priId), destAccountType: ctrType, destAccountId: getRealId(ctrId), amount: fa, currency: pc, counterAmount: fx ? parseFloat(amount) : undefined, counterCurrency: fx ? cc : undefined, exchangeRate: fx ? parseFloat(exchRate) : undefined, paymentMethod: payMethod, description, notes: notes || undefined };
+      const fx = !!needsFx; let fa = parseAmount(amount); const pc = priAcc?.currency ?? currency; const cc = ctrAcc?.currency ?? currency;
+      if (fx && priAcc && ctrAcc) fa = convertAmount(parseAmount(amount), ctrAcc.currency, priAcc.currency, parseAmount(exchRate), base);
+      const txPayload = { transactionType: txnType, sourceAccountType: priType, sourceAccountId: getRealId(priId), destAccountType: ctrType, destAccountId: getRealId(ctrId), amount: fa, currency: pc, counterAmount: fx ? parseAmount(amount) : undefined, counterCurrency: fx ? cc : undefined, exchangeRate: fx ? parseAmount(exchRate) : undefined, paymentMethod: payMethod, description, notes: notes || undefined };
       // One key per submission: a second press after a timeout can't record it twice.
       const res = await api.withIdempotencyKey(api.submissionKey(submitSession.current, txPayload), () => api.createTransaction(txPayload));
       if (res.success) {
@@ -214,7 +216,7 @@ export default function TransactionsScreen() {
                 clientName: clientAcc.name.split(' (')[0], type: isIncrease ? 'Credit' : 'Debit',
                 // The client's own amount: on a forex entry with the client as the counter
                 // account that is the counter amount, not the primary amount typed.
-                amount: Number(isClientPri ? (res.data?.amount ?? parseFloat(amount)) : (res.data?.counterAmount ?? res.data?.amount ?? parseFloat(amount))).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+                amount: Number(isClientPri ? (res.data?.amount ?? parseAmount(amount)) : (res.data?.counterAmount ?? res.data?.amount ?? parseAmount(amount))).toLocaleString('en-US', { minimumFractionDigits: 2 }),
                 currency: cur, balance: balanceStr, code: txnCode, description,
                 date: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
               })) },
@@ -396,8 +398,8 @@ export default function TransactionsScreen() {
         {needsFx && (<View style={{ backgroundColor: 'rgba(246,180,94,0.12)', borderWidth: 1, borderColor: 'rgba(246,180,94,0.32)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '700' as any, color: '#F6B45E', marginBottom: 8 }}>Cross-Currency</Text>
           <Input label={`Rate (${rateLabel(base, ctrAcc?.currency, priAcc?.currency)})`} value={exchRate} onChangeText={setExchRate} keyboardType="numeric" icon="swap-horizontal-outline" placeholder={base === Currency.UGX ? "3700" : "130.50"} />
-          {amount && exchRate && parseFloat(exchRate) > 0 && ctrAcc && priAcc && (<View style={{ backgroundColor: 'rgba(91,156,255,0.12)', borderRadius: 8, padding: 8, marginTop: 4 }}>
-            <Text style={{ fontSize: 13, color: '#7FB3FF', fontWeight: '700' as any }}>{`${currencyCode(ctrAcc.currency)} ${parseFloat(amount).toLocaleString()} ${ctrAcc.currency === Currency.KES ? '÷' : '×'} ${exchRate} = ${currencyCode(priAcc.currency)} ${convertAmount(parseFloat(amount), ctrAcc.currency, priAcc.currency, parseFloat(exchRate), base).toFixed(2)}`}</Text></View>)}
+          {amount && exchRate && parseAmount(exchRate) > 0 && ctrAcc && priAcc && (<View style={{ backgroundColor: 'rgba(91,156,255,0.12)', borderRadius: 8, padding: 8, marginTop: 4 }}>
+            <Text style={{ fontSize: 13, color: '#7FB3FF', fontWeight: '700' as any }}>{`${currencyCode(ctrAcc.currency)} ${parseAmount(amount).toLocaleString()} ${ctrAcc.currency === Currency.KES ? '÷' : '×'} ${exchRate} = ${currencyCode(priAcc.currency)} ${convertAmount(parseAmount(amount), ctrAcc.currency, priAcc.currency, parseAmount(exchRate), base).toFixed(2)}`}</Text></View>)}
         </View>)}
         <FormSection label="Description">
           <Input label="" value={description} onChangeText={setDescription} icon="document-text-outline" placeholder="e.g. Client deposit, transfer..." />

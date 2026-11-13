@@ -1,3 +1,4 @@
+import { parseAmount } from "../../../../utils/amount";
 import { AccountType, currencyChips, currencyCode, floatCurrenciesFor } from "../../../../types";
 import { ActionBtn, ChipGroup, FormSection, Input, ModalSheet } from "../../../../components/ui";
 import { Text, TouchableOpacity, View } from "react-native";
@@ -53,7 +54,7 @@ export function FloatFundingSheet({ vm }: { vm: ExchangeScreenVM }) {
             <Text style={{ fontSize: 13, color: "#39D9B0", marginTop: 4 }}>
               Cost: {baseCode}{" "}
               {(
-                parseFloat(floatAmount) * parseFloat(floatPurchaseRate)
+                parseAmount(floatAmount) * parseAmount(floatPurchaseRate)
               ).toLocaleString("en-US", { minimumFractionDigits: 2 })}
             </Text>
           )}

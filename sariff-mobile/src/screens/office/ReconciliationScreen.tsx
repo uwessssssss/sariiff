@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -70,9 +71,10 @@ export default function ReconciliationScreen() {
 
   const handleCreate = async () => {
     if (!accId || !actualBalance) { Toast.show({ type: 'error', text1: 'Fill all required fields' }); return; }
+    if (anyBadAmount(actualBalance)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     try {
-      const res = await api.createReconciliation({ accountType: accType, accountId: accId, actualBalance: parseFloat(actualBalance), notes: reconcNotes || undefined });
+      const res = await api.createReconciliation({ accountType: accType, accountId: accId, actualBalance: parseAmount(actualBalance), notes: reconcNotes || undefined });
       if (res.success) { Toast.show({ type: 'success', text1: 'Reconciliation created' }); setShowCreate(false); setActualBalance(''); setReconcNotes(''); load(); }
       else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     } catch (e: any) { Toast.show({ type: 'error', text1: 'Error', text2: e.message }); }

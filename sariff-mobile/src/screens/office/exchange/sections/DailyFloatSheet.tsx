@@ -1,3 +1,4 @@
+import { parseAmount } from "../../../../utils/amount";
 import { ActionBtn, FormSection, InfoRow, Input, ModalSheet } from "../../../../components/ui";
 import { CURRENCY_COLOR, Currency, formatCurrency } from "../../../../types";
 import { Text, View } from "react-native";
@@ -75,9 +76,9 @@ export function DailyFloatSheet({ vm }: { vm: ExchangeScreenVM }) {
             placeholder={`Count physical ${o.currencyCode}`}
           />
           {dailyOtherCounts[o.currency] ? (
-            <Text style={{ fontSize: 12, marginTop: 4, color: parseFloat(dailyOtherCounts[o.currency]) - o.balance === 0 ? "#39D9B0" : "#FF6B81" }}>
-              Variance: {parseFloat(dailyOtherCounts[o.currency]) - o.balance >= 0 ? "+" : ""}
-              {(parseFloat(dailyOtherCounts[o.currency]) - o.balance).toFixed(2)}
+            <Text style={{ fontSize: 12, marginTop: 4, color: parseAmount(dailyOtherCounts[o.currency]) - o.balance === 0 ? "#39D9B0" : "#FF6B81" }}>
+              Variance: {parseAmount(dailyOtherCounts[o.currency]) - o.balance >= 0 ? "+" : ""}
+              {(parseAmount(dailyOtherCounts[o.currency]) - o.balance).toFixed(2)}
             </Text>
           ) : null}
         </FormSection>
@@ -86,8 +87,8 @@ export function DailyFloatSheet({ vm }: { vm: ExchangeScreenVM }) {
         <View
           style={{
             backgroundColor:
-              parseFloat(dailyKesCount) - (float?.kesBalance || 0) === 0 &&
-              parseFloat(dailyUsdCount) - (float?.usdBalance || 0) === 0
+              parseAmount(dailyKesCount) - (float?.kesBalance || 0) === 0 &&
+              parseAmount(dailyUsdCount) - (float?.usdBalance || 0) === 0
                 ? "rgba(57,217,176,0.12)"
                 : "rgba(246,180,94,0.12)",
             borderRadius: 12,
@@ -107,18 +108,18 @@ export function DailyFloatSheet({ vm }: { vm: ExchangeScreenVM }) {
           </Text>
           <InfoRow
             label={`${baseCode}`}
-            value={`${parseFloat(dailyKesCount) - (float?.kesBalance || 0) >= 0 ? "+" : ""}${(parseFloat(dailyKesCount) - (float?.kesBalance || 0)).toFixed(2)}`}
+            value={`${parseAmount(dailyKesCount) - (float?.kesBalance || 0) >= 0 ? "+" : ""}${(parseAmount(dailyKesCount) - (float?.kesBalance || 0)).toFixed(2)}`}
             valueColor={
-              parseFloat(dailyKesCount) - (float?.kesBalance || 0) === 0
+              parseAmount(dailyKesCount) - (float?.kesBalance || 0) === 0
                 ? "#059669"
                 : "#DC2626"
             }
           />
           <InfoRow
             label="USD"
-            value={`${parseFloat(dailyUsdCount) - (float?.usdBalance || 0) >= 0 ? "+" : ""}${(parseFloat(dailyUsdCount) - (float?.usdBalance || 0)).toFixed(2)}`}
+            value={`${parseAmount(dailyUsdCount) - (float?.usdBalance || 0) >= 0 ? "+" : ""}${(parseAmount(dailyUsdCount) - (float?.usdBalance || 0)).toFixed(2)}`}
             valueColor={
-              parseFloat(dailyUsdCount) - (float?.usdBalance || 0) === 0
+              parseAmount(dailyUsdCount) - (float?.usdBalance || 0) === 0
                 ? "#059669"
                 : "#DC2626"
             }
