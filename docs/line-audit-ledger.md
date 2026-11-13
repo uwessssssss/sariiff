@@ -322,6 +322,11 @@ Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, c
 | W29 | Expenses paid by account transfer were labelled "Credit Card". By reading | Correct label |
 | W30 | Super-admin sign-out cleared the browser before asking the server, which then refused (no token): the refresh token stayed valid. By reading | Server first |
 | W31 | Portal statement PDF/print always showed KES and USD boxes (empty for Ugandan clients). By reading | Currencies held |
+| W32 | The portal profile showed KES and USD boxes first for every client, a Ugandan client's UGX under "Other". By reading | Currencies held |
+| W33 | Settings client table had KES and USD columns only. By reading | One Balances column |
+| W34 | Super-admin subscription days rounded milliseconds ("Expired 1 day ago" on the expiry day). By reading | Local calendar days |
+| W35 | Cash-flow holdings always showed KES (even at zero) instead of the home currency. By reading | Home currency |
+| W36 | The client password dialog showed KES and USD balances only. By reading | Every currency held |
 
 Read in full: lib/api/core.ts, providers/AuthProvider.tsx (sign-in, refresh, idle timer, device id), components/office/StatementModal.tsx, office/reconciliation/helpers.tsx and hooks/useReconciliationState.tsx (upload and matching), exchange/parts/NewExchangeModal.tsx and hooks/useExchangeSectionState.tsx (submit and share). Every web amount input checked: all are type="number", so a browser never hands over "1,500" (M12 does not apply to the web). Query strings in every lib/api file checked: searches are encoded. Not yet read: the rest.
 
