@@ -177,6 +177,11 @@ public class ExpenseService : IExpenseService
                         c.CompanyId == companyId && c.Currency == dto.Currency && !c.IsDeleted);
                     if (cash == null)
                         return new ApiResponse<ExpenseResponseDto>(false, $"No cash account found for {dto.Currency}", null);
+                    // The till chosen must be the one paying (it was looked up by currency only, so
+                    // "Cash USD" with the currency left at KES quietly paid from the shilling till).
+                    if (dto.PaymentAccountId != Guid.Empty && dto.PaymentAccountId != cash.Id)
+                        return new ApiResponse<ExpenseResponseDto>(false,
+                            $"That cash till doesn't hold {dto.Currency}. Choose the {dto.Currency} till or change the currency.", null);
                     balanceBefore = cash.Balance;
                     paymentAccountId = cash.Id;
                     

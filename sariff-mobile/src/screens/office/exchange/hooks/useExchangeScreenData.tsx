@@ -5,18 +5,35 @@ import { Ionicons } from "@expo/vector-icons";
 import { borderRadius, colors, fontSize, fontWeight, spacing } from "../../../../theme";
 import { styles } from "../helpers";
 import { useEffect } from "react";
+import * as api from "../../../../services/api";
 import { type useExchangeScreenState } from "./useExchangeScreenState";
 
 /** ExchangeScreen: data (part 2 of 2 of useExchangeScreen). */
 export function useExchangeScreenData(prev: ReturnType<typeof useExchangeScreenState>) {
-  const { anims, base, exchClientId, exchClientName, exchClientSearch, exchClients, floatAccounts, floatCurrency, load, modal, setExchClientId, setExchClientName, setExchClientSearch, setLoading, settleCurrency } = prev;
+  const { anims, base, exchClientId, exchClientName, exchClientSearch, exchClients, floatAccounts, floatCurrency, load, modal, setExchClientId, setExchClientName, setExchClientSearch, setExchClients, setLoading, settleCurrency } = prev;
+  // The lookup returns at most 200 clients, so searching only those never found client 201
+  // onward: ask the server (name, phone or code), keeping the chosen client in the list.
+  useEffect(() => {
+    const term = exchClientSearch.trim();
+    if (term.length < 2) return;
+    const t = setTimeout(async () => {
+      try {
+        const r = await api.getClientLookup(term);
+        if (r.success && Array.isArray(r.data)) {
+          const keep = exchClients.find((c: any) => c.id === exchClientId);
+          setExchClients(keep && !r.data.some((c: any) => c.id === keep.id) ? [keep, ...r.data] : r.data);
+        }
+      } catch {}
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exchClientSearch]);
   // Searchable vertical client picker (mirrors the Transactions account picker — render fn avoids focus loss)
   const renderExchClientPicker = (required: boolean) => {
-    const matches = exchClientSearch.trim()
+    const q = exchClientSearch.trim().toLowerCase();
+    const matches = q
       ? exchClients.filter((c: any) =>
-          (c.fullName || "")
-            .toLowerCase()
-            .includes(exchClientSearch.toLowerCase()),
+          [c.fullName, c.code, c.whatsAppNumber].some((v) => (v || "").toLowerCase().includes(q)),
         )
       : exchClients;
     const selected = exchClients.find((c: any) => c.id === exchClientId);

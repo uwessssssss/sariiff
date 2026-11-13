@@ -275,6 +275,9 @@ export function useExchangeScreenState() {
     setFormLoading(false);
   };
   const handleExchangeWithPin = async () => {
+    // A void whose PIN box was closed must not run when the PIN for THIS exchange is entered.
+    setPendingVoidId("");
+    setPendingVoidCode("");
     if (!exchAmount) {
       Toast.show({ type: "error", text1: "Enter amount" });
       return;
@@ -472,8 +475,9 @@ export function useExchangeScreenState() {
       ]);
       setFloatAccounts({
         cash: c.success ? c.data : [],
-        bank: b.success ? b.data : [],
-        mpesa: m.success ? m.data : [],
+        // switched-off accounts are refused by the server for float moves
+        bank: b.success ? (b.data || []).filter((x: any) => x.isActive !== false) : [],
+        mpesa: m.success ? (m.data || []).filter((x: any) => x.isActive !== false) : [],
       });
       setExchClients(cl.success ? cl.data : []);
     } catch {}

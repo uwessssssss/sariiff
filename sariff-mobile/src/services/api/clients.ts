@@ -32,7 +32,7 @@ export const deleteClient = (id: string) =>
   apiRequest<boolean>(`/api/client/${id}`, { method: "DELETE" });
 export const getClientLookup = (search = "") =>
   apiRequest<ClientDto[]>(
-    `/api/client/lookup${search ? `?search=${search}` : ""}`
+    `/api/client/lookup${search ? `?search=${encodeURIComponent(search)}` : ""}`
   );
 export const getClientStatement = (id: string, from?: string, to?: string, currency?: number) => {
   let url = `/api/client/${id}/statement`;

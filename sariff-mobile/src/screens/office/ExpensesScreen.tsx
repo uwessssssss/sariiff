@@ -64,9 +64,12 @@ export default function ExpensesScreen() {
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
   const getPaymentAccounts = () => {
-    if (paymentMethod === 0) return accounts.cash.map(a => ({ id: a.id, name: `Cash ${currencyCode(a.currency)}` }));
-    if (paymentMethod === 1) return accounts.bank.map(a => ({ id: a.id, name: `${a.bankName} (${a.accountName})` }));
-    return accounts.mpesa.map(a => ({ id: a.id, name: a.agentName }));
+    // Each account carries its currency: choosing it sets the expense currency, so a "Cash USD"
+    // pick can't go out as KES. Switched-off accounts are refused by the server and not offered.
+    const on = (xs: any[]) => (xs || []).filter((a: any) => a.isActive !== false);
+    if (paymentMethod === 0) return accounts.cash.map(a => ({ id: a.id, name: `Cash ${currencyCode(a.currency)}`, currency: a.currency }));
+    if (paymentMethod === 1) return on(accounts.bank).map(a => ({ id: a.id, name: `${a.bankName} (${a.accountName})`, currency: a.currency }));
+    return on(accounts.mpesa).map(a => ({ id: a.id, name: a.agentName, currency: a.currency ?? base }));
   };
 
   const handleCreate = async () => {
@@ -232,7 +235,7 @@ export default function ExpensesScreen() {
         <FormSection label="Payment Account">
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {getPaymentAccounts().map(a => (
-              <TouchableOpacity key={a.id} style={[styles.chip, paymentAccountId === a.id && styles.chipActive, { paddingHorizontal: 16 }]} onPress={() => setPaymentAccountId(a.id)}>
+              <TouchableOpacity key={a.id} style={[styles.chip, paymentAccountId === a.id && styles.chipActive, { paddingHorizontal: 16 }]} onPress={() => { setPaymentAccountId(a.id); if (a.currency !== undefined) setCurrency(a.currency); }}>
                 <Text style={[styles.chipText, paymentAccountId === a.id && styles.chipTextActive]} numberOfLines={1}>{a.name}</Text>
               </TouchableOpacity>
             ))}
