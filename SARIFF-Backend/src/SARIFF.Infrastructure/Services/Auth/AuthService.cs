@@ -641,7 +641,7 @@ public partial class AuthService : IAuthService
         ));
     }
 
-    public async Task<ApiResponse<bool>> LogoutAsync(Guid userId, UserRole? role = null)
+    public async Task<ApiResponse<bool>> LogoutAsync(Guid userId, UserRole? role = null, string? refreshToken = null)
     {
         // Only THIS person's sessions. It used to match "UserId == id OR CompanyId == id":
         // an office user's id is the bureau's id, and every client session carries its
