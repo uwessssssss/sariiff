@@ -43,7 +43,9 @@ export function SettleProfitSheet({ vm }: { vm: ExchangeScreenVM }) {
         <ChipGroup
           options={[
             {
-              value: 0,
+              // The home currency, not KES: a Ugandan bureau's "UGX" chip sent KES, which the
+              // server refuses ("profit is held in UGX"), and listed its KES accounts.
+              value: base,
               label: `${baseCode} (${formatCurrency(float?.kesProfit || 0, base)})`,
               color: "#39D9B0",
             },
@@ -66,7 +68,7 @@ export function SettleProfitSheet({ vm }: { vm: ExchangeScreenVM }) {
           options={[
             { value: AccountType.Cash, label: "Cash" },
             { value: AccountType.Bank, label: "Bank" },
-            ...(settleCurrency === 0
+            ...(settleCurrency === base
               ? [{ value: AccountType.Mpesa, label: "Mobile money" }]
               : []),
           ]}

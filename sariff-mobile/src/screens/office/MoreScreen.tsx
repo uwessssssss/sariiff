@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -69,7 +69,10 @@ export default function MoreScreen() {
         ))}
 
         {/* Logout */}
-        <TouchableOpacity style={[styles.logoutCard, shadows.sm]} onPress={logout} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.logoutCard, shadows.sm]} onPress={() => Alert.alert('Sign Out', 'Are you sure you want to sign out?', [   // one stray tap signed out mid-shift
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Out', style: 'destructive', onPress: () => { logout(); } },
+        ])} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>

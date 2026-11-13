@@ -6,7 +6,7 @@ import Toast from "react-native-toast-message";
 import * as api from "../../../../services/api";
 import { buildExchangeMessage, shareViaWhatsApp } from "../../../../utils/notifications";
 import { useBaseCurrency } from "../../../../hooks/useBaseCurrency";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /** ExchangeScreen: state (part 1 of 2 of useExchangeScreen). */
@@ -61,7 +61,8 @@ export function useExchangeScreenState() {
   );
   const [exchClientSearch, setExchClientSearch] = useState("");
   const [exchCustomRate, setExchCustomRate] = useState("");
-  const [settleCurrency, setSettleCurrency] = useState(0);
+  const [settleCurrency, setSettleCurrency] = useState<number>(Currency.KES);
+  useEffect(() => setSettleCurrency(base), [base]);   // home profit by default (was KES for every bureau)
   const [settleAccId, setSettleAccId] = useState("");
   const [rateHistoryData, setRateHistoryData] = useState<any[]>([]);
   const [todaySummary, setTodaySummary] = useState<any>(null);
@@ -153,6 +154,11 @@ export function useExchangeScreenState() {
     try {
       const profitAmount =
         settleCurrency === base ? float?.kesProfit || 0 : float?.usdProfit || 0;
+      if (!(profitAmount > 0)) {
+        Toast.show({ type: "error", text1: `No ${currencyCode(settleCurrency)} profit to settle` });
+        setFormLoading(false);
+        return;
+      }
       const res = await api.settleExchangeProfit({
         currency: settleCurrency,
         amount: profitAmount,

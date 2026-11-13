@@ -137,7 +137,7 @@ export default function AlertsScreen() {
             <Text style={styles.title}>Alerts</Text>
             <Text style={styles.subtitle}>Stay updated on your account</Text>
           </View>
-          {unreadCount > 0 && (
+          {(unreadCount > 0 || page < totalPages) && (   // older pages may hold unread alerts
             <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllBtn}>
               <Ionicons name="checkmark-done" size={16} color={colors.primary} />
               <Text style={styles.markAllText}>Read all</Text>
