@@ -110,6 +110,13 @@ export default function InvoicesScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
+  // The lookup gives the first 200 clients; typing searches the server for the rest.
+  const [clientSearch, setClientSearch] = useState('');
+  useEffect(() => {
+    const term = clientSearch.trim();
+    const t = setTimeout(() => { api.getClientLookup(term.length >= 2 ? term : '').then(r => r.success && setClients(r.data)).catch(() => {}); }, 300);
+    return () => clearTimeout(t);
+  }, [clientSearch]);
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   // Create form
@@ -126,8 +133,8 @@ export default function InvoicesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.getInvoices(1, 50);
-      if (res.success && res.data) setInvoices(res.data.items || res.data || []);
+      const res = await api.getAllInvoices();
+      if (res.success) setInvoices(res.data);
     } catch {}
   }, []);
 
@@ -294,6 +301,7 @@ export default function InvoicesScreen() {
       {/* Create Invoice Modal */}
       <ModalSheet visible={showCreate} onClose={() => setShowCreate(false)} title="New Invoice" icon="document-text-outline" iconColor="#4F46E5" iconBg="rgba(91,156,255,0.12)">
             <FormSection label="Client">
+            <Input label="Find client" value={clientSearch} onChangeText={setClientSearch} icon="search-outline" placeholder="Name, phone or code" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.chipRow}>
                 {clients.map(c => (

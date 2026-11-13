@@ -237,11 +237,13 @@ There is no React Native test harness in the repo (CI type-checks the app and ru
 | M6 | The exchange client picker searched only the first 200 clients the lookup returns, so client 201 onward could never be picked | The search asks the server (name, phone or code) |
 | M7 | Exchange PIN: closing the PIN box after starting a void left the void pending, so the PIN for the next exchange started the old void instead (same as M3) | Cleared when a new exchange starts |
 | M8 | Float and expense forms offered switched-off bank accounts and wallets; the expense currency was not tied to the chosen account | Only active accounts; choosing an account sets the currency |
+| M9 | The invoices screen loaded the latest 50 invoices, and its "Paid" and "Outstanding" totals were sums of those 50 only | Every invoice, page by page |
+| M10 | The invoice client picker showed the first 200 clients, with no search | A search box that asks the server |
 
 Backend, found while reading the mobile expense form:
 
 | Id | Bug | Fix |
 |---|---|---|
-| EX7 | A cash expense was paid from the till of the expense's currency, whatever till was chosen: "Cash USD" with the currency left at KES quietly paid from the shilling till (proven failing first, 4f… run) | Refused unless the chosen till holds that currency |
+| EX7 | A cash expense was paid from the till of the expense's currency, whatever till was chosen: "Cash USD" with the currency left at KES quietly paid from the shilling till (proven failing first, af8fece) | Refused unless the chosen till holds that currency |
 
-Files read so far: services/api/core.ts, auth.ts, clients.ts, accounts.ts, reports.ts, alerts.ts; hooks/useAuth.tsx; utils/moneyflow.ts, cache.ts; components/InactivityWrapper.tsx; screens/office/TransactionsScreen.tsx and ClientsScreen.tsx (logic; style sheets not audited). Not yet read: the rest.
+Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, clients.ts, invoices.ts; hooks/useAuth.tsx; utils/moneyflow.ts, cache.ts; components/InactivityWrapper.tsx; screens/office/TransactionsScreen.tsx, ClientsScreen.tsx, exchange/hooks/useExchangeScreenState.tsx. Read at logic-line level only (API calls, number parsing, totals): Accounts, Expenses, Reports, Invoices, Reconciliation, both dashboards, statements, alerts, analytics, profile. Not yet read: exchange sections, auth screens (Login, Otp, PhoneLogin), components/ui, utils/notifications and dates, navigation, types.

@@ -9,7 +9,7 @@ export { getCurrentExchangeRate, setExchangeRate, getExchangeFloat, createExchan
 export { getExpenses, createExpense, updateExpense, deleteExpense, getExpenseCategories, createExpenseCategory, updateExpenseCategory, deleteExpenseCategory, getExpenseStats } from "./expenses";
 export { getClientDashboard, getClientProfile, updateClientProfile, getClientTransactions, getClientAlerts, getClientAnalytics, changeClientPassword, getClientPortalStatement, getUnreadAlertsCount, markAlertAsRead, markAllAlertsAsRead, getClientTransactionById } from "./portal";
 export { getDailyReport, getExchangeSummary, getAccountSummary, getProfitLoss, getMonthlyReport, getLargeTransactions, getTodayTransactionsSummary } from "./reports";
-export { getInvoices, createInvoice, getInvoiceById, deleteInvoice, updateInvoiceStatus } from "./invoices";
+export { getInvoices, getAllInvoices, createInvoice, getInvoiceById, deleteInvoice, updateInvoiceStatus } from "./invoices";
 export { getReconciliations, getReconciliationAccounts, createReconciliation, reconcileTransaction, bulkReconcileTransactions, getAccountReconciliationSummary, getAccountTransactionsForReconciliation, getReconciliationHistory } from "./reconciliation";
 export { getMyCompanyInfo, updateMyCompanySettings } from "./settings";
 export { getApiBaseUrl, getAuthHeaders, downloadFile, downloadAndShareFile } from "./files";
