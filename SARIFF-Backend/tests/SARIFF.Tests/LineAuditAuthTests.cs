@@ -65,6 +65,23 @@ public class LineAuditAuthPostgresTests : IClassFixture<PostgresDatabase>
         Assert.True(step2.Success, step2.Message);
     }
 
+    // AU4
+    [PostgresFact]
+    public async Task A_short_guessable_device_id_is_never_trusted_to_skip_the_sms_code()
+    {
+        await using var db = _pg.NewContext();
+        var w = await SignInWorld.MakeAsync(db);
+        // The phone app falls back to the constant "unknown-device" when its storage fails.
+        // Trusted, that string let anyone with the bureau's password skip the SMS code.
+        Assert.True((await w.SignInAsync(w.Co.Code, w.Co.WhatsAppNumber, SignInWorld.Password, "unknown-device")).Success);
+        Assert.True((await w.Auth.VerifyOtpAsync(new OtpVerifyWithCodeDto(w.Co.Code, w.Co.WhatsAppNumber, w.Sms.LastCode!, "unknown-device"), SignInWorld.Ip, "test")).Success);
+
+        await Task.Delay(61_000);   // past the one-minute resend wait, so a new sign-in is a fresh one
+        var again = await w.SignInAsync(w.Co.Code, w.Co.WhatsAppNumber, SignInWorld.Password, "unknown-device");
+
+        Assert.IsNotType<TokenResponseDto>(again.Data);   // still asks for the code
+    }
+
     // AU2
     [PostgresFact]
     public async Task One_refresh_token_sent_twice_at_the_same_moment_opens_one_session_not_two()
