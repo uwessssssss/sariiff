@@ -282,14 +282,14 @@ export function TransactionForm({ onClose, onSuccess }: TransactionFormProps) {
           {/* Notes */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5">
-              Notes (Optional)
+              Notes (optional, the client sees them)
             </label>
             <textarea
               value={notes}
               onChange={(e: any) => setNotes(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm resize-none rounded-lg"
               rows={2}
-              placeholder="Additional notes..."
+              placeholder="Shown on the client's statement and receipt"
             />
           </div>
 

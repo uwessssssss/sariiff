@@ -408,8 +408,8 @@ export default function TransactionsScreen() {
         <FormSection label="Description">
           <Input label="" value={description} onChangeText={setDescription} icon="document-text-outline" placeholder="e.g. Client deposit, transfer..." />
         </FormSection>
-        <FormSection label="Notes (optional)">
-          <Input label="" value={notes} onChangeText={setNotes} icon="create-outline" placeholder="Additional notes" multiline />
+        <FormSection label="Notes (optional, the client sees them)">
+          <Input label="" value={notes} onChangeText={setNotes} icon="create-outline" placeholder="Shown on the client's statement" multiline />
         </FormSection>
         <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 16, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: isIncrease ? '#059669' : '#DC2626' }}>
           <Text style={{ fontSize: 11, fontWeight: '700' as any, color: colors.textTertiary, letterSpacing: 1, marginBottom: 8 }}>SUMMARY</Text>

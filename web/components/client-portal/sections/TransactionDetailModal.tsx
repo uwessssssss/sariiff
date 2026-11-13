@@ -100,8 +100,8 @@ export function TransactionDetailModal({ vm }: { vm: ClientUserDashboardVM }) {
                       <button
                         aria-label="Copy reference"
                         onClick={() => {
-                          navigator.clipboard.writeText(t.reference);
-                          toast.success("Reference copied");
+                          // writeText fails without permission or on http: it said "copied" anyway
+                          navigator.clipboard?.writeText(t.reference).then(() => toast.success("Reference copied"), () => toast.error("Couldn't copy. Select the reference and copy it."));
                         }}
                         className="rounded p-1 text-slate-600 hover:bg-slate-100 hover:text-slate-700"
                       >
@@ -129,8 +129,7 @@ export function TransactionDetailModal({ vm }: { vm: ClientUserDashboardVM }) {
                 </button>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(details);
-                    toast.success("Details copied");
+                    navigator.clipboard?.writeText(details).then(() => toast.success("Details copied"), () => toast.error("Couldn't copy the details"));
                   }}
                   className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >

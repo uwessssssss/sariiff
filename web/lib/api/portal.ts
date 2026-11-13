@@ -103,6 +103,8 @@ export interface CurrencyFlowDto {
   currencyCode: string;
   income: number;
   expenses: number;
+  /** In a month's row: the closing balance in this currency at the end of that month. */
+  balance?: number;
 }
 export interface MonthlyDataDto {
   month: string;

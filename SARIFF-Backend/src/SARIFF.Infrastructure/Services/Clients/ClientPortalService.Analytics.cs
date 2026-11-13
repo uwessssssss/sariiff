@@ -28,6 +28,24 @@ public partial class ClientPortalService
 
         var client = await _context.Users.FindAsync(clientId);
 
+        // Each month's CLOSING balance per currency, from the client's own running ledger. (Every
+        // month showed today's balance, so "Balance Growth: 6-month trend" was a flat line.)
+        var ledger = await LedgerAsync(companyId, clientId);
+        var openings = new Dictionary<Currency, decimal>
+        {
+            [Currency.KES] = client?.OpeningBalanceKES ?? 0,
+            [Currency.USD] = client?.OpeningBalanceUSD ?? 0
+        };
+        foreach (var o in await _context.ClientCurrencyBalances
+                     .Where(b => b.ClientId == clientId && b.CompanyId == companyId && !b.IsDeleted)
+                     .Select(b => new { b.Currency, b.OpeningBalance }).ToListAsync())
+            openings[o.Currency] = o.OpeningBalance;
+        var otherHeld = openings.Keys.Concat(ledger.Select(l => l.Currency))
+            .Where(c => c != Currency.KES && c != Currency.USD).Distinct().OrderBy(c => (int)c).ToList();
+        decimal ClosingAt(Currency cur, DateTime endExclusiveUtc) =>
+            ledger.LastOrDefault(l => l.Currency == cur && l.Date < endExclusiveUtc)?.BalanceAfter
+            ?? (openings.TryGetValue(cur, out var o) ? o : 0m);
+
         // Monthly data
         var monthlyData = new List<MonthlyDataDto>();
         for (int i = months - 1; i >= 0; i--)
@@ -42,8 +60,14 @@ public partial class ClientPortalService
 
             var (inKES, outKES, inUSD, outUSD) = CalculateInOut(monthTxns, clientId);
 
-            // Per-currency breakdown for currencies beyond KES/USD (UGX, EUR, ...).
+            // Per-currency breakdown for currencies beyond KES/USD (UGX, EUR, ...), with each
+            // held currency present (zero flows) so its closing balance is always there.
+            var monthEnd = BureauClock.MonthStartUtc(monthStart.AddMonths(1));
             var otherMonthly = OtherCurrencyFlows(monthTxns, clientId);
+            foreach (var cur in otherHeld.Where(c => otherMonthly.All(x => x.Currency != c)))
+                otherMonthly.Add(new CurrencyFlowDto { Currency = cur, CurrencyCode = cur.ToString() });
+            otherMonthly = otherMonthly.OrderBy(x => (int)x.Currency).ToList();
+            foreach (var row in otherMonthly) row.Balance = ClosingAt(row.Currency, monthEnd);
 
             monthlyData.Add(new MonthlyDataDto
             {
@@ -52,8 +76,8 @@ public partial class ClientPortalService
                 ExpensesKES = outKES,
                 IncomeUSD = inUSD,
                 ExpensesUSD = outUSD,
-                BalanceKES = client?.BalanceKES ?? 0,
-                BalanceUSD = client?.BalanceUSD ?? 0,
+                BalanceKES = ClosingAt(Currency.KES, monthEnd),
+                BalanceUSD = ClosingAt(Currency.USD, monthEnd),
                 OtherCurrencies = otherMonthly
             });
         }

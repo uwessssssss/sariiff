@@ -277,7 +277,7 @@ export function useClientUserDashboardData(prev: { userName: ClientUserDashboard
       expenses:
         analyticsCode === "KES" ? m.expensesKES : analyticsCode === "USD" ? m.expensesUSD : otherFlow(m.otherCurrencies)?.expenses ?? 0,
       balance:
-        analyticsCode === "KES" ? m.balanceKES : analyticsCode === "USD" ? m.balanceUSD : currentBalanceIn,
+        analyticsCode === "KES" ? m.balanceKES : analyticsCode === "USD" ? m.balanceUSD : (otherFlow(m.otherCurrencies)?.balance ?? currentBalanceIn),   // each month's closing balance (CL9)
     })) || [];
   const categoryChartData =
     analytics?.categoryBreakdown.map((c, i) => ({
