@@ -10,9 +10,10 @@ let reply = "fail";
 let release = null;
 global.fetch = async (url) => {
   if (!url.endsWith("/api/dashboard/currencies")) throw new Error("unexpected " + url);
-  if (reply === "fail") throw new TypeError("Network request failed");
-  if (reply === "slow-kes") await new Promise(r => { release = r; });
-  const base = reply === "slow-kes" ? KES : UGX;
+  const now = reply;   // what the server says at the moment of the request
+  if (now === "fail") throw new TypeError("Network request failed");
+  if (now === "slow-kes") await new Promise(r => { release = r; });
+  const base = now === "slow-kes" ? KES : UGX;
   return { ok: true, status: 200, json: async () => ({ success: true, message: "ok", data: { currencies: [], baseCurrency: base } }) };
 };
 const B = require("./web/useBaseCurrency");
