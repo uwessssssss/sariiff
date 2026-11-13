@@ -85,8 +85,7 @@ export function useExpensesAccountState() {
       0: "Cash",
       1: "Bank Transfer",
       2: "Mobile money",
-      3: "Credit Card",
-      4: "Cheque",
+      3: "Account transfer",   // the API's PaymentMethod 3 (it was labelled "Credit Card")
     };
     return {
       id: dto.id,

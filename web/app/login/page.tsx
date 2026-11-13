@@ -17,7 +17,9 @@ import { identityEnabled } from "@/lib/api";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
-const CODE_PATTERN = /^[A-Z]{2,4}(-CL)?-\d{4}-\d{1,6}$/;
+// Code prefixes are made from the bureau's name and may hold digits ("24/7 Forex" → "2FK")
+// or be one letter: letters-only {2,4} told those bureaus their correct code was invalid.
+const CODE_PATTERN = /^[A-Z0-9]{1,4}(-CL)?-\d{4}-\d{1,6}$/;
 const PHONE_PATTERN = /^\+[1-9]\d{9,14}$/;
 
 type FieldErrors = { code?: string; phone?: string; password?: string };
