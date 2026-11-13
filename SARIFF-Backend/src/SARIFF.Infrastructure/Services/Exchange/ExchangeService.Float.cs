@@ -59,6 +59,15 @@ public partial class ExchangeService
             ? Math.Round(dto.Amount * dto.PurchaseRate.Value, 2, MidpointRounding.AwayFromZero)
             : dto.Amount;
 
+        var accountCurrency = await GetAccountCurrencyAsync(companyId, dto.SourceType, dto.SourceAccountId);
+        if (accountCurrency == null)
+            return new ApiResponse<ExchangeFloatDto>(false, "Source account not found", null);
+        if (accountCurrency != sourceCurrency)
+            return new ApiResponse<ExchangeFloatDto>(false,
+                $"The source account holds {accountCurrency} but this funding takes {sourceCurrency} from it" +
+                (dto.Currency != baseCur && !dto.PurchaseRate.HasValue
+                    ? $". To buy {dto.Currency} with {baseCur}, enter a purchase rate." : "."), null);
+
         // Foreign currency moved in from a till of that currency is valued at today's buy
         // rate. With no rate set it used to enter at a cost of ZERO, so its whole sale price
         // was later booked as profit, which Settle Profit would pay out.
@@ -70,15 +79,6 @@ public partial class ExchangeService
                 return new ApiResponse<ExchangeFloatDto>(false,
                     $"Set today's {dto.Currency} rate first: the float values these {dto.Currency} at the buy rate.", null);
         }
-
-        var accountCurrency = await GetAccountCurrencyAsync(companyId, dto.SourceType, dto.SourceAccountId);
-        if (accountCurrency == null)
-            return new ApiResponse<ExchangeFloatDto>(false, "Source account not found", null);
-        if (accountCurrency != sourceCurrency)
-            return new ApiResponse<ExchangeFloatDto>(false,
-                $"The source account holds {accountCurrency} but this funding takes {sourceCurrency} from it" +
-                (dto.Currency != baseCur && !dto.PurchaseRate.HasValue
-                    ? $". To buy {dto.Currency} with {baseCur}, enter a purchase rate." : "."), null);
 
         using var dbTransaction = await _context.Database.BeginTransactionAsync();
 

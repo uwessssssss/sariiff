@@ -482,7 +482,7 @@ public class RateServiceTests
     {
         var b = await CreateAsync();
         var svc = new ExchangeRateService(b.Db);
-        Assert.Contains("positive", (await svc.SetRateAsync(b.Co, b.UserId, new SetExchangeRateDto(0, 1))).Message);
+        Assert.Contains("greater than zero", (await svc.SetRateAsync(b.Co, b.UserId, new SetExchangeRateDto(0, 1))).Message);
         Assert.Contains("less than sell", (await svc.SetRateAsync(b.Co, b.UserId, new SetExchangeRateDto(2, 1))).Message);
         Assert.Contains("base currency", (await svc.SetRateAsync(b.Co, b.UserId, new SetExchangeRateDto(1, 2, Currency.KES))).Message);
         Assert.Contains("isn't used", (await svc.SetRateAsync(b.Co, b.UserId, new SetExchangeRateDto(1, 2, Currency.UGX))).Message);
