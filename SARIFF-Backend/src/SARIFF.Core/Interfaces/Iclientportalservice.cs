@@ -88,6 +88,8 @@ public class ClientProfileDto
     /// clients who only hold KES/USD — existing consumers are unaffected.
     /// </summary>
     public List<CurrencyBalanceDto> OtherBalances { get; set; } = new();
+    /// <summary>The bureau holding this account: the name a client's statement is issued by.</summary>
+    public string CompanyName { get; set; } = string.Empty;
 }
 
 /// <summary>One client balance in a specific (non-KES/USD) currency.</summary>

@@ -148,4 +148,15 @@ public class LineAuditClientsTests
         Assert.Equal(1, alerts.Page);
         Assert.True(alerts.PageSize <= 200, $"page size {alerts.PageSize}");
     }
+
+    // CL8
+    [Fact]
+    public async Task The_portal_profile_names_the_bureau_so_statements_are_issued_in_its_name()
+    {
+        var w = await SignInWorld.MakeAsync(TestDb.InMemory());
+        // A client's sign-in token carries the CLIENT's name, and the portal printed it as the
+        // issuer of the statement: Amina's statement came "from Amina".
+        var profile = (await new ClientPortalService(w.Db).GetProfileAsync(w.Co.Id, w.Client.Id)).Data!;
+        Assert.Equal(w.Co.Name, profile.CompanyName);
+    }
 }
