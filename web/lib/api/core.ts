@@ -159,8 +159,14 @@ export async function apiRequest<T>(
           latest?.token && latest.token !== auth.token
             ? { accessToken: latest.token }
             : await refreshAuthOnce(auth.refreshToken);
-        if (refreshed) {
-          headers["Authorization"] = `Bearer ${refreshed.accessToken}`;
+        // A refused refresh may mean ANOTHER TAB just spent the same refresh token (tabs
+        // share localStorage; the single-flight guard is per tab, and the API accepts each
+        // refresh token once). Wait briefly for that tab's new token before signing out;
+        // signing out here also wiped the token the other tab had just saved.
+        const viaOtherTab = refreshed ? null : await tokenFromAnotherTab(auth.token);
+        const usable = refreshed ?? viaOtherTab;
+        if (usable) {
+          headers["Authorization"] = `Bearer ${usable.accessToken}`;
           const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
             headers,
@@ -228,6 +234,16 @@ export async function apiRequest<T>(
     message: "Network error — please check your connection and try again.",
     data: null,
   };
+}
+/** Up to ~3 s: has another tab stored a newer token than the one this request used? */
+async function tokenFromAnotherTab(oldToken: string): Promise<{ accessToken: string } | null> {
+  for (let i = 0; i < 6; i++) {
+    const now = getStoredAuth();
+    if (now?.token && now.token !== oldToken) return { accessToken: now.token };
+    if (!now) return null;   // signed out elsewhere
+    await sleep(500);
+  }
+  return null;
 }
 // Single-flight refresh: when the token expires, the dashboard's parallel
 // requests all get 401 at once. The API rotates (revokes) the refresh token on

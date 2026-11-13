@@ -253,3 +253,11 @@ Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, c
 | Id | Bug | Fix |
 |---|---|---|
 | AU4 | A trusted device skips the office/super-admin SMS code, but the server trusted a device id of any length. The phone app made its id with Math.random, kept it in plain storage, and fell back to the constant "unknown-device" when storage failed; the web also used Math.random. A bureau that once trusted "unknown-device" let anyone with its password skip the code (proven failing first) | The server trusts only ids of 16 to 200 characters; both apps make them from secure random bytes (the phone in the encrypted store) and send none rather than a constant; old Math.random ids on the web are replaced (one more SMS code each) |
+
+## Web (48,815 lines) — in progress
+
+| Id | Bug | Fix |
+|---|---|---|
+| W1 | Tabs share one stored sign-in, but the "one refresh at a time" guard is per tab. When two tabs hit an expired token together both spent the same refresh token; since AU2 (refresh tokens are single-use, atomically) the second was refused, and that tab cleared the stored sign-in, including the token the first tab had just saved: every tab signed out. A regression caused by AU2, proven failing first in tests/app-logic/tabs.test.js | A refused refresh first waits up to 3 s for another tab's new token |
+
+Read in full: lib/api/core.ts. Not yet read: the rest.
