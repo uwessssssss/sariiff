@@ -355,7 +355,7 @@ suite(async () => {
   });
 
   await proof("W7a", "Exchange: the receipt share is offered for a client who is not in the page's first-200 list", async (expect) => {
-    server.reply((url, body, method) => (method === "POST" && /\/api\/exchange(\?|$)/.test(url)
+    server.reply((url, body, method) => (method === "POST" && /\/api\/exchange\/transaction/.test(url)
       ? { id: "x1", code: "EX-55", currencyGiven: USD, currencyReceived: UGX, amountGiven: 100, amountReceived: 370000, exchangeRate: 3700, profit: 0 }
       : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
     const m = mountHook(app("components/office/exchange/hooks/useExchangeSectionState").useExchangeSectionState);
@@ -363,7 +363,7 @@ suite(async () => {
       exchangeType: 0, direction: 0, foreignCurrency: USD, amount: 100 });
     await tick(20);
     const share = m.render().exchShareModal;
-    expect(server.requests.some((r) => r.method === "POST" && /\/api\/exchange(\?|$)/.test(r.url)), `the exchange was not posted: ${JSON.stringify(toasts)}`);
+    expect(server.requests.some((r) => r.method === "POST" && /\/api\/exchange\/transaction/.test(r.url)), `the exchange was not posted: ${JSON.stringify(toasts)}`);
     expect(share && share.show === true && share.phone === "+256700000201", `share offered: ${JSON.stringify(share && { show: share.show, phone: share.phone })}`);
   });
 
@@ -446,7 +446,7 @@ suite(async () => {
     expect(!!file, `no PDF written: ${JSON.stringify(toasts)}`);
     if (file) {
       const raw = fs.readFileSync(path.join(dir, file));
-      let words = "";
+      let words = raw.toString("latin1");
       for (let at = raw.indexOf("stream"); at >= 0; at = raw.indexOf("stream", at + 6)) {
         const start = raw[at + 6] === 13 ? at + 8 : at + 7; const end = raw.indexOf("endstream", start);
         if (end < 0) break;
