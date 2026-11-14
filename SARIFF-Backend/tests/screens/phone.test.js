@@ -81,7 +81,10 @@ suite(async () => {
     try {
       const m = mount(app("screens/shared/ProfileScreen").default, {});
       await draw(m);
-      tappable(m.tree, /^Change Password$/).props.onPress();
+      const open = tappable(m.tree, /^Change Password$/);
+      expect(!!open, `no Change Password row${m.failed ? " (" + m.failed.message + ")" : ""}: ${text(m.tree).slice(0, 400)}`);
+      if (!open) return;
+      open.props.onPress();
       await draw(m, 1);
       field(m.tree, /Current Password/).props.onChangeText("old-pass-1");
       field(m.render(), /New Password/).props.onChangeText("NewPass123");
