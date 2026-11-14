@@ -262,7 +262,8 @@ suite(async () => {
   });
 
   await proof("M26", "Phone sign-in by phone number: the previous bureau's home currency is not kept", async (expect) => {
-    const { useBaseCurrency } = app("hooks/useBaseCurrency");
+    const { useBaseCurrency, resetBaseCurrency } = app("hooks/useBaseCurrency");
+    resetBaseCurrency();   // start as on a fresh app: the bureau signed in first is Kenyan
     const baseNow = async () => { const h = require("./phone-kit").mountHook(useBaseCurrency); await tick(30); return h.render().base; };
     server.reply((url) => (url.includes("/currencies") ? { baseCurrency: KES, currencies: [] } : undefined));
     const first = await baseNow();
