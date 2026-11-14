@@ -149,6 +149,15 @@ jobs:
           git fetch --depth=1 origin 963935c89f0569635f297f36a2e75e7d7863143c
           mkdir -p "$RUNNER_TEMP/before" && git archive FETCH_HEAD web | tar -x -C "$RUNNER_TEMP/before"
           node SARIFF-Backend/tests/screens/screens.test.js "$RUNNER_TEMP/before/web" "$PWD/web" --expect-fail
+      - name: Screen tests, earlier fixes W14-W36 (every one must pass)
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/screens/earlier.test.js "$PWD/web"
+      - name: Proof — the earlier tests on the screens as they were before W2 (every one must fail)
+        if: success() || failure()
+        run: |
+          git fetch --depth=1 origin 65a7e0e28cbb55512167b34dadb50286d580b56d
+          mkdir -p "$RUNNER_TEMP/before2" && git archive FETCH_HEAD web | tar -x -C "$RUNNER_TEMP/before2"
+          node SARIFF-Backend/tests/screens/earlier.test.js "$RUNNER_TEMP/before2/web" "$PWD/web" --expect-fail
 
   mobile:
     runs-on: ubuntu-24.04

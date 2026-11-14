@@ -201,4 +201,13 @@ function finish() {
   process.exit(passed.length || crashed.length ? 1 : 0);
 }
 
-module.exports = { SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };
+/** Call a hook that takes the layers before it as its argument (useXActions(prev)) and return what it gives. */
+const hook = (useIt, arg) => withHooks(stateless, () => useIt(arg));
+/** Mount a hook that keeps its own state: m.api is what it returns now; m.render() after changing something. */
+function mountHook(useIt, arg) {
+  const m = mount(() => { m_api = useIt(arg); return null; }, {});
+  var m_api;
+  return { get api() { return m_api; }, render() { m.render(); return m_api; } };
+}
+
+module.exports = { hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };
