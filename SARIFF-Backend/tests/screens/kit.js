@@ -55,11 +55,30 @@ let replyWith = () => undefined;
 global.fetch = async (url, opts = {}) => {
   let body; try { body = opts.body ? JSON.parse(opts.body) : undefined; } catch { body = opts.body; }
   const method = (opts.method || "GET").toUpperCase();
-  requests.push({ url: String(url), method, body });
-  const data = replyWith(String(url), body, method);
+  requests.push({ url: String(url), method, body, headers: opts.headers || {} });
+  const data = await replyWith(String(url), body, method, opts.headers || {});
+  if (data && data.__status) return { ok: false, status: data.__status, json: async () => { throw new SyntaxError("Unexpected end of JSON input"); }, text: async () => "", blob: async () => new Blob([]) };
   return { ok: true, status: 200, json: async () => ({ success: true, message: "ok", data }), text: async () => "", blob: async () => new Blob([]) };
 };
 const server = { requests, reply: (f) => { replyWith = f; }, clear: () => { requests.length = 0; } };
+
+/**
+ * Run f with the few browser objects some handlers touch (window.location, confirm, a download
+ * link, the print frame). page.printed is the HTML handed to the printer, page.downloads the files.
+ */
+async function withBrowser(f, { confirm = true } = {}) {
+  const page = { printed: null, downloads: [], asked: [], location: { protocol: "https:", href: "" } };
+  const element = () => { const e = { style: {}, setAttribute() {}, remove() {}, click() {} }; return e; };
+  global.window = { location: page.location, confirm: (q) => { page.asked.push(q); return confirm; }, open() {}, addEventListener() {}, removeEventListener() {}, dispatchEvent() {},
+    URL: { createObjectURL: (b) => { page.downloads.push(b); return "blob:x"; }, revokeObjectURL() {} } };
+  global.document = { cookie: "", createElement: element, addEventListener() {}, removeEventListener() {},
+    body: { appendChild(e) { if (e && e.srcdoc) page.printed = e.srcdoc; }, removeChild() {} } };
+  global.sessionStorage = { clear() {}, getItem: () => null, setItem() {}, removeItem() {} };
+  try { await f(page); } finally { delete global.window; delete global.document; delete global.sessionStorage; }
+  return page;
+}
+// next/navigation's useRouter outside a Next page
+try { fromWeb("next/dist/shared/lib/app-router-context.shared-runtime").AppRouterContext._currentValue = { push() {}, replace() {}, refresh() {}, back() {}, prefetch() {} }; } catch { /* not this Next version */ }
 
 /** The clipboard: allow() or refuse() what the page copies. */
 const clipboard = { copied: [], ok: true };
@@ -222,4 +241,4 @@ function suite(body) {
   body().then(finish, (e) => { console.log(`SUITE STOPPED: ${e && e.stack ? e.stack : e}`); process.exit(2); });
 }
 
-module.exports = { signedInBureau, suite, hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };
+module.exports = { withBrowser, store, signedInBureau, suite, hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };

@@ -1,6 +1,6 @@
 // Screen tests for the earlier "by reading" fixes of the line audit (W14-W36).
 // Same kit and rules as screens.test.js; the proof run uses the screens as they were before W2.
-const { suite, signedInBureau, app, mount, mountHook, hook, text, find, tag, pressable, tick, vm, proof, finish, server, toasts } = require("./kit");
+const { withBrowser, store, suite, signedInBureau, app, mount, mountHook, hook, text, find, tag, pressable, tick, vm, proof, finish, server, toasts } = require("./kit");
 
 const KES = 0, USD = 1, UGX = 2;
 const noop = () => {};
@@ -41,14 +41,15 @@ suite(async () => {
     box(t, /Client deposit/).props.onChange({ target: { value: "Deposit" } });
     if (date) find(t, (e) => tag(e) === "input" && e.props.type === "date")[0].props.onChange({ target: { value: date } });
     t = await settle();
+    const preview = (text(t).match(/Conversion Preview(.*?)=/) || [])[1];
     await find(t, (e) => tag(e) === "form")[0].props.onSubmit({ preventDefault: noop });
     for (let i = 0; i < 20; i++) { await tick(10); m.render(); }
     const share = find(m.render(), (e) => e.props.whatsappMessage !== undefined)[0];
     const sent = server.requests.find((r) => r.method === "POST" && r.url.includes("/api/transaction"));
-    return { tillNames, sent, share: share && share.props.isOpen ? share.props : null };
+    return { preview, tillNames, sent, share: share && share.props.isOpen ? share.props : null };
   }
 
-  let ugxDeposit;
+  let ugxDeposit, forex;
   await proof("W15", "Transaction form: tills are listed by currency (Cash UGX), not 'Cash 2'", async (expect) => {
     ugxDeposit = await fillAndSubmit({ account: "c1_UGX", till: "till-ugx", amount: "250000", date: "2026-11-02",
       reply: (b) => ({ code: "TXN-77", amount: b.amount, currency: b.currency, sourceBalanceAfter: 250000 }) });
@@ -66,7 +67,7 @@ suite(async () => {
   });
   await proof("W17", "Transaction form: on a forex entry the confirmation states the client's own amount and currency", async (expect) => {
     // The client's USD account receives USD 100, paid in as UGX 370,000 at 3,700 into the UGX till.
-    const r = await fillAndSubmit({ account: "c1_USD", till: "till-ugx", amount: "370000", rate: "3700",
+    const r = forex = await fillAndSubmit({ account: "c1_USD", till: "till-ugx", amount: "370000", rate: "3700",
       reply: (b) => ({ code: "TXN-78", amount: 100, currency: USD, counterAmount: 370000, counterCurrency: UGX, sourceBalanceAfter: 100 }) });
     expect(!!r.share, `no confirmation offered (posted: ${JSON.stringify(r.sent && r.sent.body)})`);
     if (r.share) {
@@ -209,4 +210,127 @@ suite(async () => {
     expect(/Expires today/.test(t), `says: ${(t.match(/Expire[ds][^·]*/) || ["nothing"])[0]}`);
   });
 
+
+  // ------------------------------------------------------------------ second batch
+  await proof("W13", "Transaction form: UGX paid in for a USD account is shown divided by the rate (÷), not multiplied", (expect) => {
+    expect(forex && /÷/.test(forex.preview || "") && !/×/.test(forex.preview || ""), `preview: UGX 370,000 ${forex && forex.preview}= USD 100`);
+  });
+
+  await proof("W11", "Sign-in: a token refresh keeps the signed-in user's id and phone", async (expect) => {
+    const before = store["sariff_auth"];
+    store["sariff_auth"] = JSON.stringify({ token: "old", refreshToken: "r1", expiresAt: "", user: { id: "user-7", fullName: "Amina", whatsAppNumber: "+256700000010", companyId: "co1", role: 1, mustChangePassword: false } });
+    server.reply((url, _b, _m, headers) => url.includes("/api/auth/refresh")
+      ? { accessToken: "new", refreshToken: "r2", companyId: "co1", role: 1, name: "Kampala Bureau", code: "KB-1", expiresAt: "" }
+      : headers.Authorization === "Bearer new" ? [] : { __status: 401 });
+    try {
+      await withBrowser(() => app("lib/api").getCashAccounts());
+      const auth = JSON.parse(store["sariff_auth"]);
+      expect(auth.token === "new", `token after refresh: ${auth.token}`);
+      expect(auth.user.id === "user-7" && auth.user.whatsAppNumber === "+256700000010", `user after refresh: ${JSON.stringify({ id: auth.user.id, whatsAppNumber: auth.user.whatsAppNumber })}`);
+    } finally { store["sariff_auth"] = before; }
+  });
+
+  await proof("W29", "Expenses: payment method 3 is 'Account transfer', not 'Credit Card'", (expect) => {
+    const state = hook(app("components/office/expenses/hooks/useExpensesAccountState").useExpensesAccountState);
+    const row = state.mapExpenseDto({ id: "e1", code: "EXP-1", expenseDate: "2026-11-10T09:00:00Z", description: "Rent", categoryId: "c", categoryName: "Rent", currency: UGX, amount: 100, paymentMethod: 3 });
+    expect(row.paymentMethod === "Account transfer", `shown as "${row.paymentMethod}"`);
+  });
+
+  await proof("W30", "Super admin sign-out: the server is told while the sign-in is still there", async (expect) => {
+    const before = store["sariff_auth"];
+    try {
+      const state = hook(app("components/super-admin/hooks/useSuperAdminDashboardState").useSuperAdminDashboardState, { userName: "Admin", initialTab: "overview", onLogout: () => app("lib/api").logout() });
+      await withBrowser(() => state.handleLogout());
+      const out = server.requests.find((r) => r.url.includes("/api/auth/logout"));
+      expect(!!out, "the server was never told");
+      if (out) expect(out.headers.Authorization === "Bearer t" && out.body && out.body.refreshToken === "r", `sign-out was sent with ${JSON.stringify({ Authorization: out.headers.Authorization, refreshToken: out.body && out.body.refreshToken })}`);
+      expect(store["sariff_auth"] === undefined, "the sign-in is still stored afterwards");
+    } finally { store["sariff_auth"] = before; }
+  });
+
+  // ---- client portal
+  const profile = { id: "c1", fullName: "Amina Hassan", code: "KB-CL-0001", whatsAppNumber: "+256700000010", email: "", companyName: "Kampala Bureau", clientType: 0, balanceKES: 0, balanceUSD: 0,
+    openingBalanceKES: 0, openingBalanceUSD: 0, totalInKES: 0, totalOutKES: 0, totalInUSD: 0, totalOutUSD: 0, createdAt: "2026-01-01T00:00:00Z",
+    otherBalances: [{ currency: UGX, currencyCode: "UGX", balance: 250000, openingBalance: 0, totalIn: 250000, totalOut: 0 }] };
+  const line = (code) => ({ id: code, code, reference: code, date: "2026-11-10T09:30:00Z", description: "Deposit", type: "Credit", amount: 1000, currency: UGX, balanceAfter: 1000 });
+  const portalData = (extra) => hook(app("components/client-portal/hooks/useClientUserDashboardData").useClientUserDashboardData,
+    vm({ userName: "Amina", profile, quickStats: null, analytics: null, transactions: [line("ON-SCREEN")], allMatchingTransactions: async () => [line("ON-SCREEN"), line("PAGE-TWO")],
+      passwordForm: { currentPassword: "old-pass", newPassword: "NewPass123", confirmPassword: "NewPass123" }, searchQuery: "", activeView: "dashboard", mobileMenuOpen: false, ...extra }));
+
+  let printed = null;
+  await proof("W31", "Portal statement print: boxes for the currencies the client holds (UGX), not empty KES/USD", async (expect) => {
+    const page = await withBrowser(() => portalData({}).handlePrintStatement());
+    printed = page.printed;
+    expect(!!printed, `nothing printed: ${JSON.stringify(toasts)}`);
+    if (printed) expect(/UGX Balance/.test(printed) && !/KES Balance/.test(printed) && !/USD Balance/.test(printed), `boxes: ${(printed.match(/[A-Z]{3} Balance/g) || []).join(", ")}`);
+  });
+  await proof("W8", "Portal statement print: every matching transaction, not only the page on screen", (expect) => {
+    expect(!!printed && /PAGE-TWO/.test(printed), "the transaction on page two is not in the statement");
+  });
+
+  await proof("W12", "Portal: after a password change the client is signed out (the server ended the session)", async (expect) => {
+    let signedOut = false;
+    server.reply(() => ({}));
+    await portalData({ onLogout: () => { signedOut = true; } }).handleChangePassword();
+    expect(server.requests.some((r) => /password/i.test(r.url)), `no password request: ${JSON.stringify(server.requests.map((r) => r.url))}`);
+    expect(signedOut, "the client was left signed in with a dead session");
+  });
+
+  await proof("W32", "Portal profile: the client's UGX balance is a main box, with no empty KES/USD boxes", async (expect) => {
+    const { ClientUserDashboard } = app("components/client-portal/ClientUserDashboard");
+    server.reply((url) => (/\/dashboard(\?|$)/.test(url) ? { profile, recentTransactions: [], recentAlerts: [], quickStats: { thisMonthInKES: 0, thisMonthOutKES: 0, thisMonthInUSD: 0, thisMonthOutUSD: 0, thisMonthOtherCurrencies: [] } }
+      : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : { items: [], totalCount: 0, totalPages: 0 }));
+    const m = mount(ClientUserDashboard, { userName: "Amina", onLogout: noop });
+    for (let i = 0; i < 10; i++) { await tick(15); m.render(); }
+    const nav = pressable(m.tree, /^(My )?Profile$/);
+    expect(!!nav, `no Profile button: ${text(m.tree).slice(0, 200)}`);
+    if (nav) nav.props.onClick();
+    for (let i = 0; i < 4; i++) { await tick(10); m.render(); }
+    const t = text(m.tree);
+    expect(/UGX Balance/.test(t), `profile: ${(t.match(/[A-Z]{3} Balance/g) || ["no balance boxes"]).join(", ")}`);
+    expect(!/KES Balance/.test(t) && !/USD Balance/.test(t), `empty boxes shown: ${(t.match(/[A-Z]{3} Balance/g) || []).join(", ")}`);
+  });
+
+  await proof("SM2", "Portal list: a slow answer for an earlier search does not replace the current one", async (expect) => {
+    let release;
+    server.reply((url) => {
+      if (!url.includes("/transactions?")) return undefined;
+      if (/search=amin(&|$)/.test(url)) return new Promise((r) => { release = () => r({ items: [line("FOR-AMIN")], totalCount: 1 }); });
+      if (/search=amina(&|$)/.test(url)) return { items: [line("FOR-AMINA")], totalCount: 1 };
+      return { items: [], totalCount: 0 };
+    });
+    const m = mountHook(app("components/client-portal/hooks/useClientUserDashboardState").useClientUserDashboardState, { userName: "Amina", onLogout: noop });
+    m.api.setSearchQuery("amin");
+    const slow = m.render().fetchTransactions();
+    await tick(10);
+    m.api.setSearchQuery("amina");
+    await m.render().fetchTransactions();
+    release(); await slow; await tick(10);
+    const shown = (m.render().transactions || []).map((x) => x.code);
+    expect(shown.length === 1 && shown[0] === "FOR-AMINA", `the box says "amina" but the list shows ${JSON.stringify(shown)}`);
+  });
+
+  await proof("W25", "Reports PDF: every transaction on screen is in the file (it stopped at the first 50)", async (expect) => {
+    const fs = require("fs"), os = require("os"), path = require("path"), zlib = require("zlib");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "report-")); const cwd = process.cwd();
+    const many = Array.from({ length: 60 }, (_, i) => ({ id: `r${i}`, code: `TXN-${String(i + 1).padStart(3, "0")}`, description: `Entry ${i + 1}`, date: today, currency: "UGX", type: "debit", amount: 1000 + i }));
+    process.chdir(dir);
+    try {
+      await withBrowser(() => hook(app("components/office/reports/hooks/useReportsEffects").useReportsEffects, reportState({ transactions: many, filteredTransactions: many })).handleExport("pdf"));
+      await tick(50);
+    } finally { process.chdir(cwd); }
+    const file = fs.readdirSync(dir).find((f) => f.endsWith(".pdf"));
+    expect(!!file, `no PDF written: ${JSON.stringify(toasts)}`);
+    if (file) {
+      const raw = fs.readFileSync(path.join(dir, file));
+      let words = raw.toString("latin1");
+      for (let at = raw.indexOf("stream"); at >= 0; at = raw.indexOf("stream", at + 6)) {
+        const start = raw[at + 6] === 13 ? at + 8 : at + 7; const end = raw.indexOf("endstream", start);
+        if (end < 0) break;
+        try { words += zlib.inflateSync(raw.subarray(start, end)).toString("latin1"); } catch { /* not compressed */ }
+      }
+      expect(/Entry 1\b/.test(words), "the PDF text could not be read");
+      expect(/Entry 60\b/.test(words), `rows in the PDF: ${(words.match(/Entry \d+/g) || []).length} of 60`);
+    }
+  });
 });
