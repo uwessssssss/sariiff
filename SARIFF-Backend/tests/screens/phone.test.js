@@ -1,7 +1,7 @@
 // Screen tests for the phone app's "by reading" fixes (M13-M35). See phone-kit.js.
 //   node phone.test.js <sariff-mobile/src> <web>                       every test must pass
 //   node phone.test.js <old sariff-mobile/src> <web> --expect-fail     every test must fail on the defect
-const { vm, suite, app, mount, hook, text, find, tick, proof, server, toasts, world, phone, tappable, field, signedIn } = require("./phone-kit");
+const { mountHook, vm, suite, app, mount, hook, text, find, tick, proof, server, toasts, world, phone, tappable, field, signedIn } = require("./phone-kit");
 
 const KES = 0, USD = 1, UGX = 2;
 const noop = () => {};
@@ -277,5 +277,115 @@ suite(async () => {
     expect(first === KES, `the first bureau's home currency was read as ${first}`);
     expect(second === UGX, `after signing in to the Ugandan bureau the home currency is still ${second === KES ? "KES" : second}`);
     signedIn();
+  });
+
+  // ------------------------------------------------------------------ the phone's transaction form and lists
+  const opener = (tree, what) => find(tree, (e) => typeof e.props.onPress === "function" && what.test(String(e.props.onPress)))[0];
+  const office = { user: { id: "u1", code: "KB-OFF-1", fullName: "Amina Hassan", role: 1 }, logout: noop, isAuthenticated: true };
+  const customer = { id: "c1", fullName: "Amina Hassan", code: "KB-CL-0001", whatsAppNumber: "+256700000010", isActive: true, balanceKES: 0, balanceUSD: 0, otherBalances: [] };
+  const row = (code) => ({ id: code, code, description: code, amount: 1000, currency: UGX, transactionType: 0, transactionDate: "2026-11-10T09:30:00Z", createdAt: "2026-11-10T09:30:00Z",
+    sourceAccountType: 0, destAccountType: 3, sourceAccountName: "Cash UGX", destAccountName: "Amina Hassan", reference: code });
+
+  let phoneForm = null;
+  await proof("M34", "Phone transaction form: UGX paid in for a USD account is shown divided by the rate (÷)", async (expect) => {
+    app("hooks/useBaseCurrency").resetBaseCurrency();
+    world.context = office;
+    server.reply((url) => (url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] }
+      : url.includes("/api/cash") ? [{ id: "till-ugx", currency: UGX, balance: 9000000, isActive: true }, { id: "till-usd", currency: USD, balance: 5000, isActive: true }]
+      : url.includes("/api/bank") || url.includes("/api/mpesa") ? []
+      : url.includes("/api/client") ? { items: [customer], totalCount: 1, totalPages: 1 }
+      : url.includes("/api/transaction") ? { items: [], totalCount: 0, totalPages: 1 } : undefined));
+    try {
+      const m = mount(app("screens/office/TransactionsScreen").default, {});
+      await draw(m, 4);
+      const add = opener(m.tree, /setModal\(['"]create['"]\)/);
+      expect(!!add, "no button opens the new-transaction form");
+      if (!add) return;
+      add.props.onPress();
+      await draw(m, 5);
+      phoneForm = text(m.tree);
+      const account = tappable(m.tree, /^Amina Hassan \(KB-CL-0001\) USD/);
+      const till = tappable(m.tree, /^Cash UGX/);
+      expect(!!account && !!till, `accounts offered${m.failed ? " (" + m.failed.message + ")" : ""}: ${(phoneForm.match(/(Amina Hassan \(KB-CL-0001\) [A-Z]{3}|Cash [A-Z]{3})/g) || ["none"]).join(", ")}`);
+      if (!account || !till) return;
+      account.props.onPress(); await draw(m, 1);
+      tappable(m.tree, /^Cash UGX/).props.onPress(); await draw(m, 1);
+      field(m.tree, /^0\.00 $/).props.onChangeText("370000"); await draw(m, 1);
+      field(m.tree, /Rate \(/).props.onChangeText("3700"); await draw(m, 1);
+      const preview = (text(m.tree).match(/UGX 370,000 . 3700 = USD [\d,.]+/) || ["no preview"])[0];
+      expect(/÷/.test(preview) && /USD 100/.test(preview), `preview: ${preview}`);
+    } finally { world.context = undefined; }
+  });
+  await proof("W37p", "Phone transaction form: the notes box says the client sees the notes", (expect) => {
+    expect(!!phoneForm && /the client sees them/i.test(phoneForm), `notes label: ${phoneForm ? (phoneForm.match(/Notes[^A-Z]{0,40}/) || ["?"])[0] : "form not opened"}`);
+  });
+
+  await proof("SM4p", "Phone transactions list: a slow answer for an earlier search does not replace the current one", async (expect) => {
+    let release;
+    world.context = office;
+    server.reply((url) => {
+      if (url.includes("/currencies")) return { baseCurrency: UGX, currencies: [] };
+      if (!url.includes("/api/transaction")) return undefined;
+      if (/search=amin(&|$)/.test(url)) return new Promise((r) => { release = () => r({ items: [row("FOR-AMIN")], totalCount: 1, totalPages: 1 }); });
+      if (/search=amina(&|$)/.test(url)) return { items: [row("FOR-AMINA")], totalCount: 1, totalPages: 1 };
+      return { items: [], totalCount: 0, totalPages: 1 };
+    });
+    try {
+      const m = mount(app("screens/office/TransactionsScreen").default, {});
+      await draw(m, 3);
+      field(m.tree, /Search by code/).props.onChangeText("amin"); await draw(m, 2);
+      field(m.tree, /Search by code/).props.onChangeText("amina"); await draw(m, 3);
+      if (release) release(); await draw(m, 3);
+      const shown = (text(m.tree).match(/FOR-AMINA?\b/g) || []).filter((v, n, a) => a.indexOf(v) === n);
+      expect(!!release, "the first search was never sent");
+      expect(shown.length === 1 && shown[0] === "FOR-AMINA", `the box says "amina" but the list shows ${JSON.stringify(shown)}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("M20", "Phone exchange: the WhatsApp confirmation writes amounts with separators (3,712,345 not 3712345.5)", async (expect) => {
+    world.context = office;
+    phone.reset();
+    server.reply((url, _b, method) => (url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] }
+      : method === "POST" && url.includes("/api/exchange") ? { id: "x1", code: "EX-77", currencyGiven: USD, currencyReceived: UGX, amountGiven: 1003.5, amountReceived: 3712345.5, exchangeRate: 3699.4 } : undefined));
+    try {
+      const m = mountHook(app("screens/office/exchange/hooks/useExchangeScreenState").useExchangeScreenState);
+      await tick(30); m.render();
+      m.api.setExchClients([customer]); m.api.setExchClientId("c1"); m.api.setExchAmount("1003.5");
+      await m.render().handleExchange();
+      await tick(900);
+      const ask = phone.alerts.find((a) => /Share Confirmation/.test(a.title));
+      expect(!!ask, `no share offered: ${JSON.stringify(toasts)}`);
+      if (!ask) return;
+      await ask.buttons.find((b) => /WhatsApp/.test(b.text)).onPress();
+      await tick(50);
+      const opened = phone.calls.find((c) => c[0] === "Linking" && c[1] === "openURL");
+      const message = opened ? decodeURIComponent(String(opened[2][0])) : "";
+      expect(!!opened, "WhatsApp was not opened");
+      if (opened) expect(/3,712,34[56]/.test(message) && !/3712345/.test(message), `the client is sent: ${(message.match(/[^\n]*3[,]?712[,]?34[^\n]*/) || [message.slice(0, 200)])[0]}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("M29", "Phone invoices: after creating one, the form opens empty for the next", async (expect) => {
+    world.context = office;
+    server.reply((url, _b, method) => (url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] }
+      : method === "POST" && url.includes("/api/invoice") ? { id: "i9", invoiceNumber: "INV-10" }
+      : url.includes("/api/invoice") ? { items: [], totalCount: 0, totalPages: 1 } : url.includes("/api/client") ? [] : undefined));
+    try {
+      const m = mount(app("screens/office/InvoicesScreen").default, {});
+      await draw(m, 4);
+      const open = () => opener(m.tree, /setShowCreate\(true\)/);
+      expect(!!open(), "no button opens the new-invoice form");
+      if (!open()) return;
+      open().props.onPress(); await draw(m, 2);
+      field(m.tree, /Client Name/).props.onChangeText("First Customer"); await draw(m, 1);
+      field(m.tree, /^Description /).props.onChangeText("Service"); await draw(m, 1);
+      field(m.tree, /^Price /).props.onChangeText("50000"); await draw(m, 1);
+      await tappable(m.tree, /^Create Invoice$/).props.onPress();
+      await draw(m, 3);
+      expect(server.requests.some((r) => r.method === "POST" && r.url.includes("/api/invoice")), `the invoice was not created: ${JSON.stringify(toasts)}`);
+      open().props.onPress(); await draw(m, 2);
+      const name = field(m.tree, /Client Name/);
+      expect(name && name.props.value === "", `the second invoice starts with client "${name && name.props.value}"`);
+    } finally { world.context = undefined; }
   });
 });
