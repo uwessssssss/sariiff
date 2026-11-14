@@ -1,6 +1,6 @@
 // Screen tests for the earlier "by reading" fixes of the line audit (W14-W36).
 // Same kit and rules as screens.test.js; the proof run uses the screens as they were before W2.
-const { withBrowser, store, suite, signedInBureau, app, mount, mountHook, hook, text, find, tag, pressable, tick, vm, proof, finish, server, toasts } = require("./kit");
+const { world, withBrowser, store, suite, signedInBureau, app, mount, mountHook, hook, text, find, tag, pressable, tick, vm, proof, finish, server, toasts } = require("./kit");
 
 const KES = 0, USD = 1, UGX = 2;
 const noop = () => {};
@@ -49,7 +49,7 @@ suite(async () => {
     return { preview, tillNames, sent, share: share && share.props.isOpen ? share.props : null };
   }
 
-  let ugxDeposit, forex;
+  let ugxDeposit, forex, sm3 = null;
   await proof("W15", "Transaction form: tills are listed by currency (Cash UGX), not 'Cash 2'", async (expect) => {
     ugxDeposit = await fillAndSubmit({ account: "c1_UGX", till: "till-ugx", amount: "250000", date: "2026-11-02",
       reply: (b) => ({ code: "TXN-77", amount: b.amount, currency: b.currency, sourceBalanceAfter: 250000 }) });
@@ -334,6 +334,126 @@ suite(async () => {
       }
       expect(/Entry 1\b/.test(words), "the PDF text could not be read");
       expect(/Entry 60\b/.test(words), `rows in the PDF: ${(words.match(/Entry \d+/g) || []).length} of 60`);
+    }
+  });
+
+  // ------------------------------------------------------------------ third batch
+  await proof("W28", "Web sign-in: a code whose prefix has a digit (2FK-2026-0001) is accepted", async (expect) => {
+    const calls = [];
+    world.context = { login: async (...a) => { calls.push(a); return { success: true }; }, verifyOtp: noop, isLoading: false, user: null };
+    try {
+      const LoginPage = app("app/login/page").default;
+      const m = mount(LoginPage, {});
+      box(m.tree, /^AFB-2026-0001$/).props.onChange({ target: { value: "2fk-2026-0001" } });
+      box(m.render(), /^\+254712345678$/).props.onChange({ target: { value: "+256772123456" } });
+      find(m.render(), (e) => tag(e) === "input" && (e.props.type === "password" || e.props.autoComplete === "current-password"))[0].props.onChange({ target: { value: "Passw0rd!" } });
+      await find(m.render(), (e) => tag(e) === "form")[0].props.onSubmit({ preventDefault: noop });
+      await tick(10);
+      const t = text(m.render());
+      expect(calls.length === 1 && calls[0][0] === "2FK-2026-0001", `sign-in was ${calls.length ? "sent as " + calls[0][0] : "refused"}: ${(t.match(/Check your code[^.]*\./) || [""])[0]}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("W7a", "Exchange: the receipt share is offered for a client who is not in the page's first-200 list", async (expect) => {
+    server.reply((url, body, method) => (method === "POST" && /\/api\/exchange(\?|$)/.test(url)
+      ? { id: "x1", code: "EX-55", currencyGiven: USD, currencyReceived: UGX, amountGiven: 100, amountReceived: 370000, exchangeRate: 3700, profit: 0 }
+      : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
+    const m = mountHook(app("components/office/exchange/hooks/useExchangeSectionState").useExchangeSectionState);
+    await m.api.handleNewExchange({ clientId: "client-0201-aaaa-bbbb", client: { id: "client-0201-aaaa-bbbb", fullName: "Zedekiah Okello", whatsAppNumber: "+256700000201" },
+      exchangeType: 0, direction: 0, foreignCurrency: USD, amount: 100 });
+    await tick(20);
+    const share = m.render().exchShareModal;
+    expect(server.requests.some((r) => r.method === "POST" && /\/api\/exchange(\?|$)/.test(r.url)), `the exchange was not posted: ${JSON.stringify(toasts)}`);
+    expect(share && share.show === true && share.phone === "+256700000201", `share offered: ${JSON.stringify(share && { show: share.show, phone: share.phone })}`);
+  });
+
+  await proof("W7b", "Reconciliation: a statement named STATEMENT.CSV is accepted", async (expect) => {
+    global.FileReader = class { readAsText() { this.onload({ target: { result: "Date,Description,Amount\n13/11/2026,Deposit,1500\n" } }); } };
+    try {
+      const m = mountHook(app("components/office/reconciliation/hooks/useReconciliationState").useReconciliationState);
+      m.api.handleFileUpload({ target: { files: [{ name: "STATEMENT.CSV" }] } });
+      await tick(10);
+      expect(!toasts.some(([, msg]) => /upload a CSV file/i.test(msg)), `refused: ${JSON.stringify(toasts)}`);
+    } finally { delete global.FileReader; }
+  });
+
+  await proof("SM4", "Client list: a slow answer for an earlier spelling does not replace the current one", async (expect) => {
+    let release;
+    const person = (name) => ({ id: name, code: name, fullName: name, isActive: true, balanceKES: 0, balanceUSD: 0 });
+    server.reply((url) => {
+      if (!url.includes("/api/client?")) return undefined;
+      if (/search=amin(&|$)/.test(url)) return new Promise((r) => { release = () => r({ items: [person("FOR-AMIN")], totalCount: 1, totalPages: 1 }); });
+      if (/search=amina(&|$)/.test(url)) return { items: [person("FOR-AMINA")], totalCount: 1, totalPages: 1 };
+      return { items: [], totalCount: 0, totalPages: 0 };
+    });
+    const m = mountHook(app("components/office/clients/hooks/useClientManagementState").useClientManagementState);
+    m.api.setSearchTerm("amin");
+    const slow = m.render().fetchClients();
+    await tick(10);
+    m.api.setSearchTerm("amina");
+    await m.render().fetchClients();
+    if (release) release(); await slow; await tick(10);
+    const shown = (m.render().clients || []).map((c) => c.code);
+    expect(!!release, "the first search was never sent");
+    expect(shown.length === 1 && shown[0] === "FOR-AMINA", `the box says "amina" but the list shows ${JSON.stringify(shown)}`);
+  });
+
+  await proof("SM1", "Statement: switching currency quickly never leaves the other currency's lines on screen", async (expect) => {
+    const { StatementModal } = app("components/office/StatementModal");
+    const waiting = [];
+    const answer = (words) => ({ openingBalance: 0, closingBalance: 5, totalDebit: 0, totalCredit: 5, periodStart: "", periodEnd: "",
+      transactions: words.map((w, i) => ({ transactionId: w, transactionCode: w, date: "2026-11-10T09:30:00Z", description: w, debit: 0, credit: 5 + i, balance: 5 })) });
+    server.reply((url) => {
+      if (!url.includes("/statement")) return undefined;
+      if (/currency=0/.test(url)) return new Promise((r) => waiting.push(() => r(answer(["KES LINE"]))));
+      return answer(["USD LINE", "USD RENT"]);
+    });
+    world.context = { user: { companyName: "Kampala Bureau" } };
+    const fs = require("fs"), os = require("os"), path = require("path"), zlib = require("zlib");
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "stmt-")); const cwd = process.cwd();
+    try {
+      await withBrowser(async () => {
+        const m = mount(StatementModal, { kind: "client", accountId: "c1", title: "Amina Hassan", currency: KES, currencies: [KES, USD], onClose: noop });
+        await tick(10);
+        pressable(m.render(), /^USD$/).props.onClick();
+        for (let i = 0; i < 4; i++) { m.render(); await tick(10); }
+        waiting.forEach((go) => go());
+        for (let i = 0; i < 4; i++) { await tick(10); m.render(); }
+        const t = text(m.tree);
+        expect(waiting.length > 0, "the KES statement was never asked for");
+        expect(/USD LINE/.test(t) && !/KES LINE/.test(t), `under the USD tab: ${(t.match(/(KES|USD) (LINE|RENT)/g) || ["nothing"]).join(", ")}`);
+        sm3 = { m, dir, cwd, fs, path, zlib };
+      });
+    } finally { world.context = undefined; }
+  });
+
+  await proof("SM3", "Statement PDF: with a search on, the file says it is filtered and that totals are for the whole period", async (expect) => {
+    expect(!!sm3, "statement not open");
+    if (!sm3) return;
+    const { m, dir, cwd, fs, path, zlib } = sm3;
+    world.context = { user: { companyName: "Kampala Bureau" } };
+    process.chdir(dir);
+    try {
+      await withBrowser(async () => {
+        box(m.render(), /^Search description/).props.onChange({ target: { value: "rent" } });
+        const pdf = pressable(m.render(), /^PDF$/);
+        expect(!!pdf, "PDF button not found");
+        if (pdf) pdf.props.onClick();
+        await tick(50);
+      });
+    } finally { process.chdir(cwd); world.context = undefined; }
+    const file = fs.readdirSync(dir).find((f) => f.endsWith(".pdf"));
+    expect(!!file, `no PDF written: ${JSON.stringify(toasts)}`);
+    if (file) {
+      const raw = fs.readFileSync(path.join(dir, file));
+      let words = "";
+      for (let at = raw.indexOf("stream"); at >= 0; at = raw.indexOf("stream", at + 6)) {
+        const start = raw[at + 6] === 13 ? at + 8 : at + 7; const end = raw.indexOf("endstream", start);
+        if (end < 0) break;
+        try { words += zlib.inflateSync(raw.subarray(start, end)).toString("latin1"); } catch { /* not compressed */ }
+      }
+      expect(/USD RENT/.test(words) && !/USD LINE/.test(words), "the PDF does not hold exactly the filtered line");
+      expect(/Filtered: 1 of 2/.test(words), "the PDF lists 1 of 2 lines under the whole period's totals without saying so");
     }
   });
 });

@@ -101,19 +101,22 @@ function withHooks(hooks, f) {
   for (const h of HOOKS) { saved[h] = React[h]; React[h] = hooks[h]; }
   try { return f(); } finally { Object.assign(React, saved); }
 }
+/** world.context: what a component gets from a provider the test does not mount (e.g. the signed-in user). */
+const world = { context: undefined };
 /** Hooks that keep nothing: first-render values, effects not run. Used to look inside child components. */
 const stateless = {
   useState: (init) => [typeof init === "function" ? init() : init, () => {}],
   useReducer: (_r, init) => [init, () => {}],
   useEffect() {}, useLayoutEffect() {},
   useMemo: (f) => f(), useCallback: (f) => f, useRef: (v) => ({ current: v }),
-  useContext: (c) => c && c._currentValue, useId: () => "id",
+  useContext: (c) => (c && c._currentValue !== undefined ? c._currentValue : world.context), useId: () => "id",
 };
 
 /**
  * Mount a component that keeps state. tree is what it draws now; after pressing something call
  * render() to draw again. Effects run after each render when their inputs changed (like React).
  */
+const same = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((d, n) => Object.is(d, b[n]));
 function mount(Component, props) {
   const slots = []; let i = 0; let pending = [];
   const hooks = {
@@ -124,8 +127,8 @@ function mount(Component, props) {
       return [slots[k], (v) => { slots[k] = typeof v === "function" ? v(slots[k]) : v; }];
     },
     useRef(v) { const k = i++; if (!(k in slots)) slots[k] = { current: v }; return slots[k]; },
-    useMemo(f) { i++; return f(); },
-    useCallback(f) { i++; return f; },
+    useMemo(f, deps) { const k = i++; const old = slots[k]; if (old && same(old.deps, deps)) return old.value; slots[k] = { deps, value: f() }; return slots[k].value; },
+    useCallback(f, deps) { const k = i++; const old = slots[k]; if (old && same(old.deps, deps)) return old.value; slots[k] = { deps, value: f }; return f; },
     useEffect(f, deps) {
       const k = i++; const old = slots[k];
       const changed = !old || !deps || !old.deps || deps.length !== old.deps.length || deps.some((d, n) => !Object.is(d, old.deps[n]));
@@ -242,4 +245,4 @@ function suite(body) {
   body().then(finish, (e) => { console.log(`SUITE STOPPED: ${e && e.stack ? e.stack : e}`); process.exit(2); });
 }
 
-module.exports = { withBrowser, store, signedInBureau, suite, hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };
+module.exports = { world, withBrowser, store, signedInBureau, suite, hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };
