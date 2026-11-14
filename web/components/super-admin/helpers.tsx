@@ -136,7 +136,8 @@ export const holdingsRows = (c: any) => {
   const order = (code: string) => (code === base ? 0 : code === "USD" ? 1 : 2 + CODES.indexOf(code));
   return [...map.values()]
     // hide a non-home currency the bureau doesn't hold at all (e.g. KES at a Ugandan bureau)
-    .filter((r) => r.isBase || r.code === "USD" || r.cash || r.bank || r.owed)
+    // (mobile counts: a Ugandan bureau whose only KES is an M-Pesa wallet lost the whole row)
+    .filter((r) => r.isBase || r.code === "USD" || r.cash || r.bank || r.owed || r.mobile)
     .sort((a, b) => order(a.code) - order(b.code));
 };
 export const formatCurrency = (amount: number, currency = "KES") =>

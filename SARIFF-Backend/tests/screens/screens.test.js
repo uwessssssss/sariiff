@@ -43,7 +43,7 @@ const count = (s, re) => (s.match(re) || []).length;
 
   await proof("W40", "Portal analytics: negative growth is red, not green", (expect) => {
     const { AnalyticsView } = app("components/client-portal/sections/AnalyticsView");
-    const tree = AnalyticsView({ vm: vm({ activeView: "analytics", statementCurrencies: [], loadingAnalytics: false, analyticsCode: "UGX", analyticsCur: UGX, avgIn: 0, netIncomeIn: 0, categoryChartData: [], monthlyChartData: [], weeklyChartData: [],
+    const tree = AnalyticsView({ vm: vm({ activeView: "analytics", statementCurrencies: [], loadingAnalytics: false, analyticsCode: "UGX", analyticsCur: UGX, avgIn: () => 0, netIncomeIn: () => 0, categoryChartData: [], monthlyChartData: [], weeklyChartData: [],
       analytics: { totals: { growthPercentage: -12.5, totalTransactions: 4 } } }) });
     const growth = find(tree, (e) => tag(e) === "span" && /-12\.5\s*%/.test(text(e)))[0];
     expect(!!growth, "growth figure not found");
