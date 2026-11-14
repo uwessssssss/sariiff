@@ -46,7 +46,6 @@ Module._resolveFilename = function (request, parent, ...rest) {
 const store = {};
 global.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => (store[k] = String(v)), removeItem: (k) => delete store[k] };
 store["sariff_auth"] = JSON.stringify({ token: "t", refreshToken: "r", user: { id: "u1", role: 1, whatsAppNumber: "+256700000001" }, expiresAt: "" });
-global.document = { cookie: "" };
 process.on("unhandledRejection", () => {});
 
 /** Requests the screens made: [{ url, method, body }]. reply(url, body, method) decides the answer's data. */
