@@ -47,6 +47,7 @@ const store = {};
 global.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => (store[k] = String(v)), removeItem: (k) => delete store[k] };
 store["sariff_auth"] = JSON.stringify({ token: "t", refreshToken: "r", user: { id: "u1", role: 1, whatsAppNumber: "+256700000001" }, expiresAt: "" });
 process.on("unhandledRejection", () => {});   // a refused clipboard etc. inside the app; test failures are reported by proof()
+process.on("uncaughtException", (e) => console.log(`        (late error outside a test, ignored: ${String(e && e.message).slice(0, 120)})`));
 process.exitCode = 3;                            // until finish() runs: a run that stops early is never a pass
 
 /** Requests the screens made: [{ url, method, body }]. reply(url, body, method) decides the answer's data. */

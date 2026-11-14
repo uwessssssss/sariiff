@@ -181,11 +181,14 @@ suite(async () => {
     expect(!!csv, `no file: ${JSON.stringify(toasts)}`);
     if (csv) expect(/TXN-1/.test(csv) && /TXN-2/.test(csv) && !/TXN-0/.test(csv) && csv.split("\n").length === 3, `file:\n${csv.slice(0, 300)}`);
   });
-  await proof("W27", "Reports CSV: quotes are doubled and a formula opens as text", (expect) => {
-    expect(!!csv, "no file");
-    if (csv) {
-      expect(csv.includes('"Client said ""pay today"""'), `quotes not doubled:\n${csv.slice(0, 300)}`);
-      expect(csv.includes(`"'=SUM(A1:A9)"`), "=SUM(...) would run as a formula in Excel");
+  await proof("W27", "Reports CSV: quotes are doubled and a formula opens as text", async (expect) => {
+    const clients = [{ id: "c1", code: "KB-CL-0001", name: 'Amina "Mimi" Hassan', whatsAppNumber: "+256700000010", balances: { [UGX]: 250000 }, balanceType: "=HYPERLINK(1)" }];
+    const page = await withBrowser(() => hook(app("components/office/reports/hooks/useReportsEffects").useReportsEffects, reportState({ reportType: "clients", clientBalances: clients, clientCurrencies: [UGX] })).handleExport("csv"));
+    const file = page.downloads[0] ? await page.downloads[0].text() : null;
+    expect(!!file, `no file: ${JSON.stringify(toasts)}`);
+    if (file) {
+      expect(file.includes('"Amina ""Mimi"" Hassan"'), `a name with quotes breaks the row:\n${file}`);
+      expect(file.includes(`"'=HYPERLINK(1)"`) && file.includes(`"'+256700000010"`), `=... and +... would run as formulas in Excel:\n${file}`);
     }
   });
 
