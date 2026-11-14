@@ -401,4 +401,26 @@ suite(async () => {
       expect(secret === undefined || (/^[0-9a-f]{48}$/.test(secret) && new Set(secret).size > 4), `with Math.random fixed at 0.5 the secret is "${secret}"`);
     } finally { Math.random = realRandom; if (hadCrypto) Object.defineProperty(globalThis, "crypto", hadCrypto); else delete globalThis.crypto; }
   });
+
+  await proof("SM1p", "Phone statements: tapping KES then USD never leaves the KES summary under the USD chip", async (expect) => {
+    let release;
+    world.context = { user: { id: "c1", code: "KB-CL-0001", fullName: "Amina Hassan", role: 2 }, logout: noop, isAuthenticated: true };
+    server.reply((url) => {
+      if (url.includes("/api/portal/statement")) {
+        if (/currency=0(&|$)/.test(url)) return new Promise((r) => { release = () => r({ openingBalance: 0, closingBalance: 111, totalCredit: 111, totalDebit: 0, transactions: [] }); });
+        if (/currency=1(&|$)/.test(url)) return { openingBalance: 0, closingBalance: 222, totalCredit: 222, totalDebit: 0, transactions: [] };
+      }
+      return url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : { items: [], totalCount: 0, totalPages: 1 };
+    });
+    try {
+      const m = mountHook(app("screens/client/statements/useStatementsScreen").useStatementsScreen);
+      await tick(20); m.render();
+      m.api.setCurrencyFilter("kes"); m.render(); await tick(10); m.render();
+      m.api.setCurrencyFilter("usd"); m.render(); await tick(20); m.render();
+      if (release) release(); await tick(20);
+      const summary = m.render().summary;
+      expect(!!release, "the KES summary was never asked for");
+      expect(summary && summary.currency === USD && summary.closingBalance === 222, `under the USD chip the summary is ${JSON.stringify(summary && { currency: summary.currency, closingBalance: summary.closingBalance })}`);
+    } finally { world.context = undefined; }
+  });
 });
