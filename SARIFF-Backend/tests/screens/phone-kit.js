@@ -16,6 +16,7 @@ const phone = {
   alerts: [],        // Alert.alert(title, message, buttons)
   secure: {},        // expo-secure-store contents
   storage: {},       // AsyncStorage contents
+  storeBroken: false, // the encrypted store refuses to read (seen after an OS restore)
   calls: [],         // [module, function, args] for expo-* calls (printing, sharing, downloads)
   answers: {},       // "expo-print.printToFileAsync": (args...) => value   to choose a reply
   navigation: { navigated: [], route: { params: {} } },
@@ -75,7 +76,7 @@ const stubs = {
   "react-native-safe-area-context": named({ useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }), useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 800 }) }),
   "react-native-toast-message": { __esModule: true, default: Object.assign(() => null, { show: (o) => toasts.push([o.type || "info", `${o.text1 || ""} ${o.text2 || ""}`.trim()]), hide() {} }) },
   "expo-linear-gradient": named(), "expo-blur": named(), "expo-status-bar": named(), "react-native-gesture-handler": named(),
-  "expo-secure-store": { getItemAsync: async (k) => (k in phone.secure ? phone.secure[k] : null), setItemAsync: async (k, v) => { phone.secure[k] = String(v); }, deleteItemAsync: async (k) => { delete phone.secure[k]; } },
+  "expo-secure-store": { getItemAsync: async (k) => { if (phone.storeBroken) throw new Error("Could not decrypt the value"); return k in phone.secure ? phone.secure[k] : null; }, setItemAsync: async (k, v) => { phone.secure[k] = String(v); }, deleteItemAsync: async (k) => { delete phone.secure[k]; } },
   "@react-native-async-storage/async-storage": { __esModule: true, default: { getItem: async (k) => (k in phone.storage ? phone.storage[k] : null), setItem: async (k, v) => { phone.storage[k] = String(v); },
     removeItem: async (k) => { delete phone.storage[k]; }, multiRemove: async (ks) => ks.forEach((k) => delete phone.storage[k]), clear: async () => { for (const k in phone.storage) delete phone.storage[k]; }, getAllKeys: async () => Object.keys(phone.storage) } },
   "@react-navigation/native": named({ useNavigation: () => navigation, useRoute: () => phone.navigation.route, useIsFocused: () => true, useFocusEffect: (cb) => React.useEffect(() => cb(), [cb]),

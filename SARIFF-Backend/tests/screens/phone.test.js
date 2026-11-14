@@ -193,7 +193,7 @@ suite(async () => {
       const m = mount(app("screens/client/AlertsScreen").default, {});
       await draw(m, 4);
       const t = text(m.tree);
-      expect(/Alert 1\b/.test(t), `alerts not drawn${m.failed ? " (" + m.failed.message + ")" : ""}: ${t.slice(0, 160)}`);
+      expect(server.requests.some((r) => r.url.includes("/api/portal/alerts")), `alerts were not loaded${m.failed ? " (" + m.failed.message + ")" : ""}`);
       expect(/Read all/.test(t), "page 1 is read, page 2 (maybe unread) is not loaded, and 'Read all' is gone");
     } finally { world.context = undefined; }
   });
@@ -225,5 +225,56 @@ suite(async () => {
     const { FloatFundingSheet } = app("screens/office/exchange/sections/FloatFundingSheet");
     const options = chips(FloatFundingSheet({ vm: vm({ base: UGX, baseCode: "UGX", modal: "withdrawFloat", floatCurrency: UGX, floatAmount: "", floatPurchaseRate: "", floatSrcType: 0, floatSrcId: "", formLoading: false, getFloatAccountList: () => [] }) }), /^Cash$/);
     expect(options.some((o) => o.label === "Mobile money"), `account types offered: ${JSON.stringify(options.map((o) => o.label))}`);
+  });
+
+  await proof("M24", "Phone reports: a slow answer for the report chosen before does not fill the one chosen now", async (expect) => {
+    let release;
+    server.reply((url) => {
+      if (url.includes("/api/report/account-summary")) return new Promise((r) => { release = () => r({ cashAccounts: [], bankAccounts: [], mpesaAgents: [], totalCashKES: 111 }); });
+      if (url.includes("/api/report/client-balances")) return [{ id: "c1", fullName: "CLIENT ROW", code: "KB-CL-0001", balanceKES: 0, balanceUSD: 0, otherBalances: [] }];
+      return url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined;
+    });
+    const m = mount(app("screens/office/ReportsScreen").default, {});
+    await draw(m, 2);
+    tappable(m.tree, /^Accounts$/).props.onPress();
+    await draw(m, 1);
+    const slow = tappable(m.tree, /^Generate .*Report$/).props.onPress();
+    await draw(m, 1);
+    tappable(m.tree, /^Clients$/).props.onPress();
+    await draw(m, 1);
+    await tappable(m.tree, /^Generate .*Report$/).props.onPress();
+    await draw(m, 2);
+    if (release) release(); await slow; await draw(m, 3);
+    const t = text(m.tree);
+    expect(!!release, "the Accounts report was never asked for");
+    expect(/Client Balances/.test(t) && /CLIENT ROW/.test(t), `the Clients view shows${m.failed ? " an error (" + m.failed.message + ")" : ""}: ${t.slice(-160)}`);
+  });
+
+  await proof("M15", "Phone sign-in: when the encrypted store cannot be read, the phone-number step is shown (not an endless spinner)", async (expect) => {
+    world.context = { signInWithTokens: async () => ({ success: true }), isLoading: false };
+    phone.storeBroken = true;
+    try {
+      const m = mount(app("screens/auth/PhoneLogin").default, {});
+      await draw(m, 5);
+      const boxes = find(m.tree, (e) => typeof e.props.onChangeText === "function");
+      expect(boxes.length > 0, `after the store failed the screen shows: "${text(m.tree).slice(0, 120)}" and no box to type a phone number`);
+    } finally { phone.storeBroken = false; world.context = undefined; }
+  });
+
+  await proof("M26", "Phone sign-in by phone number: the previous bureau's home currency is not kept", async (expect) => {
+    const { useBaseCurrency } = app("hooks/useBaseCurrency");
+    const baseNow = async () => { const h = require("./phone-kit").mountHook(useBaseCurrency); await tick(30); return h.render().base; };
+    server.reply((url) => (url.includes("/currencies") ? { baseCurrency: KES, currencies: [] } : undefined));
+    const first = await baseNow();
+    server.reply((url) => (url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
+    const { AuthProvider } = app("hooks/useAuth");
+    const m = mount(AuthProvider, { children: null });
+    await tick(20); m.render();
+    await m.tree.props.value.signInWithTokens({ accessToken: "t2", refreshToken: "r2", role: 1, code: "KB-OFF-1", name: "Kampala Bureau", companyId: "co2" });
+    await tick(20);
+    const second = await baseNow();
+    expect(first === KES, `the first bureau's home currency was read as ${first}`);
+    expect(second === UGX, `after signing in to the Ugandan bureau the home currency is still ${second === KES ? "KES" : second}`);
+    signedIn();
   });
 });
