@@ -84,8 +84,8 @@ const ugx = (c) => (c?.otherBalances || []).find((b) => b.currency === UGX)?.bal
   check("Most deposits go through (≥ 90%)", ok >= N * 0.9, `${ok}/${N}`);
   check(`Client moved by exactly ${ok} × 1,000 UGX (no lost or doubled update)`, clientAfter - clientBefore === ok * 1000, `before ${clientBefore}, after ${clientAfter}, diff ${clientAfter - clientBefore}`);
   check(`Till moved by exactly ${ok} × 1,000 UGX`, tillAfter - tillBefore === ok * 1000, `before ${tillBefore}, after ${tillAfter}, diff ${tillAfter - tillBefore}`);
-  if (txBefore !== undefined && txAfter !== undefined)
-    check(`Exactly ${ok} transactions were recorded`, txAfter - txBefore === ok, `before ${txBefore}, after ${txAfter}`);
+  // never skipped: a missing count is a failure, not a pass
+  check(`Exactly ${ok} transactions were recorded`, Number.isFinite(txBefore) && Number.isFinite(txAfter) && txAfter - txBefore === ok, `before ${txBefore}, after ${txAfter}`);
 
   // ---- 2. idempotency: the same request sent twice is one deposit
   const key = crypto.randomUUID();

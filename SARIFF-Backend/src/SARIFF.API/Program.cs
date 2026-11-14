@@ -29,6 +29,7 @@ builder.WebHost.UseUrls($"http://+:{listenPort}");
 // Serilog - adjust logging level based on environment
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.With(new SARIFF.API.Middleware.StripNewlinesEnricher()) // no forged log lines from user input
     .MinimumLevel.Is(builder.Environment.IsDevelopment() 
         ? Serilog.Events.LogEventLevel.Debug 
         : Serilog.Events.LogEventLevel.Information)
@@ -42,7 +43,7 @@ Log.Information("SARIFF API - {Environment} MODE", builder.Environment.Environme
 Log.Information("========================================");
 
 // Add services
-builder.Services.AddControllers()
+builder.Services.AddControllers(o => o.Filters.Add<SARIFF.API.Middleware.PagingClampFilter>())
     // Times leave the API marked as UTC ("...Z"), so screens show the viewer's local time.
     .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new SARIFF.API.UtcDateTimeConverter()));
 builder.Services.AddEndpointsApiExplorer();
@@ -156,6 +157,8 @@ builder.Services.AddCors(options =>
 // Infrastructure (DbContext, Services)
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+// Who did it, for the audit trail written on every save (see AuditInterceptor).
+builder.Services.AddScoped<SARIFF.Infrastructure.Data.IAuditContext, SARIFF.API.Middleware.HttpAuditContext>();
 
 // Real-time hub removed (Oct 2026): no web or mobile client ever connected and
 // nothing sent through it. Re-add with a client (@microsoft/signalr) if needed.
@@ -172,10 +175,40 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// Don't announce the server software in a "Server: Kestrel" header.
+builder.WebHost.ConfigureKestrel(o => o.AddServerHeader = false);
+
+// Compress JSON on the wire (a busy day's report: ~4 MB of JSON → a few hundred KB; it
+// matters on mobile data). Fastest level: little CPU on a small instance.
+builder.Services.AddResponseCompression(o =>
+{
+    o.EnableForHttps = true; // behind the proxy the request is HTTPS once forwarded headers apply
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    o.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+});
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+
 var app = builder.Build();
 
 // Must run first, before anything that reads the client IP.
 app.UseForwardedHeaders();
+
+// Standard security headers on every API response (Swagger in development included).
+app.Use(async (ctx, next) =>
+{
+    var h = ctx.Response.Headers;
+    h["X-Content-Type-Options"] = "nosniff";
+    h["X-Frame-Options"] = "DENY";
+    h["Referrer-Policy"] = "no-referrer";
+    h["Cache-Control"] = "no-store"; // balances and statements must not sit in shared caches
+    // No other origin can embed API responses (the web app reads them with CORS, which this doesn't affect).
+    h["Cross-Origin-Resource-Policy"] = "same-origin";
+    if (!app.Environment.IsDevelopment())
+        h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    await next();
+});
+
 
 // Swagger only in Development
 if (app.Environment.IsDevelopment())
@@ -208,18 +241,10 @@ app.Use(async (ctx, next) =>
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-// Standard security headers on every API response.
-app.Use(async (ctx, next) =>
-{
-    var h = ctx.Response.Headers;
-    h["X-Content-Type-Options"] = "nosniff";
-    h["X-Frame-Options"] = "DENY";
-    h["Referrer-Policy"] = "no-referrer";
-    h["Cache-Control"] = "no-store"; // balances and statements must not sit in shared caches
-    if (!app.Environment.IsDevelopment())
-        h["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-    await next();
-});
+// Compression for everything except sign-in: those responses carry tokens, and compressing
+// a secret next to input an attacker controls is what the BREACH attack measures.
+app.UseWhen(ctx => !ctx.Request.Path.StartsWithSegments("/api/auth") && !ctx.Request.Path.StartsWithSegments("/api/identity"),
+    branch => branch.UseResponseCompression());
 
 // FIX: Add Rate Limiting middleware for auth endpoints
 app.UseMiddleware<RateLimitingMiddleware>();
@@ -231,7 +256,7 @@ app.UseCors("AllowFrontend");
 app.Use(async (ctx, next) =>
 {
     if (ctx.Request.Path.StartsWithSegments("/health")) { await next(); return; }
-    var ip = ctx.Connection.RemoteIpAddress?.ToString();
+    var ip = ctx.Connection.RemoteIpAddress is { } ra ? SARIFF.Infrastructure.Services.IpAccess.Normalize(ra.ToString()) : null;
     string? refusal = null;
     try
     {
@@ -263,6 +288,20 @@ app.MapControllers();
 
 // Health check
 app.MapGet("/health", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }));
+// Readiness: is the database reachable? (/health only says the process is up; point Render's
+// health check here so a server that lost its database stops getting traffic.)
+app.MapGet("/health/ready", async (SARIFF.Infrastructure.Data.AppDbContext db, CancellationToken ct) =>
+{
+    try
+    {
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.CancelAfter(TimeSpan.FromSeconds(3));
+        return await db.Database.CanConnectAsync(cts.Token)
+            ? Results.Ok(new { Status = "Ready", Database = "up", Timestamp = DateTime.UtcNow })
+            : Results.Json(new { Status = "Unavailable", Database = "down" }, statusCode: 503);
+    }
+    catch { return Results.Json(new { Status = "Unavailable", Database = "down" }, statusCode: 503); }
+});
 
 // ========================================
 // DATABASE INITIALIZATION AND SEEDING

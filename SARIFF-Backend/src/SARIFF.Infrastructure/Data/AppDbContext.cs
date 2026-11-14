@@ -4,12 +4,8 @@ using SARIFF.Core.Entities;
 namespace SARIFF.Infrastructure.Data;
 
 /// <summary>
-/// FIXED AppDbContext
-/// 
-/// Changes:
-/// 1. Added HasPrecision(18, 2) to ALL decimal fields
-/// 2. Added missing indexes for frequently queried columns
-/// 3. Added concurrency token for balance fields (optimistic locking)
+/// EF Core model: every table, its money precision (18,2), indexes and the concurrency
+/// tokens that guard balance fields.
 /// </summary>
 public class AppDbContext : DbContext
 {

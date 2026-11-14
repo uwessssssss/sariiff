@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Modal, ScrollView, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from '../../components/toastConfig';
 import * as api from '../../services/api';
-import { TransactionDto, TransactionType, AccountType, Currency, formatCurrency, formatDateTime, getAccountTypeLabel, getCurrencyLabel, currencyCode, ALL_CURRENCIES, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
+import { TransactionDto, TransactionType, amountText, AccountType, Currency, formatCurrency, formatDateTime, getAccountTypeLabel, getCurrencyLabel, currencyCode, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
 
 // Any currency pair. With the home currency (KES in Kenya, UGX in Uganda) on one
@@ -25,7 +26,7 @@ function rateLabel(base: number, from?: number, to?: number): string {
   return `1 ${currencyCode(from)} = ? ${currencyCode(to)}`;
 }
 import { shareViaWhatsApp, buildTransactionMessage } from '../../utils/notifications';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type FilterType = 'all' | 'credit' | 'debit';
@@ -50,7 +51,6 @@ export default function TransactionsScreen() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinDigits, setPinDigits] = useState(['', '', '', '']);
   const [pinError, setPinError] = useState('');
-  const [pinForgotMode, setPinForgotMode] = useState(false);
   const [pinVerifying, setPinVerifying] = useState(false);
   const pinRefs = [useRef<any>(null), useRef<any>(null), useRef<any>(null), useRef<any>(null)];
   // Create form
@@ -70,7 +70,10 @@ export default function TransactionsScreen() {
   // View
   const [viewTxn, setViewTxn] = useState<TransactionDto | null>(null);
 
+  // One request per keystroke or filter tap: only the answer for what is on screen now may fill the list.
+  const listSeq = useRef(0);
   const loadTxns = useCallback(async (p = 1, append = false) => {
+    const seq = append ? listSeq.current : ++listSeq.current;
     try {
       const filters: any = {};
       if (searchText.trim()) filters.search = searchText.trim();
@@ -78,12 +81,16 @@ export default function TransactionsScreen() {
       if (filter === 'credit') filters.type = TransactionType.Credit;
       if (filter === 'debit') filters.type = TransactionType.Debit;
       const r = await api.getTransactions(p, 25, Object.keys(filters).length > 0 ? filters : undefined);
+      if (seq !== listSeq.current) return;
       if (r.success && r.data) { setTxns(prev => append ? [...prev, ...(r.data.items || [])] : (r.data.items || [])); setTotalPages(r.data.totalPages || 1); setPage(p); }
     } catch {}
   }, [searchText, filterCurrency, filter]);
   const loadAccs = useCallback(async () => {
-    try { const [c, b, m, cl] = await Promise.all([api.getCashAccounts(), api.getBankAccounts(), api.getMpesaAgents(), api.getClients(1, 500)]);
-      setAccs({ cash: c.success ? c.data : [], bank: b.success ? b.data : [], mpesa: m.success ? m.data : [], clients: cl.success ? (cl.data?.items || cl.data || []) : [] });
+    try { const [c, b, m, cl] = await Promise.all([api.getCashAccounts(), api.getBankAccounts(), api.getMpesaAgents(), api.getAllClients()]);
+      // Every client (not the first 500), and only accounts that may take a posting: the
+      // server refuses a switched-off bank account or wallet and an archived client.
+      const active = (xs: any[]) => (xs || []).filter((x: any) => x.isActive !== false);
+      setAccs({ cash: c.success ? c.data : [], bank: b.success ? active(b.data) : [], mpesa: m.success ? active(m.data) : [], clients: active(cl) });
       api.getCompanyCurrencies().then((r: any) => { if (r?.success && r.data?.currencies) setCompanyCurrencies(r.data.currencies.map((x: any) => x.value)); }).catch(() => {});
     } catch {}
   }, []);
@@ -123,11 +130,13 @@ export default function TransactionsScreen() {
 
   // PIN-gated submit — check backend if PIN is required
   const handleCreateWithPin = async () => {
+    // A reversal whose PIN box was closed must not run when this PIN is entered.
+    setPendingReverse(null);
     if (!priId || !ctrId || !amount || !description) { Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Fill all required fields' }); return; }
     try {
       const status = await api.getTransactionPinStatus();
       if (status.success && status.data?.isEnabled && status.data?.hasPin) {
-        setPinDigits(['', '', '', '']); setPinError(''); setPinForgotMode(false); setPinVerifying(false);
+        setPinDigits(['', '', '', '']); setPinError(''); setPinVerifying(false);
         setShowPinModal(true);
         setTimeout(() => pinRefs[0].current?.focus(), 200);
       } else {
@@ -175,12 +184,13 @@ export default function TransactionsScreen() {
   const handleCreate = async () => {
     if (!priId || !ctrId || !amount || !description) { Toast.show({ type: 'error', text1: 'Missing fields', text2: 'Fill all required fields' }); return; }
     if (priType === ctrType && priId === ctrId) { Toast.show({ type: 'error', text1: 'Same account', text2: 'Source and destination must differ' }); return; }
-    if (needsFx && (!exchRate || parseFloat(exchRate) <= 0)) { Toast.show({ type: 'error', text1: 'Enter exchange rate' }); return; }
+    if (anyBadAmount(amount, needsFx ? exchRate : '') || !(parseAmount(amount) > 0)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
+    if (needsFx && (!exchRate || !(parseAmount(exchRate) > 0))) { Toast.show({ type: 'error', text1: 'Enter exchange rate' }); return; }
     setFormLoading(true);
     try {
-      const fx = !!needsFx; let fa = parseFloat(amount); const pc = priAcc?.currency ?? currency; const cc = ctrAcc?.currency ?? currency;
-      if (fx && priAcc && ctrAcc) fa = convertAmount(parseFloat(amount), ctrAcc.currency, priAcc.currency, parseFloat(exchRate), base);
-      const txPayload = { transactionType: txnType, sourceAccountType: priType, sourceAccountId: getRealId(priId), destAccountType: ctrType, destAccountId: getRealId(ctrId), amount: fa, currency: pc, counterAmount: fx ? parseFloat(amount) : undefined, counterCurrency: fx ? cc : undefined, exchangeRate: fx ? parseFloat(exchRate) : undefined, paymentMethod: payMethod, description, notes: notes || undefined };
+      const fx = !!needsFx; let fa = parseAmount(amount); const pc = priAcc?.currency ?? currency; const cc = ctrAcc?.currency ?? currency;
+      if (fx && priAcc && ctrAcc) fa = convertAmount(parseAmount(amount), ctrAcc.currency, priAcc.currency, parseAmount(exchRate), base);
+      const txPayload = { transactionType: txnType, sourceAccountType: priType, sourceAccountId: getRealId(priId), destAccountType: ctrType, destAccountId: getRealId(ctrId), amount: fa, currency: pc, counterAmount: fx ? parseAmount(amount) : undefined, counterCurrency: fx ? cc : undefined, exchangeRate: fx ? parseAmount(exchRate) : undefined, paymentMethod: payMethod, description, notes: notes || undefined };
       // One key per submission: a second press after a timeout can't record it twice.
       const res = await api.withIdempotencyKey(api.submissionKey(submitSession.current, txPayload), () => api.createTransaction(txPayload));
       if (res.success) {
@@ -202,7 +212,7 @@ export default function TransactionsScreen() {
             const txnCurNum = isClientPri ? res.data?.currency : (res.data?.counterCurrency ?? res.data?.currency);
             // Balance in the transaction's own currency (UGX used to be labelled USD)
             const balCur = txnCurNum ?? clientAcc.currency ?? Currency.KES;
-            const balanceStr = `${currencyCode(balCur)} ${(balAfter ?? clientAcc.balance ?? 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            const balanceStr = `${currencyCode(balCur)} ${amountText(balAfter ?? clientAcc.balance ?? 0, balCur)}`;
 
             setTimeout(() => Alert.alert('Share Confirmation?', `Send transaction confirmation to ${clientAcc.name.split(' (')[0]} via WhatsApp?`, [
               { text: 'Skip', style: 'cancel' },
@@ -210,7 +220,7 @@ export default function TransactionsScreen() {
                 clientName: clientAcc.name.split(' (')[0], type: isIncrease ? 'Credit' : 'Debit',
                 // The client's own amount: on a forex entry with the client as the counter
                 // account that is the counter amount, not the primary amount typed.
-                amount: Number(isClientPri ? (res.data?.amount ?? parseFloat(amount)) : (res.data?.counterAmount ?? res.data?.amount ?? parseFloat(amount))).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+                amount: amountText(Number(isClientPri ? (res.data?.amount ?? parseAmount(amount)) : (res.data?.counterAmount ?? res.data?.amount ?? parseAmount(amount))), balCur),
                 currency: cur, balance: balanceStr, code: txnCode, description,
                 date: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
               })) },
@@ -260,7 +270,6 @@ export default function TransactionsScreen() {
   };
 
   const filters: { key: FilterType; label: string }[] = [{ key: 'all', label: 'All' }, { key: 'credit', label: 'Credits' }, { key: 'debit', label: 'Debits' }];
-  const filtered = txns.filter(t => filter === 'credit' ? t.transactionType === TransactionType.Credit : filter === 'debit' ? t.transactionType === TransactionType.Debit : true);
 
   const AccTypeSel = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
     <View style={{ marginBottom: spacing.xs }}><Text style={s.fieldLabel}>{label} *</Text>
@@ -323,7 +332,6 @@ export default function TransactionsScreen() {
     );
   };
 
-  const DR = ({ l, v, c }: { l: string; v: string; c?: string }) => (<View style={s.dRow}><Text style={s.dLabel}>{l}</Text><Text style={[s.dVal, c ? { color: c } : {}]} numberOfLines={2}>{v}</Text></View>);
 
   if (loading) return <LoadingScreen message="Loading transactions..." />;
 
@@ -393,15 +401,15 @@ export default function TransactionsScreen() {
         </FormSection>
         {needsFx && (<View style={{ backgroundColor: 'rgba(246,180,94,0.12)', borderWidth: 1, borderColor: 'rgba(246,180,94,0.32)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <Text style={{ fontSize: 12, fontWeight: '700' as any, color: '#F6B45E', marginBottom: 8 }}>Cross-Currency</Text>
-          <Input label={`Rate (${rateLabel(base, ctrAcc?.currency, priAcc?.currency)})`} value={exchRate} onChangeText={setExchRate} keyboardType="numeric" icon="swap-horizontal-outline" placeholder="130.50" />
-          {amount && exchRate && parseFloat(exchRate) > 0 && ctrAcc && priAcc && (<View style={{ backgroundColor: 'rgba(91,156,255,0.12)', borderRadius: 8, padding: 8, marginTop: 4 }}>
-            <Text style={{ fontSize: 13, color: '#7FB3FF', fontWeight: '700' as any }}>{`${currencyCode(ctrAcc.currency)} ${parseFloat(amount).toLocaleString()} ${ctrAcc.currency === Currency.KES ? '÷' : '×'} ${exchRate} = ${currencyCode(priAcc.currency)} ${convertAmount(parseFloat(amount), ctrAcc.currency, priAcc.currency, parseFloat(exchRate), base).toFixed(2)}`}</Text></View>)}
+          <Input label={`Rate (${rateLabel(base, ctrAcc?.currency, priAcc?.currency)})`} value={exchRate} onChangeText={setExchRate} keyboardType="numeric" icon="swap-horizontal-outline" placeholder={base === Currency.UGX ? "3700" : "130.50"} />
+          {amount && exchRate && parseAmount(exchRate) > 0 && ctrAcc && priAcc && (<View style={{ backgroundColor: 'rgba(91,156,255,0.12)', borderRadius: 8, padding: 8, marginTop: 4 }}>
+            <Text style={{ fontSize: 13, color: '#7FB3FF', fontWeight: '700' as any }}>{`${currencyCode(ctrAcc.currency)} ${parseAmount(amount).toLocaleString()} ${ctrAcc.currency === base ? '÷' : '×'} ${exchRate} = ${currencyCode(priAcc.currency)} ${convertAmount(parseAmount(amount), ctrAcc.currency, priAcc.currency, parseAmount(exchRate), base).toFixed(2)}`}</Text></View>)}
         </View>)}
         <FormSection label="Description">
           <Input label="" value={description} onChangeText={setDescription} icon="document-text-outline" placeholder="e.g. Client deposit, transfer..." />
         </FormSection>
-        <FormSection label="Notes (optional)">
-          <Input label="" value={notes} onChangeText={setNotes} icon="create-outline" placeholder="Additional notes" multiline />
+        <FormSection label="Notes (optional, the client sees them)">
+          <Input label="" value={notes} onChangeText={setNotes} icon="create-outline" placeholder="Shown on the client's statement" multiline />
         </FormSection>
         <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 16, marginBottom: 16, borderLeftWidth: 4, borderLeftColor: isIncrease ? '#059669' : '#DC2626' }}>
           <Text style={{ fontSize: 11, fontWeight: '700' as any, color: colors.textTertiary, letterSpacing: 1, marginBottom: 8 }}>SUMMARY</Text>
@@ -472,7 +480,7 @@ export default function TransactionsScreen() {
 
       {/* PIN Modal — Beautiful 4-box design */}
       <Modal visible={showPinModal} transparent animationType="fade">
-        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: spacing.lg }} activeOpacity={1} onPress={() => setShowPinModal(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: spacing.lg }} activeOpacity={1} onPress={() => { setShowPinModal(false); setPendingReverse(null); }}>
           <TouchableOpacity activeOpacity={1} style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, alignItems: 'center' }}>
             <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(91,156,255,0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 }}>
               <Ionicons name="lock-closed" size={28} color="#4F46E5" />
@@ -498,7 +506,7 @@ export default function TransactionsScreen() {
               <Text style={{ color: colors.textTertiary, fontSize: 11, textAlign: 'center' }}>Contact your administrator if you don't know the PIN</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={{ width: '100%', paddingVertical: 14, backgroundColor: colors.surfaceAlt, borderRadius: 12, alignItems: 'center', marginTop: 20 }} onPress={() => setShowPinModal(false)}>
+            <TouchableOpacity style={{ width: '100%', paddingVertical: 14, backgroundColor: colors.surfaceAlt, borderRadius: 12, alignItems: 'center', marginTop: 20 }} onPress={() => { setShowPinModal(false); setPendingReverse(null); }}>
               <Text style={{ color: colors.textTertiary, fontWeight: '600' as any, fontSize: 15 }}>Cancel</Text>
             </TouchableOpacity>
           </TouchableOpacity>

@@ -1,14 +1,15 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Modal, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import * as api from '../../services/api';
-import { Currency, formatCurrency, formatDate, currencyCode, allowedCurrenciesFor, sumByCurrency, formatTotals } from '../../types';
+import { Currency, amountText, formatCurrency, formatDate, currencyCode, allowedCurrenciesFor, sumByCurrency, formatTotals } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ActionBtn, InfoRow } from '../../components/ui';
+import { Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ActionBtn, InfoRow } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 import { localDate } from '../../utils/dates';
 
@@ -22,10 +23,16 @@ const statusConfig: Record<number, { label: string; color: string; bg: string; i
 // Builds a branded HTML invoice that expo-print renders into a real PDF
 // on-device. (The backend's /api/invoice/{id}/pdf endpoint is a stub that
 // returns "PDF generation not implemented", so it can never work.)
-function buildInvoiceHtml(inv: any): string {
+/**
+ * The invoice is the bureau's document: its name, phone, address and tax ID head it. It said
+ * "Sarif · Forex Bureau Services" (the software) on every invoice a bureau sent its customers.
+ * Every value is escaped: an "&" or "<" in a name or a note broke the page.
+ */
+function buildInvoiceHtml(inv: any, bureau?: any): string {
+  const e = (v: any) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   const cur = currencyCode(inv.currency) + ' ';
   const fmt = (n: number) =>
-    cur + Math.abs(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    cur + amountText(Math.abs(n || 0), inv.currency);
   const d = (s: string) => (s ? new Date(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
   const stMap: Record<number, { label: string; color: string }> = {
     0: { label: 'DRAFT', color: '#64748B' },
@@ -39,8 +46,8 @@ function buildInvoiceHtml(inv: any): string {
     .map(
       (it: any, i: number) => `
       <tr style="background:${i % 2 ? '#F8FAFC' : '#fff'}">
-        <td style="padding:9px 10px;border-bottom:1px solid #E2E8F0;">${it.description || '—'}</td>
-        <td style="padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:center;">${it.quantity ?? 1}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #E2E8F0;">${e(it.description) || '—'}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:center;">${e(it.quantity ?? 1)}</td>
         <td style="padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:right;">${fmt(it.unitPrice)}</td>
         <td style="padding:9px 10px;border-bottom:1px solid #E2E8F0;text-align:right;font-weight:600;">${fmt(it.amount ?? (it.quantity || 1) * (it.unitPrice || 0))}</td>
       </tr>`,
@@ -48,28 +55,30 @@ function buildInvoiceHtml(inv: any): string {
     .join('');
   const money = (label: string, val: number, opts?: { bold?: boolean; color?: string }) => `
     <tr><td style="padding:5px 10px;text-align:right;color:#475569;${opts?.bold ? 'font-weight:700;font-size:15px;' : ''}">${label}</td>
-    <td style="padding:5px 10px;text-align:right;width:130px;${opts?.bold ? 'font-weight:700;font-size:15px;' : ''}${opts?.color ? `color:${opts.color};` : ''}">${fmt(val)}</td></tr>`;
+    <td style="padding:5px 10px;text-align:right;width:130px;${opts?.bold ? 'font-weight:700;font-size:15px;' : ''}${opts?.color ? `color:${opts.color};` : ''}">${val < 0 ? '− ' : ''}${fmt(val)}</td></tr>`;
   return `
   <html><head><meta charset="utf-8" /></head>
   <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;color:#0F172A;padding:28px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #4F46E5;padding-bottom:14px;">
       <div>
-        <div style="font-size:24px;font-weight:800;color:#4F46E5;">Sarif</div>
-        <div style="font-size:11px;color:#64748B;">Forex Bureau Services</div>
+        <div style="font-size:24px;font-weight:800;color:#4F46E5;">${e(bureau?.name) || 'Invoice'}</div>
+        ${bureau?.address ? `<div style="font-size:11px;color:#64748B;">${e(bureau.address)}</div>` : ''}
+        ${bureau?.whatsAppNumber ? `<div style="font-size:11px;color:#64748B;">${e(bureau.whatsAppNumber)}${bureau?.email ? ` · ${e(bureau.email)}` : ''}</div>` : ''}
+        ${bureau?.taxId ? `<div style="font-size:11px;color:#64748B;">Tax ID: ${e(bureau.taxId)}</div>` : ''}
       </div>
       <div style="text-align:right;">
         <div style="font-size:20px;font-weight:800;letter-spacing:1px;">INVOICE</div>
-        <div style="font-size:12px;color:#475569;">${inv.invoiceNumber || ''}</div>
+        <div style="font-size:12px;color:#475569;">${e(inv.invoiceNumber)}</div>
         <div style="margin-top:6px;display:inline-block;padding:3px 12px;border:2px solid ${st.color};color:${st.color};font-weight:800;font-size:11px;letter-spacing:1px;">${st.label}</div>
       </div>
     </div>
     <table style="width:100%;margin-top:16px;font-size:12px;"><tr>
       <td style="vertical-align:top;">
         <div style="font-size:10px;color:#94A3B8;font-weight:700;letter-spacing:1px;">BILL TO</div>
-        <div style="font-weight:700;font-size:14px;margin-top:2px;">${inv.clientName || '—'}</div>
-        ${inv.clientEmail ? `<div style="color:#475569;">${inv.clientEmail}</div>` : ''}
-        ${inv.clientPhone ? `<div style="color:#475569;">${inv.clientPhone}</div>` : ''}
-        ${inv.clientAddress ? `<div style="color:#475569;">${inv.clientAddress}</div>` : ''}
+        <div style="font-weight:700;font-size:14px;margin-top:2px;">${e(inv.clientName) || '—'}</div>
+        ${inv.clientEmail ? `<div style="color:#475569;">${e(inv.clientEmail)}</div>` : ''}
+        ${inv.clientPhone ? `<div style="color:#475569;">${e(inv.clientPhone)}</div>` : ''}
+        ${inv.clientAddress ? `<div style="color:#475569;">${e(inv.clientAddress)}</div>` : ''}
       </td>
       <td style="vertical-align:top;text-align:right;color:#475569;">
         <div>Invoice date: <b>${d(inv.invoiceDate)}</b></div>
@@ -91,10 +100,10 @@ function buildInvoiceHtml(inv: any): string {
       ${inv.discountAmount ? money('Discount', -inv.discountAmount) : ''}
       ${money('TOTAL', inv.total, { bold: true, color: '#4F46E5' })}
     </table>
-    ${inv.notes ? `<div style="margin-top:16px;font-size:11px;"><b>Notes:</b> <span style="color:#475569;">${inv.notes}</span></div>` : ''}
-    ${inv.terms ? `<div style="margin-top:6px;font-size:11px;"><b>Terms:</b> <span style="color:#475569;">${inv.terms}</span></div>` : ''}
+    ${inv.notes ? `<div style="margin-top:16px;font-size:11px;"><b>Notes:</b> <span style="color:#475569;">${e(inv.notes)}</span></div>` : ''}
+    ${inv.terms ? `<div style="margin-top:6px;font-size:11px;"><b>Terms:</b> <span style="color:#475569;">${e(inv.terms)}</span></div>` : ''}
     <div style="margin-top:26px;padding-top:10px;border-top:1px solid #E2E8F0;font-size:10px;color:#94A3B8;text-align:center;">
-      Generated by Sarif · ${new Date().toLocaleString()}
+      ${e(bureau?.name || '')}${bureau?.name ? ' · ' : ''}${new Date().toLocaleString('en-GB')}
     </div>
   </body></html>`;
 }
@@ -110,6 +119,13 @@ export default function InvoicesScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [clients, setClients] = useState<any[]>([]);
+  // The lookup gives the first 200 clients; typing searches the server for the rest.
+  const [clientSearch, setClientSearch] = useState('');
+  useEffect(() => {
+    const term = clientSearch.trim();
+    const t = setTimeout(() => { api.getClientLookup(term.length >= 2 ? term : '').then(r => r.success && setClients(r.data)).catch(() => {}); }, 300);
+    return () => clearTimeout(t);
+  }, [clientSearch]);
   const headerAnim = useRef(new Animated.Value(0)).current;
 
   // Create form
@@ -119,14 +135,15 @@ export default function InvoicesScreen() {
   const [dueDate] = useState(localDate(new Date(Date.now() + 30*86400000)));
   const [currency, setCurrency] = useState<number>(Currency.KES);
   useEffect(() => setCurrency(base), [base]); // new invoices default to the home currency
-  const [taxRate, setTaxRate] = useState('16');
+  // 0% like the web: forex services are generally VAT-exempt; a bureau that charges tax sets it per invoice
+  const [taxRate, setTaxRate] = useState('0');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState([{ description: '', quantity: '1', unitPrice: '' }]);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.getInvoices(1, 50);
-      if (res.success && res.data) setInvoices(res.data.items || res.data || []);
+      const res = await api.getAllInvoices();
+      if (res.success) setInvoices(res.data);
     } catch {}
   }, []);
 
@@ -145,16 +162,22 @@ export default function InvoicesScreen() {
     if (!clientName || items.some(it => !it.description || !it.unitPrice)) {
       Toast.show({ type: 'error', text1: 'Fill all fields' }); return;
     }
+    if (anyBadAmount(taxRate, ...items.flatMap((it: any) => [it.quantity, it.unitPrice]))) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     try {
       const res = await api.createInvoice({
         clientId: clientId || undefined, clientName, clientEmail: clientEmail || undefined,
-        dueDate, currency, taxRate: parseFloat(taxRate) || 0, discountAmount: 0,
+        dueDate, currency, taxRate: parseAmount(taxRate) || 0, discountAmount: 0,
         notes: notes || undefined, items: items.map(it => ({
-          description: it.description, quantity: parseFloat(it.quantity) || 1, unitPrice: parseFloat(it.unitPrice) || 0,
+          description: it.description, quantity: parseAmount(it.quantity) || 1, unitPrice: parseAmount(it.unitPrice) || 0,
         })),
       });
-      if (res.success) { Toast.show({ type: 'success', text1: 'Invoice created' }); setShowCreate(false); load(); }
+      if (res.success) {
+        Toast.show({ type: 'success', text1: 'Invoice created' }); setShowCreate(false); load();
+        // A second invoice started with the first one's client and lines.
+        setClientId(''); setClientName(''); setClientEmail(''); setTaxRate('0'); setNotes('');
+        setItems([{ description: '', quantity: '1', unitPrice: '' }]);
+      }
       else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     } catch (e: any) { Toast.show({ type: 'error', text1: 'Error', text2: e.message }); }
     setFormLoading(false);
@@ -196,7 +219,8 @@ export default function InvoicesScreen() {
 
       const Print = require('expo-print');
       const Sharing = require('expo-sharing');
-      const { uri } = await Print.printToFileAsync({ html: buildInvoiceHtml(inv) });
+      const bureau = await api.getMyCompanyInfo().then((r: any) => (r?.success ? r.data : undefined)).catch(() => undefined);
+      const { uri } = await Print.printToFileAsync({ html: buildInvoiceHtml(inv, bureau) });
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(uri, {
           mimeType: 'application/pdf',
@@ -215,8 +239,8 @@ export default function InvoicesScreen() {
     const n = [...items]; (n[i] as any)[field] = value; setItems(n);
   };
   const removeItem = (i: number) => items.length > 1 && setItems(items.filter((_, idx) => idx !== i));
-  const subtotal = items.reduce((s, it) => s + (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0), 0);
-  const tax = subtotal * (parseFloat(taxRate) || 0) / 100;
+  const subtotal = items.reduce((s, it) => s + (parseAmount(it.quantity) || 0) * (parseAmount(it.unitPrice) || 0), 0);
+  const tax = subtotal * (parseAmount(taxRate) || 0) / 100;
 
   if (loading) return <LoadingScreen message="Loading invoices..." />;
 
@@ -293,6 +317,7 @@ export default function InvoicesScreen() {
       {/* Create Invoice Modal */}
       <ModalSheet visible={showCreate} onClose={() => setShowCreate(false)} title="New Invoice" icon="document-text-outline" iconColor="#4F46E5" iconBg="rgba(91,156,255,0.12)">
             <FormSection label="Client">
+            <Input label="Find client" value={clientSearch} onChangeText={setClientSearch} icon="search-outline" placeholder="Name, phone or code" />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.chipRow}>
                 {clients.map(c => (

@@ -431,6 +431,12 @@ export const formatTotals = (totals: { currency: number; total: number }[], base
 /** "Kenyan Shillings", "Ugandan Shillings", "US Dollars" */
 export const currencyPlural = (c: number) => (CURRENCY_INFO[c]?.label ? CURRENCY_INFO[c].label + 's' : '');
 
+/** The number alone, with the currency's decimals: "1,800,000" for UGX, "12.50" for USD. */
+export const amountText = (amount: number, currency: number) => {
+  const dp = currency === Currency.UGX ? 0 : 2;
+  const v = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  return v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+};
 export const formatCurrency = (amount: number, currency: number = Currency.KES) => {
   const symbol = CURRENCY_INFO[currency]?.symbol ?? 'KES ';
   const val = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
@@ -438,7 +444,9 @@ export const formatCurrency = (amount: number, currency: number = Currency.KES) 
   // symbol) so negative balances / net movements can never masquerade as
   // positive. Call sites that want an explicit "+" add it for val >= 0 only.
   const sign = val < 0 ? '-' : '';
-  return `${sign}${symbol}${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  // Ugandan shillings have no cents (the web shows whole shillings too).
+  const dp = currency === Currency.UGX ? 0 : 2;
+  return `${sign}${symbol}${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })}`;
 };
 export const formatDate = (date: string) => {
   if (!date) return '—';

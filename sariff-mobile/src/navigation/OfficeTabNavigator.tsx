@@ -8,7 +8,7 @@ import { colors, borderRadius } from '../theme';
 
 import OfficeDashboardScreen from '../screens/office/OfficeDashboardScreen';
 import ClientsScreen from '../screens/office/ClientsScreen';
-import ExchangeScreen from '../screens/office/ExchangeScreen';
+import ExchangeScreen from '../screens/office/exchange/ExchangeScreen';
 import TransactionsScreen from '../screens/office/TransactionsScreen';
 import MoreScreen from '../screens/office/MoreScreen';
 

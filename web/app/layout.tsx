@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "../styles/globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { A11yManager } from "@/components/A11yManager";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -34,11 +36,15 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Reading the request makes every page render per request, so Next.js can put this
+  // request's CSP nonce (set in middleware.ts) on its scripts. A page built ahead of time
+  // would carry no nonce, and the policy would block its scripts.
+  await headers();
   return (
     <html
       lang="en"
@@ -49,6 +55,8 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <div className="min-h-screen relative">
+              {/* keyboard + screen-reader behaviour for every pop-up and field */}
+              <A11yManager />
               {/* Toast Notifications */}
               <Toaster
                 position="top-right"

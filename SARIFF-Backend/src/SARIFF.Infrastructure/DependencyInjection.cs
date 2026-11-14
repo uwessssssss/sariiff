@@ -32,7 +32,10 @@ public static class DependencyInjection
     {
         // Database
         var connectionString = WithPoolCap(configuration.GetConnectionString("DefaultConnection"));
-        services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+        // Every financial change is written to the audit trail in the same save (AuditInterceptor).
+        services.AddDbContext<AppDbContext>((sp, options) => options
+            .UseNpgsql(connectionString)
+            .AddInterceptors(new AuditInterceptor(sp.GetService<IAuditContext>())));
 
         // HTTP Client for Expo Push API
         services.AddHttpClient("ExpoPush", client =>

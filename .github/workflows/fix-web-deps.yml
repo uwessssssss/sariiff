@@ -1,0 +1,52 @@
+# Updates the web app's packages to versions without known security advisories and
+# regenerates package-lock.json, then commits the result to the same branch.
+# Runs on GitHub (it needs the npm registry).
+# Trigger: a push whose commit message contains [fix-web-deps], or "Run workflow" in Actions.
+name: Fix web dependencies
+on:
+  push:
+    branches-ignore: [ci-artifacts-web, ci-artifacts-android]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[fix-web-deps]')
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install current packages
+        run: npm install --no-audit --no-fund
+      - name: Advisories before
+        run: npm audit --omit=dev || true
+      - name: Compatible fixes (same major versions)
+        run: npm audit fix --omit=dev || true
+      - name: Apply package.json overrides to the lock file
+        run: npm install --no-audit --no-fund
+      - name: Advisories after
+        run: npm audit --omit=dev || true
+      - name: Types and build still pass
+        run: |
+          npx tsc --noEmit
+          npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:18080
+      - name: Commit package.json + package-lock.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git diff --cached --stat
+          git diff --cached --quiet && { echo "Nothing to change"; exit 0; }
+          git commit -m "Web: security fixes; regenerate lock file"
+          git push

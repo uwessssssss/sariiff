@@ -1,3 +1,4 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Modal, ScrollView, Alert, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,9 +9,9 @@ import { toastConfig } from '../../components/toastConfig';
 import { useAuth } from '../../hooks/useAuth';
 import * as api from '../../services/api';
 import { shareViaWhatsApp, buildCredentialMessage, buildPasswordResetMessage } from '../../utils/notifications';
-import { ClientDto, ClientType, formatCurrency, Currency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, ALL_CURRENCIES, allowedCurrenciesFor } from '../../types';
+import { ClientDto, ClientType, formatCurrency, Currency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, allowedCurrenciesFor } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Button, Input, EmptyState, LoadingScreen, ModalSheet, ActionBtn, InfoRow, SummaryCard, SummaryGrid } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type ViewMode = 'list' | 'detail' | 'create';
@@ -91,7 +92,8 @@ export default function ClientsScreen() {
   };
   const createAlert = async () => {
     if (!selectedClient || !alertThreshold) { Toast.show({ type: 'error', text1: 'Enter threshold amount' }); return; }
-    const res = await api.createBalanceAlert({ clientId: selectedClient.id, currency: alertCurrency, direction: 0, threshold: parseFloat(alertThreshold) });
+    if (anyBadAmount(alertThreshold) || !(parseAmount(alertThreshold) > 0)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
+    const res = await api.createBalanceAlert({ clientId: selectedClient.id, currency: alertCurrency, direction: 0, threshold: parseAmount(alertThreshold) });
     if (res.success) { Toast.show({ type: 'success', text1: 'Alert created' }); setAlertThreshold(''); await loadAlerts(selectedClient.id); }
     else Toast.show({ type: 'error', text1: res.message });
   };
@@ -106,23 +108,29 @@ export default function ClientsScreen() {
       } }]);
   };
 
+  // Only the latest statement request may fill the sheet: on a slow line, client A's answer
+  // (or the KES one, after tapping USD) could land after client B's and show the wrong account.
+  const stmtSeq = useRef(0);
   const openClientDetail = async (client: ClientDto) => {
+    const seq = ++stmtSeq.current;
     setSelectedClient(client);
     setShowDetail(true);
     setStmtCurrency(base);
+    setStatement(null);
     try {
       const res = await api.getClientStatement(client.id, undefined, undefined, base);
-      if (res.success) setStatement(res.data);
+      if (res.success && seq === stmtSeq.current) setStatement(res.data);
     } catch {}
   };
 
   const loadStatementCurrency = async (cur: number) => {
     if (!selectedClient) return;
+    const seq = ++stmtSeq.current;
     setStmtCurrency(cur);
     setStatement(null);
     try {
       const res = await api.getClientStatement(selectedClient.id, undefined, undefined, cur);
-      if (res.success) setStatement(res.data);
+      if (res.success && seq === stmtSeq.current) setStatement(res.data);
     } catch {}
   };
 
@@ -134,14 +142,15 @@ export default function ClientsScreen() {
     if (!fullName.trim() || !phone.trim()) {
       Toast.show({ type: 'error', text1: 'Required', text2: 'Name and phone are required' }); return;
     }
+    if (anyBadAmount(openingKES, openingUSD, openingHome)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     try {
       const res = await api.createClient({
         fullName, whatsAppNumber: phone, email: email || undefined,
         idPassport: idPassport || undefined, clientType,
-        openingBalanceKES: parseFloat(openingKES) || 0,
-        openingBalanceUSD: parseFloat(openingUSD) || 0,
-        openingBalanceHome: parseFloat(openingHome) || 0,
+        openingBalanceKES: parseAmount(openingKES) || 0,
+        openingBalanceUSD: parseAmount(openingUSD) || 0,
+        openingBalanceHome: parseAmount(openingHome) || 0,
         password: password || undefined,
       });
       if (res.success) {
@@ -191,9 +200,12 @@ export default function ClientsScreen() {
   };
 
   const [showResetPw, setShowResetPw] = useState(false);
+  // The same sheet asks for the password when a walk-in client is made permanent.
+  const [pwForConvert, setPwForConvert] = useState(false);
 
   const handleResetPassword = () => {
     if (!selectedClient) return;
+    setPwForConvert(false);
     setResetPw('');
     setShowResetPw(true);
   };
@@ -204,8 +216,21 @@ export default function ClientsScreen() {
     }
     setFormLoading(true);
     try {
-      const res = await api.resetClientPassword(selectedClient.id, resetPw);
-      if (res.success) {
+      const res = pwForConvert
+        ? await api.convertClientToPermanent(selectedClient.id, resetPw)
+        : await api.resetClientPassword(selectedClient.id, resetPw);
+      if (res.success && pwForConvert) {
+        Toast.show({ type: 'success', text1: 'Converted to permanent' });
+        setShowResetPw(false); setShowDetail(false); loadClients(1);
+        if (selectedClient?.whatsAppNumber) {
+          const pw = resetPw;
+          setTimeout(() => Alert.alert('Share Login Details?', `Send the login details to ${selectedClient.fullName} via WhatsApp?`, [
+            { text: 'Skip', style: 'cancel' },
+            { text: 'Share via WhatsApp', onPress: () => shareViaWhatsApp(selectedClient.whatsAppNumber, buildCredentialMessage({ role: 'client', fullName: selectedClient.fullName, code: selectedClient.code, password: pw, companyName: user?.companyName })) },
+          ]), 500);
+        }
+        setResetPw('');
+      } else if (res.success) {
         Toast.show({ type: 'success', text1: 'Password reset successfully' });
         setShowResetPw(false);
         // Share new password via WhatsApp
@@ -222,16 +247,13 @@ export default function ClientsScreen() {
     setFormLoading(false);
   };
 
+  // Staff choose the client's first password. It used to be "Change@123" for EVERY converted
+  // client: anyone knowing a client's code and phone number could sign in as them.
   const handleConvert = () => {
     if (!selectedClient || selectedClient.clientType !== ClientType.WalkIn) return;
-    Alert.alert('Convert to Permanent', `Upgrade ${selectedClient.fullName} to a permanent client?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Convert', onPress: async () => {
-        const res = await api.convertClientToPermanent(selectedClient.id, 'Change@123');
-        if (res.success) { Toast.show({ type: 'success', text1: 'Converted to permanent' }); setShowDetail(false); loadClients(1); }
-        else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
-      }},
-    ]);
+    setPwForConvert(true);
+    setResetPw('');
+    setShowResetPw(true);
   };
 
   const handleReverseTxn = async (txnId: string) => {
@@ -349,30 +371,35 @@ export default function ClientsScreen() {
 
       {/* Client Detail Modal */}
       <ModalSheet visible={showDetail} onClose={() => { setShowDetail(false); setStatement(null); }}
-        title={selectedClient?.fullName || 'Client'} icon="person-outline" iconColor="#4F46E5" iconBg="rgba(91,156,255,0.12)">
+        title={selectedClient?.fullName || 'Client'} icon="person-outline" iconColor={colors.primary} iconBg="rgba(91,156,255,0.14)">
         {selectedClient && (<>
-          {/* Balance Cards */}
-          <View style={{ flexDirection: 'row', gap: 12, marginBottom: 16 }}>
-            <View style={{ flex: 1, backgroundColor: (selectedClient.balanceKES || 0) < 0 ? 'rgba(255,107,129,0.12)' : 'rgba(57,217,176,0.12)', borderRadius: 14, padding: 16, alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, fontWeight: '600' as any, color: colors.textTertiary, letterSpacing: 0.5 }}>KES BALANCE</Text>
-              <Text style={{ fontSize: 22, fontWeight: '800' as any, marginTop: 4, color: (selectedClient.balanceKES || 0) < 0 ? '#FF6B81' : (selectedClient.balanceKES || 0) > 0 ? '#39D9B0' : '#9AA6BE' }}>{formatCurrency(selectedClient.balanceKES)}</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: (selectedClient.balanceUSD || 0) < 0 ? 'rgba(255,107,129,0.12)' : 'rgba(91,156,255,0.12)', borderRadius: 14, padding: 16, alignItems: 'center' }}>
-              <Text style={{ fontSize: 11, fontWeight: '600' as any, color: colors.textTertiary, letterSpacing: 0.5 }}>USD BALANCE</Text>
-              <Text style={{ fontSize: 22, fontWeight: '800' as any, marginTop: 4, color: (selectedClient.balanceUSD || 0) < 0 ? '#FF6B81' : (selectedClient.balanceUSD || 0) > 0 ? '#7FB3FF' : '#9AA6BE' }}>{formatCurrency(selectedClient.balanceUSD, Currency.USD)}</Text>
-            </View>
-          </View>
-          {/* UGX / EUR / ... balances */}
-          {(selectedClient.otherBalances || []).filter((b) => b.balance).length > 0 && (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
-              {(selectedClient.otherBalances || []).filter((b) => b.balance).map((b) => (
-                <View key={b.currency} style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: b.balance < 0 ? 'rgba(255,107,129,0.12)' : 'rgba(255,255,255,0.06)', borderRadius: 14, padding: 16, alignItems: 'center' }}>
-                  <Text style={{ fontSize: 11, fontWeight: '600' as any, color: colors.textTertiary, letterSpacing: 0.5 }}>{b.currencyCode} BALANCE</Text>
-                  <Text style={{ fontSize: 22, fontWeight: '800' as any, marginTop: 4, color: b.balance < 0 ? '#FF6B81' : CURRENCY_COLOR[b.currency] || colors.text }}>{formatCurrency(b.balance, b.currency)}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          {/* Balances (Nov 2026): the bureau's home currency first, then any other currency the
+              client holds; KES/USD at zero are left out in a Ugandan bureau. Same cards as home. */}
+          {(() => {
+            const all = [
+              { currency: Currency.KES, balance: selectedClient.balanceKES || 0 },
+              { currency: Currency.USD, balance: selectedClient.balanceUSD || 0 },
+              ...(selectedClient.otherBalances || []).map((b) => ({ currency: b.currency, balance: b.balance || 0 })),
+            ];
+            const rows = all
+              .filter((r) => r.currency === base || r.balance)
+              .sort((a, b) => (a.currency === base ? -1 : b.currency === base ? 1 : Math.abs(b.balance) - Math.abs(a.balance)));
+            return (
+              <SummaryGrid style={{ marginBottom: 16 }}>
+                {rows.map((r) => (
+                  <SummaryCard
+                    key={r.currency}
+                    tone={r.balance < 0 ? 'out' : r.balance > 0 ? 'in' : 'neutral'}
+                    icon={r.currency === Currency.USD ? 'logo-usd' : 'cash-outline'}
+                    label={`Balance · ${currencyCode(r.currency)}`}
+                    value={formatCurrency(r.balance, r.currency)}
+                    valueColor={r.balance < 0 ? colors.danger : undefined}
+                    caption={r.balance < 0 ? 'Owes the bureau' : r.balance > 0 ? 'Bureau holds for client' : 'Settled'}
+                  />
+                ))}
+              </SummaryGrid>
+            );
+          })()}
 
           {/* Client Info */}
           <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 14, padding: 16, marginBottom: 16 }}>
@@ -520,11 +547,11 @@ export default function ClientsScreen() {
         <Modal visible={showResetPw} transparent animationType="fade" onRequestClose={() => setShowResetPw(false)}>
           <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: spacing.lg }} activeOpacity={1} onPress={() => setShowResetPw(false)}>
             <TouchableOpacity activeOpacity={1} style={{ backgroundColor: colors.surface, borderRadius: borderRadius.lg, padding: spacing.lg }}>
-              <Text style={{ fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.sm }}>Reset Password</Text>
-              <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.lg }}>Enter a new password for {selectedClient?.fullName}</Text>
+              <Text style={{ fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text, marginBottom: spacing.sm }}>{pwForConvert ? 'Make Permanent' : 'Reset Password'}</Text>
+              <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, marginBottom: spacing.lg }}>{pwForConvert ? `Choose a sign-in password for ${selectedClient?.fullName}` : `Enter a new password for ${selectedClient?.fullName}`}</Text>
               <Input label="New Password *" value={resetPw} onChangeText={setResetPw} icon="lock-closed-outline" placeholder="Minimum 8 characters" secureTextEntry />
               <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
-                <View style={{ flex: 1 }}><Button title="Reset Password" onPress={submitResetPassword} loading={formLoading} icon="key-outline" /></View>
+                <View style={{ flex: 1 }}><Button title={pwForConvert ? 'Make Permanent' : 'Reset Password'} onPress={submitResetPassword} loading={formLoading} icon="key-outline" /></View>
                 <View style={{ flex: 1 }}><Button title="Cancel" onPress={() => setShowResetPw(false)} variant="outline" /></View>
               </View>
             </TouchableOpacity>
@@ -540,7 +567,7 @@ export default function ClientsScreen() {
       <ModalSheet visible={showCreate} onClose={() => setShowCreate(false)} title="New Client" icon="person-add-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
           <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
             <Input label="Full Name *" value={fullName} onChangeText={setFullName} icon="person-outline" placeholder="Client name" />
-            <Input label="WhatsApp Number *" value={phone} onChangeText={setPhone} icon="call-outline" placeholder="+254..." keyboardType="phone-pad" />
+            <Input label="WhatsApp Number *" value={phone} onChangeText={setPhone} icon="call-outline" placeholder={base === 2 ? "+256..." : "+254..."} keyboardType="phone-pad" />
             <Input label="Email" value={email} onChangeText={setEmail} icon="mail-outline" placeholder="email@example.com" keyboardType="email-address" />
             <Input label="ID/Passport" value={idPassport} onChangeText={setIdPassport} icon="card-outline" placeholder="ID number" />
             <Text style={styles.fieldLabel}>Client Type</Text>

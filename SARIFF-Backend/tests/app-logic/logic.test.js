@@ -6,7 +6,7 @@ global.Date = FakeDate;
 const store = {}; global.localStorage = { getItem: k => store[k] ?? null, setItem: (k, v) => store[k] = String(v), removeItem: k => delete store[k] };
 global.window = { localStorage: global.localStorage, location: { href: "" }, dispatchEvent() {} };
 
-const W = { api: require("./web/api.js"), dates: require("./web/dates.js"), flow: require("./web/moneyflow.js"),
+const W = { api: require("./web/api"), dates: require("./web/dates.js"), flow: require("./web/moneyflow.js"),
             base: require("./web/useBaseCurrency.js"), wa: require("./web/whatsapp.js"), print: require("./web/print.js") };
 const M = { types: require("./mob/types/index.js"), dates: require("./mob/utils/dates.js"), flow: require("./mob/utils/moneyflow.js") };
 const KES = 0, USD = 1, UGX = 2, EUR = 3;
@@ -58,13 +58,27 @@ t("formatting", "web negative keeps its minus", W.api.formatMoney(-5000, UGX), "
 t("formatting", "web unknown/empty amount is 0", W.api.formatMoney(undefined, KES), "KES 0");
 t("formatting", "mobile negative keeps its minus", M.types.formatCurrency(-1000, KES).startsWith("-"), true);
 t("formatting", "mobile NaN shows 0", M.types.formatCurrency(NaN, USD).includes("0.00"), true);
+// M19: Ugandan shillings have no cents; the phone showed "USh 1,800,000.00" where the web shows whole shillings.
+t("formatting", "mobile UGX: whole shillings", M.types.formatCurrency(1800000, UGX), "USh 1,800,000");
+t("formatting", "mobile USD keeps cents", M.types.formatCurrency(12.5, USD), "$12.50");
 t("formatting", "currency code for every currency (web)", [KES, USD, UGX, EUR].map(W.api.currencyCode), ["KES", "USD", "UGX", "EUR"]);
 t("formatting", "currency code for every currency (mobile)", [KES, USD, UGX, EUR].map(M.types.currencyCode), ["KES", "USD", "UGX", "EUR"]);
+
+// W24: the reports' "Date Range" (Today by default) filtered nothing. NOW = 01:30 on 9 Nov (Monday) in Nairobi.
+const inR = W.dates.inDateRange;
+t("date range", "an entry at 00:30 Nairobi (21:30 UTC the day before) is today", inR("2026-11-08T21:30:00Z", "today"), true);
+t("date range", "yesterday evening is not today", inR("2026-11-08T17:00:00Z", "today"), false);
+t("date range", "this week starts Monday", inR("2026-11-08T08:00:00Z", "week"), false);
+t("date range", "this month", inR("2026-11-01T06:00:00Z", "month"), true);
+t("date range", "last month is not this month", inR("2026-10-31T06:00:00Z", "month"), false);
+t("date range", "custom range, inclusive", inR("2026-11-03T06:00:00Z", "custom", "2026-11-01", "2026-11-03"), true);
+t("date range", "custom range, outside", inR("2026-11-04T06:00:00Z", "custom", "2026-11-01", "2026-11-03"), false);
+t("date range", "unreadable date is outside", inR("not a date", "today"), false);
 
 // ---------- 5. Totals never mix currencies
 const rows = [{ a: 1000, c: KES }, { a: 2000000, c: UGX }, { a: 500, c: KES }, { a: 0, c: USD }];
 t("totals", "sumByCurrency keeps KES and UGX apart, home first, zero dropped", M.types.sumByCurrency(rows, r => r.a, r => r.c, UGX), [{ currency: UGX, total: 2000000 }, { currency: KES, total: 1500 }]);
-t("totals", "no totals → a zero in the home currency", M.types.formatTotals([], UGX).includes("0.00"), true);
+t("totals", "no totals → a zero in the home currency (whole shillings, M19)", M.types.formatTotals([], UGX), "USh 0");
 t("totals", "client balance rows hide empty KES/USD for a UGX client", M.types.balanceRowsFrom({ balanceKES: 0, balanceUSD: 0, otherBalances: [{ currency: UGX, currencyCode: "UGX", balance: 750000 }] }).map(r => r.code), ["UGX"]);
 t("totals", "…but can show them when asked", M.types.balanceRowsFrom({ otherBalances: [] }, true).map(r => r.code), ["KES", "USD"]);
 

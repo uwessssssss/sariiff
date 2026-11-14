@@ -103,17 +103,17 @@ export function EditTransactionDialog({
         >
           <div className="grid grid-cols-3 gap-3 rounded-lg bg-[#E9EEF6] px-3 py-2.5 text-sm">
             <div>
-              <p className="text-xs text-slate-500">Amount</p>
+              <p className="text-xs text-slate-600">Amount</p>
               <p className="font-semibold tabular-nums text-slate-900">
                 {currencyCode(txn.currency)}{" "}
                 {(txn.amount || 0).toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp })}
               </p>
             </div>
             <div>
-              <p className="text-xs text-slate-500">Entry</p>
+              <p className="text-xs text-slate-600">Entry</p>
               <p className="font-semibold text-slate-900">{txn.thisAccountAction || "—"}</p>
             </div>
-            <div className="flex items-center justify-end gap-1 text-xs text-slate-500">
+            <div className="flex items-center justify-end gap-1 text-xs text-slate-600">
               <Lock className="h-3.5 w-3.5" /> Reverse to change money
             </div>
           </div>

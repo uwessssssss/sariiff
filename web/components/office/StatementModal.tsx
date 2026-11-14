@@ -9,7 +9,7 @@
  * The screen shows that check explicitly, and the PDF/print carry it too.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   X,
   Download,
@@ -146,6 +146,8 @@ export function renderStatementPdf(o: {
   lines: Line[];
   fmt: (n: number) => string;
   money: (n: number) => string;
+  /** Set when a search or money-in/out filter hides lines: the totals are still the whole period's. */
+  note?: string;
 }) {
   const { bureau, title, subtitle, code, periodLabel, head, fmt } = o;
   const shown = o.lines;
@@ -183,6 +185,11 @@ export function renderStatementPdf(o: {
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   if (subtitle) doc.text(subtitle, 14, 48);
+  if (o.note) {
+    doc.setTextColor(180, 83, 9);
+    doc.text(o.note, W - 14, 48, { align: "right" });
+    doc.setTextColor(100, 116, 139);
+  }
   doc.text(`Generated ${new Date().toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}`, W - 14, 42, { align: "right" });
 
   const boxes: [string, string, [number, number, number]][] = [
@@ -281,7 +288,12 @@ export function StatementModal(props: StatementModalProps) {
   const periodLabel =
     preset === "all" ? "All time" : start && end ? `${longDate(start)} – ${longDate(end)}` : start ? `From ${longDate(start)}` : end ? `Up to ${longDate(end)}` : "All time";
 
+  // Switching currency or period quickly starts a second load before the first answers;
+  // only the latest one may fill the screen (else KES lines could show under the USD tab).
+  const loadSeq = useRef(0);
   const load = useCallback(async () => {
+    const seq = ++loadSeq.current;
+    const stale = () => seq !== loadSeq.current;
     setLoading(true);
     setError(null);
     try {
@@ -294,6 +306,7 @@ export function StatementModal(props: StatementModalProps) {
               ? await getMpesaAgentStatement(accountId!, start, end)
               : await getCashAccountStatement(cashCurrency ?? currency, start, end);
 
+      if (stale()) return;
       if (!res?.success || !res.data) {
         setError(res?.message || "The statement couldn't be loaded.");
         setLines([]);
@@ -340,10 +353,11 @@ export function StatementModal(props: StatementModalProps) {
         }),
       );
     } catch {
+      if (stale()) return;
       setError("The statement couldn't be loaded. Check your connection and try again.");
       setLines([]);
     } finally {
-      setLoading(false);
+      if (!stale()) setLoading(false);
     }
   }, [kind, accountId, cashCurrency, currency, start, end, isAsset]);
 
@@ -385,7 +399,10 @@ export function StatementModal(props: StatementModalProps) {
 
   // ---------------------------------------------------------------- PDF
   const buildPdf = () =>
-    renderStatementPdf({ bureau, title, subtitle, code, periodLabel, head, lines: shown, fmt, money });
+    renderStatementPdf({
+      bureau, title, subtitle, code, periodLabel, head, lines: shown, fmt, money,
+      note: shown.length === lines.length ? undefined : `Filtered: ${shown.length} of ${entries(lines.length)} shown; totals are for the whole period`,
+    });
 
   const fileName = `${title.replace(/[^\w-]+/g, "_")}_${code}_statement.pdf`;
   const downloadPdf = () => {
@@ -529,9 +546,9 @@ export function StatementModal(props: StatementModalProps) {
               <p className="mt-0.5 text-xs text-slate-500">{entries(lines.filter((l) => l.moneyOut > 0).length)}</p>
             </div>
             {/* The figure people open a statement for: the blue accent, not the header's navy. */}
-            <div className="rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 p-4 text-white shadow-sm shadow-blue-600/20">
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-100">Closing balance</p>
-              <p className={`mt-1 text-lg font-semibold tabular-nums ${head.closing < 0 ? "text-amber-200" : ""}`}>{money(head.closing)}</p>
+            <div className="rounded-xl bg-gradient-to-br from-blue-700 to-blue-800 p-4 text-white shadow-sm shadow-blue-600/20">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-50">Closing balance</p>
+              <p className={`mt-1 text-lg font-semibold tabular-nums ${head.closing < 0 ? "text-amber-100" : ""}`}>{money(head.closing)}</p>
               <p className="mt-0.5 text-xs text-blue-100/90">{preset === "all" ? "Right now" : `On ${longDate(end) || "today"}`}</p>
             </div>
           </div>
@@ -558,12 +575,12 @@ export function StatementModal(props: StatementModalProps) {
           {/* Toolbar */}
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search description, reference or counterparty"
-                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                className="h-10 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5" role="group" aria-label="Show">
@@ -603,7 +620,7 @@ export function StatementModal(props: StatementModalProps) {
               </div>
             ) : error ? (
               <div className="flex flex-col items-center gap-3 py-14 text-center">
-                <AlertTriangle className="h-6 w-6 text-amber-500" />
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
                 <p className="text-sm text-slate-600">{error}</p>
                 <button onClick={load} className={ui.btnSecondary}>Try again</button>
               </div>
@@ -619,7 +636,7 @@ export function StatementModal(props: StatementModalProps) {
                     <li
                       key={l.id}
                       onClick={onView ? () => onView(l.raw) : undefined}
-                      className={`px-4 py-3 ${l.reversed ? "opacity-60" : ""} ${onView ? "cursor-pointer active:bg-slate-50" : ""}`}
+                      className={`px-4 py-3 ${l.reversed ? "bg-slate-50 line-through decoration-slate-400" : ""} ${onView ? "cursor-pointer active:bg-slate-50" : ""}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -655,7 +672,7 @@ export function StatementModal(props: StatementModalProps) {
                     </thead>
                     <tbody className="tabular-nums">
                       {shown.map((l) => (
-                        <tr key={l.id} className={`${ui.row} align-top hover:bg-slate-50 ${l.reversed ? "opacity-60" : ""}`}>
+                        <tr key={l.id} className={`${ui.row} align-top hover:bg-slate-50 ${l.reversed ? "bg-slate-50 line-through decoration-slate-400" : ""}`}>
                           <td className={`${ui.td} whitespace-nowrap pl-5`}>
                             <span className="block font-medium text-slate-900">{longDate(l.date)}</span>
                             <span className="text-xs text-slate-500">
@@ -693,10 +710,10 @@ export function StatementModal(props: StatementModalProps) {
                             </span>
                           </td>
                           <td className={`${ui.td} whitespace-nowrap text-right font-medium text-emerald-700`}>
-                            {l.moneyIn ? fmt(l.moneyIn) : <span className="text-slate-300">—</span>}
+                            {l.moneyIn ? fmt(l.moneyIn) : <span className="text-slate-500">—</span>}
                           </td>
                           <td className={`${ui.td} whitespace-nowrap text-right font-medium text-red-700`}>
-                            {l.moneyOut ? fmt(l.moneyOut) : <span className="text-slate-300">—</span>}
+                            {l.moneyOut ? fmt(l.moneyOut) : <span className="text-slate-500">—</span>}
                           </td>
                           <td className={`${ui.td} whitespace-nowrap ${hasActions ? "" : "pr-5"} text-right font-semibold ${l.balance < 0 ? "text-red-700" : "text-[#0F172A]"}`}>
                             {fmt(l.balance)}

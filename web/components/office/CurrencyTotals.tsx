@@ -81,7 +81,7 @@ export function CurrencyTotals({
                           ? "bg-emerald-50 text-emerald-700"
                           : r.net < 0
                             ? "bg-red-50 text-red-700"
-                            : "bg-slate-100 text-slate-500"
+                            : "bg-slate-100 text-slate-600"
                       }`}
                     >
                       {signed(r.net, r.currency)}

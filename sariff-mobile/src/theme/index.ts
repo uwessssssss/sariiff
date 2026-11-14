@@ -55,7 +55,7 @@ export const colors = {
   // Text (on dark)
   text: '#F4F6FB',
   textSecondary: '#9AA6BE',
-  textTertiary: '#646E86',
+  textTertiary: '#7F8AA3',     // 5:1 on surfaces (was #646E86, 3.6:1 — too faint for captions)
   textInverse: '#0A0C12',     // text on gold/light fills
   textMuted: '#4B5468',
 

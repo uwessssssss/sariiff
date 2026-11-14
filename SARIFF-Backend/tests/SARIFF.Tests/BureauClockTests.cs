@@ -48,4 +48,27 @@ public class BureauClockTests
     {
         Assert.Equal(new DateTime(2026, 10, 31, 21, 0, 0, DateTimeKind.Utc), BureauClock.MonthStartUtc(new DateTime(2026, 11, 18)));
     }
+
+    // An omitted [FromQuery] DateTime arrives as 0001-01-01. Turning that into a UTC
+    // bound used to throw "un-representable DateTime" (client statement, profit report).
+    [Fact]
+    public void An_omitted_date_means_no_limit()
+    {
+        var (from, toEx) = BureauClock.Range(default(DateTime), default(DateTime));
+        Assert.Null(from);
+        Assert.Null(toEx);
+        var (f2, t2) = BureauClock.Range(DateTime.MinValue, DateTime.MaxValue);
+        Assert.Null(f2);
+        Assert.Null(t2);
+    }
+
+    [Fact]
+    public void Extreme_dates_never_throw()
+    {
+        var a = BureauClock.DayStartUtc(DateTime.MinValue);
+        var b = BureauClock.DayStartUtc(DateTime.MaxValue).AddDays(1);
+        var c = BureauClock.ToLocal(DateTime.MaxValue);
+        var d = BureauClock.ToLocal(DateTime.MinValue);
+        Assert.True(a <= b && c >= d);
+    }
 }

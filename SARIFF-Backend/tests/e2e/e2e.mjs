@@ -11,7 +11,7 @@ const LOG = process.argv[3] || "/tmp/sariff-e2e-api.log";
 const EAT = 3 * 3600 * 1000;
 const todayEAT = () => new Date(Date.now() + EAT).toISOString().slice(0, 10);
 const hhmmEAT = (ms = Date.now()) => new Date(ms + EAT).toISOString().slice(11, 16);
-const KES = 0, USD = 1, UGX = 2, Credit = 1, Cash = 0, Mpesa = 2, Client = 3;
+const KES = 0, UGX = 2, Credit = 1, Cash = 0, Mpesa = 2, Client = 3;
 
 let pass = 0, fail = 0;
 const results = [];

@@ -1,5 +1,6 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Animated, Modal, Alert, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +9,7 @@ import Toast from 'react-native-toast-message';
 import * as api from '../../services/api';
 import { BankAccountDto, MpesaAgentDto, CashAccountDto, Currency, formatCurrency, formatDate, getAccountTypeLabel, currencyCode, CURRENCY_COLOR, providerLabel, MOBILE_MONEY_PROVIDERS, currencyChips, allowedCurrenciesFor, walletCurrency } from '../../types';
 import { useBaseCurrency } from '../../hooks/useBaseCurrency';
-import { Button, Input, EmptyState, LoadingScreen, GradientCard, SectionHeader, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Button, Input, EmptyState, LoadingScreen, SectionHeader, ModalSheet, FormSection, ChipGroup, ActionBtn } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 type ModalType = 'none' | 'createBank' | 'createMpesa' | 'editBank' | 'editMpesa' | 'statement';
@@ -46,7 +47,7 @@ export default function AccountsScreen() {
   const [accName, setAccName] = useState('');
   const [branchCode, setBranchCode] = useState('');
   // Home currency (KES in Kenya, UGX in Uganda): default for new banks (wallets hold their network's currency)
-  const { base, baseCode } = useBaseCurrency();
+  const { base } = useBaseCurrency();
   const [bankCurrency, setBankCurrency] = useState<number>(Currency.KES);
   useEffect(() => setBankCurrency(base), [base]);
   const [openingBal, setOpeningBal] = useState('');
@@ -73,7 +74,9 @@ export default function AccountsScreen() {
   useEffect(() => { (async () => { await load(); setLoading(false); })(); }, []);
   const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
 
+  const stmtSeq = useRef(0);   // only the latest statement request may fill the sheet
   const viewStatement = async (type: string, idOrCurrency: string | number, name: string) => {
+    const seq = ++stmtSeq.current;
     setStmtTitle(name); setStatement(null); setStmtLoading(true); setModal('statement');
     try {
       let res;
@@ -84,6 +87,7 @@ export default function AccountsScreen() {
       } else {
         res = await api.getMpesaStatement(idOrCurrency as string);
       }
+      if (seq !== stmtSeq.current) return;
       if (res.success && res.data) {
         setStatement(res.data);
       } else {
@@ -95,15 +99,17 @@ export default function AccountsScreen() {
         }
       }
     } catch (e: any) {
+      if (seq !== stmtSeq.current) return;
       setStatement({ error: e.message || 'Failed to load statement' });
     }
-    setStmtLoading(false);
+    if (seq === stmtSeq.current) setStmtLoading(false);
   };
 
   const handleCreateBank = async () => {
     if (!bankName || !accNumber || !accName) { Toast.show({ type: 'error', text1: 'Fill required fields' }); return; }
+    if (anyBadAmount(openingBal)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
-    const res = await api.createBankAccount({ bankName, accountNumber: accNumber, accountName: accName, branchCode, currency: bankCurrency, openingBalance: parseFloat(openingBal) || 0 });
+    const res = await api.createBankAccount({ bankName, accountNumber: accNumber, accountName: accName, branchCode, currency: bankCurrency, openingBalance: parseAmount(openingBal) || 0 });
     if (res.success) { Toast.show({ type: 'success', text1: 'Bank account created' }); setModal('none'); load(); }
     else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     setFormLoading(false);
@@ -111,8 +117,9 @@ export default function AccountsScreen() {
 
   const handleCreateMpesa = async () => {
     if (!agentName || !agentPhone || !agentNumber) { Toast.show({ type: 'error', text1: 'Fill required fields' }); return; }
+    if (anyBadAmount(mpesaOpenBal)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
-    const res = await api.createMpesaAgent({ agentName, phoneNumber: agentPhone, agentNumber, storeNumber, agentType: 0, openingBalance: parseFloat(mpesaOpenBal) || 0, provider } as any);
+    const res = await api.createMpesaAgent({ agentName, phoneNumber: agentPhone, agentNumber, storeNumber, agentType: 0, openingBalance: parseAmount(mpesaOpenBal) || 0, provider } as any);
     if (res.success) { Toast.show({ type: 'success', text1: 'Mobile money agent created' }); setModal('none'); load(); }
     else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     setFormLoading(false);
@@ -134,8 +141,9 @@ export default function AccountsScreen() {
   };
 
   const handleCreateCash = async () => {
+    if (anyBadAmount(cashOpenBal)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
-    const res = await api.createCashAccount({ currency: cashCurrency, openingBalance: parseFloat(cashOpenBal) || 0 });
+    const res = await api.createCashAccount({ currency: cashCurrency, openingBalance: parseAmount(cashOpenBal) || 0 });
     if (res.success) { Toast.show({ type: 'success', text1: 'Cash account created' }); setShowCreateCash(false); setCashOpenBal(''); load(); }
     else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     setFormLoading(false);

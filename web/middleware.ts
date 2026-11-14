@@ -4,23 +4,20 @@ import type { NextRequest } from "next/server";
 // Public routes that don't require authentication
 const publicRoutes = ["/", "/login"];
 
-// Role-based route prefixes
-const roleRoutes = {
-  "super-admin": "/admin",
-  "office-user": "/office",
-  client: "/client",
-};
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for static files and API routes
+  // Static files (robots.txt, icons, the web manifest): no auth or nonce, but the same
+  // headers, with a policy that lets them run nothing.
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname.includes(".") // static files like favicon.ico
   ) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set("Content-Security-Policy", "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
+    setCommonHeaders(res.headers);
+    return res;
   }
 
   // Get auth token from cookies
@@ -73,40 +70,53 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Add security headers
-  const response = NextResponse.next();
-  response.headers.set("X-Frame-Options", "DENY");
-  response.headers.set("X-Content-Type-Options", "nosniff");
-  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
-  // HSTS only matters over HTTPS; browsers ignore it on http://localhost.
-  response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
-  // Scripts only from this site (Next.js still needs inline bootstrap scripts;
-  // a nonce-based policy would remove 'unsafe-inline' later). The API, fonts and
-  // WhatsApp links are allowed; plugins, <base> hijacking and framing are not.
-  const dev = process.env.NODE_ENV !== "production";
-  // The API this build talks to is always allowed, even on plain http (a local or test
-  // API); without it a production build pointed at http://127.0.0.1 could not sign in.
-  let apiOrigin = "";
-  try { apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL || "").origin; } catch { /* unset */ }
-  response.headers.set(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https:",
-      "connect-src 'self' https: wss:" + (dev ? " http: ws:" : "") + (apiOrigin ? ` ${apiOrigin}` : ""),
-      "frame-src 'self' blob:",
-      "frame-ancestors 'none'",
-      "base-uri 'self'",
-      "object-src 'none'",
-      "form-action 'self'",
-    ].join("; "),
-  );
-
+  // Security headers. Scripts run only with this request's nonce (Next.js puts it on its own
+  // scripts when it finds the policy on the request), so an injected <script> can't run.
+  // 'strict-dynamic' lets those scripts load the app's chunks. Styles keep 'unsafe-inline':
+  // React style attributes and the toast library need it, and CSS alone can't run code.
+  const nonce = btoa(crypto.randomUUID());
+  const csp = contentSecurityPolicy(nonce);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", csp);
+  setCommonHeaders(response.headers);
   return response;
+}
+
+const dev = process.env.NODE_ENV !== "production";
+// The API this build talks to (NEXT_PUBLIC_API_URL is fixed at build time). Always allowed,
+// even on plain http, so a production build pointed at a local or test API can sign in.
+const apiOrigin = (() => {
+  try { return new URL(process.env.NEXT_PUBLIC_API_URL || "").origin; } catch { return ""; }
+})();
+
+function contentSecurityPolicy(nonce: string): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    // Logos and profile pictures are data: URLs; PDFs preview from blob: URLs.
+    "img-src 'self' data: blob:",
+    "connect-src 'self'" + (apiOrigin ? ` ${apiOrigin}` : "") + (dev ? " http: ws:" : ""),
+    "frame-src 'self' blob:",
+    "worker-src 'self' blob:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "form-action 'self'",
+  ].join("; ");
+}
+
+function setCommonHeaders(h: Headers) {
+  h.set("X-Frame-Options", "DENY");
+  h.set("X-Content-Type-Options", "nosniff");
+  h.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  h.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  // HSTS only matters over HTTPS; browsers ignore it on http://localhost.
+  h.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 }
 
 // Helper function to get dashboard path based on role

@@ -1,5 +1,6 @@
+import { parseAmount, anyBadAmount } from "../../utils/amount";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Modal, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import * as api from '../../services/api';
 import { AccountType, formatCurrency, formatDate, currencyCode } from '../../types';
-import { Button, Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn, InfoRow } from '../../components/ui';
+import { Input, EmptyState, LoadingScreen, ModalSheet, FormSection, ChipGroup, ActionBtn } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 
 const statusConfig: Record<number, { label: string; color: string; bg: string }> = {
@@ -20,7 +21,6 @@ export default function ReconciliationScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [items, setItems] = useState<any[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
@@ -40,8 +40,6 @@ export default function ReconciliationScreen() {
     try {
       const res = await api.getReconciliations(1, 50);
       if (res.success && res.data) setItems(Array.isArray(res.data) ? res.data : res.data.items || []);
-      const accRes = await api.getReconciliationAccounts();
-      if (accRes.success) setAccounts(accRes.data || []);
     } catch {}
   }, []);
 
@@ -73,9 +71,10 @@ export default function ReconciliationScreen() {
 
   const handleCreate = async () => {
     if (!accId || !actualBalance) { Toast.show({ type: 'error', text1: 'Fill all required fields' }); return; }
+    if (anyBadAmount(actualBalance)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
     setFormLoading(true);
     try {
-      const res = await api.createReconciliation({ accountType: accType, accountId: accId, actualBalance: parseFloat(actualBalance), notes: reconcNotes || undefined });
+      const res = await api.createReconciliation({ accountType: accType, accountId: accId, actualBalance: parseAmount(actualBalance), notes: reconcNotes || undefined });
       if (res.success) { Toast.show({ type: 'success', text1: 'Reconciliation created' }); setShowCreate(false); setActualBalance(''); setReconcNotes(''); load(); }
       else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     } catch (e: any) { Toast.show({ type: 'error', text1: 'Error', text2: e.message }); }

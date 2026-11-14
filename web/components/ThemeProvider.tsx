@@ -69,7 +69,7 @@ export function ThemeToggle() {
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
       >
         {theme === "light" ? (
-          <Sun className="w-4 h-4 text-amber-500" />
+          <Sun className="w-4 h-4 text-amber-600" />
         ) : (
           <Moon className="w-4 h-4 text-violet-500" />
         )}

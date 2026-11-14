@@ -6,7 +6,13 @@
 import { readFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
-const { chromium, devices } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
+const PW = require(process.env.PLAYWRIGHT_MODULE || "playwright");
+const { devices } = PW;
+// PW_BROWSER=firefox|webkit runs the same test in another engine (Firefox has no "mobile" mode,
+// so the phone size there is the screen size and touch only)
+const ENGINE = process.env.PW_BROWSER || "chromium";
+const chromium = PW[ENGINE];
+const dev = (d) => (ENGINE === "firefox" ? (({ isMobile, defaultBrowserType, ...rest }) => rest)(d) : d);
 
 const WEB = process.argv[2] || "http://127.0.0.1:3000";
 const LOG = process.argv[3];
@@ -34,12 +40,17 @@ async function codeFor(phone, afterLen) {
 }
 
 const BAD = /\bNaN\b|\bundefined\b|Invalid Date|\[object Object\]|Something went wrong|Application error/;
-const IGNORE_CONSOLE = /favicon|Download the React DevTools|\[Fast Refresh\]|Failed to load resource/i; // failed requests are reported with their address below
+// "Failed to fetch RSC payload": Next.js cancels a link prefetch when the test moves on; it falls back by itself
+const IGNORE_CONSOLE = /Failed to fetch RSC payload|favicon|Download the React DevTools|\[Fast Refresh\]|Failed to load resource/i; // failed requests are reported with their address below
 const EXPECTED_HTTP = /favicon/;
 
 function watch(page) {
   const errs = [];
-  page.on("pageerror", (e) => errs.push(`page error: ${e.message}`));
+  // WebKit reports a request cut off by leaving the page (a Next.js prefetch, or an API call still
+  // in flight when the test moves on) as "<url> due to access control checks". Chromium and Firefox
+  // say nothing for these. The screen's content is checked separately, so a real CORS failure would
+  // still fail the test (its data would be missing).
+  page.on("pageerror", (e) => !(ENGINE === "webkit" && /due to access control checks\.?$/.test(e.message)) && errs.push(`page error: ${e.message}`));
   page.on("console", (m) => m.type() === "error" && !IGNORE_CONSOLE.test(m.text()) && errs.push(`console: ${m.text()}`));
   page.on("response", async (r) => {
     if (r.status() < 400 || EXPECTED_HTTP.test(r.url())) return;
@@ -263,7 +274,7 @@ async function currencyNear(page, name) {
 
   // ---------- On a phone (iPhone 13 size)
   {
-    const ctx = await browser.newContext({ ...devices["iPhone 13"], timezoneId: "Africa/Nairobi" });
+    const ctx = await browser.newContext({ ...dev(devices["iPhone 13"]), timezoneId: "Africa/Nairobi" });
     const page = await ctx.newPage(), errs = watch(page);
     await page.goto(`${WEB}/login`);
     await screen(page, errs, "Phone screen: login", { dump: false });
@@ -276,7 +287,7 @@ async function currencyNear(page, name) {
       }
     }
     await ctx.close();
-    const c2 = await browser.newContext({ ...devices["iPhone 13"], timezoneId: "Africa/Nairobi" });
+    const c2 = await browser.newContext({ ...dev(devices["iPhone 13"]), timezoneId: "Africa/Nairobi" });
     const p2 = await c2.newPage(), e2 = watch(p2);
     if (await signIn(p2, e2, S.client, "Phone screen: client")) {
       await screen(p2, e2, "Phone screen: client dashboard", { dump: false });

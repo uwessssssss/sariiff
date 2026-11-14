@@ -380,3 +380,12 @@
     zoom: 0.8;
   }
 }
+
+@layer base {
+  /* A box that scrolls sideways (wide tables) must also contain its absolutely positioned
+     children (screen-reader-only labels, row menus). Without this they escape the box and
+     make the whole page scroll sideways on a phone. */
+  .overflow-x-auto {
+    position: relative;
+  }
+}

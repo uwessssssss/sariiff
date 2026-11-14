@@ -1,3 +1,4 @@
+import { secureRandomHex } from './random';
 import { Linking, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -204,20 +205,22 @@ export const removeTransactionPin = async (): Promise<void> => {};
 
 const DEVICE_ID_KEY = 'sariff_device_id';
 
-export const getDeviceId = async (): Promise<string> => {
+// A trusted device skips the SMS code, so this id is a secret: secure random bytes, kept in
+// the encrypted store. It was Math.random in plain AsyncStorage, and the constant
+// "unknown-device" when storage failed (the same "secret" on every such phone).
+export const getDeviceId = async (): Promise<string | undefined> => {
   try {
-    let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
-    if (!deviceId) {
-      // Generate a UUID-like ID
-      deviceId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-      });
-      await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+    const SecureStore = require('expo-secure-store');
+    let deviceId: string | null = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+    if (!deviceId || deviceId.length < 32) {
+      deviceId = secureRandomHex(24) ?? null;
+      if (!deviceId) return undefined;   // no secure randomness: no trusted device
+      await SecureStore.setItemAsync(DEVICE_ID_KEY, deviceId);
+      AsyncStorage.removeItem(DEVICE_ID_KEY).catch(() => {});   // the old plain copy
     }
     return deviceId;
   } catch {
-    return 'unknown-device';
+    return undefined;
   }
 };
 

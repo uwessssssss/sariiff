@@ -8,8 +8,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.0" />
-    <!-- Keeps every Microsoft.IdentityModel.* package on 7.1.2 (JwtBearer 8.0.0 would pull 7.0.3, mixed with the patched JWT package). -->
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.1.2" />
+    <!-- Keeps every Microsoft.IdentityModel.* package on 7.7.1 (7.1.2 is flagged for critical bugs) (JwtBearer 8.0.0 would pull 7.0.3, mixed with the patched JWT package). -->
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.7.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.3" />
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />

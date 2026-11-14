@@ -240,7 +240,7 @@ export function TransactionDetailsDialog({
           </p>
           <StatusPill t={txn} />
         </div>
-        <p className={`mt-1 text-2xl font-semibold tabular-nums ${moneyIn ? "text-emerald-700" : "text-red-700"} ${txn.isReversed ? "line-through opacity-70" : ""}`}>
+        <p className={`mt-1 text-2xl font-semibold tabular-nums ${moneyIn ? "text-emerald-700" : "text-red-700"} ${txn.isReversed ? "line-through" : ""}`}>
           {signed(txn.amount, txn.currency, moneyIn)}
         </p>
         <p className="mt-1 text-xs text-slate-600">
@@ -254,7 +254,7 @@ export function TransactionDetailsDialog({
         <Field label="Currency">{`${currencyCode(txn.currency)} · ${CURRENCY_NAME[currencyCode(txn.currency)] || ""}`}</Field>
         <div className="col-span-2">
           <Field label="Date & time">
-            <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-slate-400" />{when(txn)}</span>
+            <span className="inline-flex items-center gap-1.5"><CalendarDays className="h-3.5 w-3.5 text-slate-500" />{when(txn)}</span>
           </Field>
         </div>
       </div>
@@ -332,11 +332,11 @@ export function RelatedAccountDialog({
         </p>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <div>
-            <p className="text-xs text-slate-500">{otherIn ? "Money in" : "Money out"}</p>
+            <p className="text-xs text-slate-600">{otherIn ? "Money in" : "Money out"}</p>
             <p className={`text-lg font-semibold tabular-nums ${otherIn ? "text-emerald-700" : "text-red-700"}`}>{signed(otherAmount, r.currency, otherIn)}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Balance after</p>
+            <p className="text-xs text-slate-600">Balance after</p>
             <p className="text-lg font-semibold tabular-nums text-slate-900">{formatMoney(r.balanceAfter, r.currency)}</p>
           </div>
         </div>
@@ -444,7 +444,7 @@ export function ReverseTransactionDialog({
         </div>
       </div>
       <label className="block">
-        <span className="mb-1.5 block text-sm font-medium text-slate-700">Reason <span className="font-normal text-slate-400">(optional, kept in the audit log)</span></span>
+        <span className="mb-1.5 block text-sm font-medium text-slate-700">Reason <span className="font-normal text-slate-500">(optional, kept in the audit log)</span></span>
         <input
           value={reason}
           onChange={(e) => setReason(e.target.value)}

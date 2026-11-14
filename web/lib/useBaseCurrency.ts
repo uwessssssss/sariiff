@@ -14,13 +14,27 @@ let cached: Currency | null = null;
 let inflight: Promise<Currency> | null = null;
 const listeners = new Set<(c: Currency) => void>();
 
+/** Exported for the logic tests. */
+export function loadBaseCurrency(): Promise<Currency> {
+  return load();
+}
+// Bumped on every reset: an answer that arrives after a sign-out or bureau switch belongs
+// to the previous bureau and is dropped.
+let generation = 0;
+
 function load(): Promise<Currency> {
   if (cached !== null) return Promise.resolve(cached);
   if (!inflight) {
+    const gen = generation;
     inflight = getCompanyCurrencies()
-      .then((r) => (r.success && r.data && r.data.baseCurrency !== undefined ? (Number(r.data.baseCurrency) as Currency) : Currency.KES))
-      .catch((): Currency => Currency.KES)
-      .then((c) => {
+      .then((r: any) => (r?.success && r.data && r.data.baseCurrency !== undefined ? (Number(r.data.baseCurrency) as Currency) : null))
+      .catch(() => null)
+      .then((c: Currency | null) => {
+        if (gen !== generation) return cached ?? (Currency.KES as Currency);   // a newer sign-in owns the cache
+        inflight = null;
+        // A failed load is NOT cached: KES is shown for now and the next screen asks again
+        // (a failed first request used to label a Ugandan bureau's figures KES until reload).
+        if (c === null) return Currency.KES as Currency;
         cached = c;
         listeners.forEach((l) => l(c));
         return c;
@@ -31,6 +45,7 @@ function load(): Promise<Currency> {
 
 /** Forget the cached value (on logout, so the next company re-fetches). */
 export function resetBaseCurrency() {
+  generation++;
   cached = null;
   inflight = null;
 }
@@ -75,4 +90,19 @@ export function useAllowedCurrencies(): { base: Currency; baseCode: string; allo
   const { base, baseCode } = useBaseCurrency();
   const allowed = allowedCurrenciesFor(base);
   return { base, baseCode, allowed, codes: allowed.map((c) => currencyCode(c)), has: (c) => isCurrencyAllowed(base, c) };
+}
+
+/**
+ * Example values for form placeholders in the bureau's own country, so a Ugandan bureau
+ * isn't shown "+254 712 345 678 / John Kamau / Nairobi, Kenya" (found in the Nov 2026 review).
+ */
+export type CountrySamples = { phone: string; phoneCompact: string; name: string; place: string };
+export const samplesFor = (base: number): CountrySamples =>
+  base === Currency.UGX
+    ? { phone: "+256 772 123 456", phoneCompact: "+256772123456", name: "Sarah Nakato", place: "Kampala, Uganda" }
+    : { phone: "+254 712 345 678", phoneCompact: "+254712345678", name: "John Kamau", place: "Nairobi, Kenya" };
+
+export function useCountrySamples(): CountrySamples {
+  const { base } = useBaseCurrency();
+  return samplesFor(base);
 }

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, borderRadius } from '../theme';
 
 import ClientDashboardScreen from '../screens/client/ClientDashboardScreen';
-import StatementsScreen from '../screens/client/StatementsScreen';
+import StatementsScreen from '../screens/client/statements/StatementsScreen';
 import AnalyticsScreen from '../screens/client/AnalyticsScreen';
 import AlertsScreen from '../screens/client/AlertsScreen';
 import ProfileScreen from '../screens/shared/ProfileScreen';

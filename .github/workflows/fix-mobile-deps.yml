@@ -1,9 +1,10 @@
 # Aligns the mobile app's packages with its Expo SDK and regenerates package-lock.json,
 # then commits the result to the same branch. Runs on GitHub (it needs the npm registry).
-# Trigger: a push whose commit message contains [fix-deps], or "Run workflow" in Actions.
+# Trigger: a push whose commit message contains [fix-mobile-deps] (or the older [fix-deps]), or "Run workflow" in Actions.
 name: Fix mobile dependencies
 on:
   push:
+    branches-ignore: [ci-artifacts-web, ci-artifacts-android]
   workflow_dispatch:
 
 permissions:
@@ -11,7 +12,7 @@ permissions:
 
 jobs:
   fix:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[fix-deps]')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[fix-deps]') || contains(github.event.head_commit.message, '[fix-mobile-deps]')
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -25,13 +26,17 @@ jobs:
           node-version: 20
       - name: Install current packages
         run: npm install --no-audit --no-fund
-      - name: Align every package with the Expo SDK
+      # No `npm audit fix`: it ignores Expo's version pins (Nov 2026 it nested Expo 57 inside
+      # Expo 54, two copies of eight native modules). Security pins go in package.json
+      # "overrides"; the install above applies them.
+      - name: Align every package with the Expo SDK (undoes any fix Expo can't run with)
         run: npx expo install --fix
+      - name: Advisories left (most are build tools that never ship in the app)
+        run: npm audit --omit=dev || true
       - name: Add packages the app needs but the lock file lacks
-        run: npx expo install react-native-worklets expo-print expo-local-authentication
-      - name: Expo project health after the fix
+        run: npx expo install react-native-worklets expo-print expo-local-authentication expo-crypto
+      - name: Expo project health after the fix (a failing check stops the commit)
         run: npx expo-doctor
-        continue-on-error: true
       - name: Commit package.json + package-lock.json
         run: |
           git config user.name "github-actions[bot]"
@@ -39,5 +44,5 @@ jobs:
           git add package.json package-lock.json
           git diff --cached --stat
           git diff --cached --quiet && { echo "Nothing to change"; exit 0; }
-          git commit -m "Mobile: align packages with Expo SDK 54 and regenerate lock file"
+          git commit -m "Mobile: security fixes within Expo SDK 54; regenerate lock file"
           git push

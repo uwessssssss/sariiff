@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/providers/AuthProvider";
-import { SuperAdminDashboard } from "@/components/SuperAdminDashboard";
+import { SuperAdminDashboard } from "@/components/super-admin/SuperAdminDashboard";
 
 export default function AdminDashboardPage() {
   const { user, logout } = useAuth();

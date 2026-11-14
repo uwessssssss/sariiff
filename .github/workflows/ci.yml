@@ -10,6 +10,7 @@
 name: CI
 on:
   push:
+    branches-ignore: [ci-artifacts-web, ci-artifacts-android]
   pull_request:
   workflow_dispatch:
 
@@ -126,6 +127,45 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
       - name: Web + mobile logic tests (90, at 01:30 Nairobi time)
         run: bash ../SARIFF-Backend/tests/app-logic/run.sh "$PWD" "$PWD/../sariff-mobile"
+
+  # The real web screens, drawn in Node from their view-models: what each one SAYS (labels,
+  # figures, currencies, signs) and what its buttons do. See SARIFF-Backend/tests/screens/kit.js.
+  screens:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+        working-directory: web
+      - name: Screen tests (every one must pass)
+        run: node SARIFF-Backend/tests/screens/screens.test.js "$PWD/web"
+      - name: Proof — the same tests on the screens as they were before the fixes (every one must fail)
+        if: success() || failure()
+        run: |
+          git fetch --depth=1 origin 963935c89f0569635f297f36a2e75e7d7863143c
+          mkdir -p "$RUNNER_TEMP/before" && git archive FETCH_HEAD web | tar -x -C "$RUNNER_TEMP/before"
+          node SARIFF-Backend/tests/screens/screens.test.js "$RUNNER_TEMP/before/web" "$PWD/web" --expect-fail
+      - name: Screen tests, earlier fixes W14-W36 (every one must pass)
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/screens/earlier.test.js "$PWD/web"
+      - name: Proof — the earlier tests on the screens as they were before W2 (every one must fail)
+        if: success() || failure()
+        run: |
+          git fetch --depth=1 origin 65a7e0e28cbb55512167b34dadb50286d580b56d
+          mkdir -p "$RUNNER_TEMP/before2" && git archive FETCH_HEAD web | tar -x -C "$RUNNER_TEMP/before2"
+          node SARIFF-Backend/tests/screens/earlier.test.js "$RUNNER_TEMP/before2/web" "$PWD/web" --expect-fail
+      - name: Phone screen tests (every one must pass)
+        if: success() || failure()
+        run: TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/phone.test.js "$PWD/sariff-mobile/src" "$PWD/web"
+      - name: Proof — the phone tests on the app as it was before the fixes (every one must fail)
+        if: success() || failure()
+        run: |
+          git archive FETCH_HEAD sariff-mobile/src | tar -x -C "$RUNNER_TEMP/before2"
+          TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/phone.test.js "$RUNNER_TEMP/before2/sariff-mobile/src" "$PWD/web" --expect-fail
 
   mobile:
     runs-on: ubuntu-24.04

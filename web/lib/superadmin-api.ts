@@ -1,4 +1,4 @@
-import { refreshAuthOnce, newIdempotencyKey } from "./api";
+import { refreshAuthOnce, newIdempotencyKey, authorizedFetch } from "./api";
 const API_BASE =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080") + "/api";
 
@@ -434,6 +434,34 @@ async function apiRequest<T>(
       headers,
     });
 
+    // Token refresh on 401, BEFORE reading the body: the API's 401 has an empty body, and
+    // reading it first returned "Request failed with status 401" without ever refreshing, so
+    // every super-admin screen failed after the first hour.
+    if (response.status === 401 && auth?.refreshToken) {
+      const latest = getStoredAuth();
+      const rd =
+        latest?.token && latest.token !== auth.token
+          ? { accessToken: latest.token }
+          : await refreshAuthOnce(auth.refreshToken);
+      if (rd) {
+        const retryResp = await fetch(`${API_BASE}${endpoint}`, {
+          ...options,
+          headers: { ...headers, Authorization: `Bearer ${rd.accessToken}` },
+        });
+        try {
+          const retried = await retryResp.json();
+          return "success" in retried ? retried : { success: retryResp.ok, message: retryResp.ok ? "Success" : `Request failed with status ${retryResp.status}`, data: retryResp.ok ? retried : (null as any) };
+        } catch {
+          return { success: false, message: `Request failed with status ${retryResp.status}`, data: null as any };
+        }
+      }
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("sariff_auth");
+        window.location.href = "/login";
+      }
+      return { success: false, message: "Session expired. Please sign in again.", data: null as any };
+    }
+
     // Handle non-JSON responses (e.g. 404 with empty body)
     let data: any;
     try {
@@ -444,34 +472,6 @@ async function apiRequest<T>(
         message: `Request failed with status ${response.status}`,
         data: null as any,
       };
-    }
-
-    // Token refresh on 401
-    if (response.status === 401 && auth?.refreshToken) {
-      try {
-        // Shared single-flight refresh (lib/api.ts) — never two refreshes at once.
-        const latest = getStoredAuth();
-        const rd =
-          latest?.token && latest.token !== auth.token
-            ? { accessToken: latest.token }
-            : await refreshAuthOnce(auth.refreshToken);
-        if (rd) {
-          {
-            // Retry original request
-            const retryHeaders: HeadersInit = {
-              ...headers,
-              Authorization: `Bearer ${rd.accessToken}`,
-            };
-            const retryResp = await fetch(`${API_BASE}${endpoint}`, {
-              ...options,
-              headers: retryHeaders,
-            });
-            return await retryResp.json();
-          }
-        }
-      } catch {
-        // Refresh failed — fall through to return error
-      }
     }
 
     if (!response.ok) {
@@ -508,6 +508,8 @@ export const getCompanies = (params: {
   pageSize?: number;
   search?: string;
   status?: string;
+  /** Home currency (0 KES, 2 UGX); "all" or omitted = every country */
+  baseCurrency?: string;
 }) => {
   const queryParams = new URLSearchParams();
   if (params.page) queryParams.append("page", String(params.page));
@@ -515,6 +517,8 @@ export const getCompanies = (params: {
   if (params.search) queryParams.append("search", params.search);
   if (params.status && params.status !== "all")
     queryParams.append("status", params.status);
+  if (params.baseCurrency && params.baseCurrency !== "all")
+    queryParams.append("baseCurrency", params.baseCurrency);
   return apiRequest<PagedResult<CompanyStats>>(
     `/admin/companies?${queryParams}`
   );
@@ -735,9 +739,6 @@ export const exportAuditLogs = async (params?: {
   startDate?: string;
   endDate?: string;
 }): Promise<Blob | null> => {
-  const auth = getStoredAuth();
-  const token = auth?.token || null;
-
   const queryParams = new URLSearchParams();
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -746,12 +747,7 @@ export const exportAuditLogs = async (params?: {
   }
 
   try {
-    const response = await fetch(
-      `${API_BASE}/admin/audit-logs/export?${queryParams}`,
-      {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
-    );
+    const response = await authorizedFetch(`${API_BASE}/admin/audit-logs/export?${queryParams}`);
     if (response.ok) return await response.blob();
     return null;
   } catch {

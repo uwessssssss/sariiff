@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { resetBaseCurrency } from './useBaseCurrency';
 import { Platform } from "react-native";
-import { UserInfoDto, UnifiedLoginDto, OtpVerifyDto } from "../types";
+import { UserInfoDto, UnifiedLoginDto, OtpVerifyDto, UserRole } from "../types";
 import * as api from "../services/api";
 import {
   registerForPushNotifications,
@@ -70,6 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Wire session expired callback — forces logout when token refresh fails
     api.setSessionExpiredCallback(() => {
       pendingDtoRef.current = null;
+      // The screens cache under fixed keys ("client_dashboard", ...): an expired session must
+      // not leave this account's balances for the next person who signs in on this phone.
+      cacheClear().catch(() => {});
+      resetBaseCurrency();
       setState({
         isLoading: false,
         isAuthenticated: false,
@@ -105,6 +109,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Clear old auth first so stale tokens don't interfere with OTP flow
     pendingDtoRef.current = null;
     await api.clearAuth();
+    // A new sign-in starts with nothing cached from whoever used this phone before.
+    try { await cacheClear(); } catch {}
 
     // Also reset current auth state before a fresh login
     setState((s) => ({
@@ -139,6 +145,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Direct login (Client — no OTP) — backend returns TokenResponseDto with flat fields
     const data = result.data as any;
+    if (data.accessToken && data.role === UserRole.SuperAdmin) {   // trusted device: no code step
+      await api.storeAuth(data.accessToken, data.refreshToken || "", { id: "", code: "", fullName: "", role: 0 } as UserInfoDto);
+      await api.logout();
+      return { success: false, message: "The super admin dashboard is on the web. Sign in at the Sarif website." };
+    }
     if (data.accessToken) {
       const userInfo: UserInfoDto = {
         id: "", // Not in TokenResponseDto — loaded from profile API later
@@ -192,6 +203,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Backend returns TokenResponseDto with flat fields (accessToken, not token)
       const data = result.data as any;
+      // The platform owner's screens are web-only: signed in here, the super admin landed in
+      // the bureau tabs, where every request is refused. End that session and say where to go.
+      if (data.accessToken && data.role === UserRole.SuperAdmin) {
+        await api.storeAuth(data.accessToken, data.refreshToken || "", { id: "", code: "", fullName: "", role: 0 } as UserInfoDto);
+        await api.logout();
+        pendingDtoRef.current = null;
+        setState((s) => ({ ...s, requiresOtp: false, pendingLogin: null }));
+        return { success: false, message: "The super admin dashboard is on the web. Sign in at the Sarif website." };
+      }
       if (data.accessToken) {
         const userInfo: UserInfoDto = {
           id: "", // Not in TokenResponseDto — loaded from profile API later
@@ -248,9 +268,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutFn = useCallback(async () => {
     resetBaseCurrency(); // next company re-fetches its home currency
     pendingDtoRef.current = null;
-    // Push token is intentionally KEPT on logout so the user still gets
-    // re-engagement notifications. This is safe because notification text is
-    // generic (no balances/amounts) — sensitive data is only shown after login.
+    // Push token is KEPT on logout so the user still gets re-engagement notifications.
+    // Notification text DOES carry amounts and references, so the server hands the token to
+    // whoever signs in next on this phone and stops it for the previous account.
     await api.logout();
     try {
       await cacheClear();
@@ -274,6 +294,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       companyId: data.companyId || undefined,
       companyName: undefined,
     };
+    // Like the code+password sign-in: nothing cached from another account may paint first.
+    try { await cacheClear(); } catch {}
+    resetBaseCurrency();
     await api.storeAuth(data.accessToken, data.refreshToken || "", userInfo);
     registerPushToken(); // push token now belongs to this bureau's account
     pendingDtoRef.current = null;

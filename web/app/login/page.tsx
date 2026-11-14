@@ -17,7 +17,9 @@ import { identityEnabled } from "@/lib/api";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 60;
-const CODE_PATTERN = /^[A-Z]{2,4}(-CL)?-\d{4}-\d{1,6}$/;
+// Code prefixes are made from the bureau's name and may hold digits ("24/7 Forex" → "2FK")
+// or be one letter: letters-only {2,4} told those bureaus their correct code was invalid.
+const CODE_PATTERN = /^[A-Z0-9]{1,4}(-CL)?-\d{4}-\d{1,6}$/;
 const PHONE_PATTERN = /^\+[1-9]\d{9,14}$/;
 
 type FieldErrors = { code?: string; phone?: string; password?: string };
@@ -89,7 +91,7 @@ export default function LoginPage() {
       errs.code = "Check your code. It looks like AFB-2026-0001.";
     if (!p) errs.phone = "Enter your phone number.";
     else if (!PHONE_PATTERN.test(p))
-      errs.phone = "Start with your country code, for example +254712345678.";
+      errs.phone = "Start with your country code, for example +254712345678 (Kenya) or +256772123456 (Uganda).";
     if (!password) errs.password = "Enter your password.";
     return errs;
   };
@@ -245,13 +247,13 @@ export default function LoginPage() {
   if (isLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-400" aria-label="Loading" />
+        <Loader2 className="h-6 w-6 animate-spin text-slate-500" aria-label="Loading" />
       </div>
     );
   }
 
   const inputBase =
-    "block w-full h-12 px-3.5 rounded-lg border bg-white text-[15px] text-slate-900 placeholder:text-slate-400 outline-none transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-slate-50";
+    "block w-full h-12 px-3.5 rounded-lg border bg-white text-base text-slate-900 placeholder:text-slate-500 outline-none transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-slate-50";
   const inputState = (hasError?: string) =>
     hasError ? "border-red-500" : "border-slate-300 hover:border-slate-400";
 
@@ -261,15 +263,15 @@ export default function LoginPage() {
       <aside className="hidden lg:flex lg:w-[42%] xl:w-[40%] flex-col justify-between bg-[#0F172A] px-14 py-12 text-white">
         <div className="flex items-center gap-3">
           <SarifMark size={36} className="rounded-[7px] ring-1 ring-white/15" />
-          <span className="text-[22px] font-bold tracking-tight">Sarif</span>
+          <span className="text-xl font-bold tracking-tight">Sarif</span>
         </div>
 
         <div>
-          <p className="max-w-sm text-[17px] leading-relaxed text-slate-300">
+          <p className="max-w-sm text-lg leading-relaxed text-slate-300">
             Cash, bank, mobile money and client accounts for your bureau, in one ledger.
           </p>
           <div
-            className="mt-10 grid grid-cols-2 gap-x-10 gap-y-2 text-[64px] font-bold leading-none tracking-tight tabular-nums text-white/90 xl:text-[76px]"
+            className="mt-10 grid grid-cols-2 gap-x-10 gap-y-2 text-6xl font-bold leading-none tracking-tight tabular-nums text-white/90 xl:text-7xl"
             aria-hidden="true"
           >
             <span>KES</span>
@@ -279,7 +281,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-sm text-slate-500">© {new Date().getFullYear()} Sarif</p>
+        <p className="text-sm text-slate-400">© {new Date().getFullYear()} Sarif</p>
       </aside>
 
       {/* Form column */}
@@ -287,12 +289,12 @@ export default function LoginPage() {
         <div className="w-full max-w-[400px]">
           <div className="mb-10 flex items-center gap-2.5 lg:hidden">
             <SarifMark size={32} />
-            <span className="text-[20px] font-bold tracking-tight text-slate-900">Sarif</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900">Sarif</span>
           </div>
 
           {step === "credentials" ? (
             <>
-              <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">Sign in</h1>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Sign in</h1>
 
               {phoneLoginOn && (
                 <div role="tablist" aria-label="Sign-in method" className="mt-6 grid grid-cols-2 rounded-lg bg-slate-200/70 p-1 text-sm font-medium">
@@ -323,7 +325,7 @@ export default function LoginPage() {
                 <PhoneLogin />
               ) : (
               <>
-              <p className="mt-2 text-[15px] text-slate-600">
+              <p className="mt-2 text-base text-slate-600">
                 Use the code and password from your welcome SMS.
               </p>
 
@@ -426,7 +428,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-[15px] font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submitting ? "Signing in…" : "Sign in"}
@@ -451,10 +453,10 @@ export default function LoginPage() {
                 Use a different account
               </button>
 
-              <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
                 Enter the code we sent
               </h1>
-              <p className="mt-2 text-[15px] text-slate-600">
+              <p className="mt-2 text-base text-slate-600">
                 We sent a {OTP_LENGTH}-digit code by SMS to{" "}
                 <span className="font-medium text-slate-900 tabular-nums whitespace-nowrap">{maskPhone(phone)}</span>.
                 It expires 5 minutes after it's sent.
@@ -492,7 +494,7 @@ export default function LoginPage() {
                         onKeyDown={(e) => handleDigitKeyDown(i, e)}
                         onPaste={(e) => handlePaste(i, e)}
                         onFocus={(e) => e.target.select()}
-                        className={`h-14 w-full min-w-0 rounded-lg border bg-white text-center text-[24px] font-semibold tabular-nums text-slate-900 outline-none transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-slate-50 ${
+                        className={`h-14 w-full min-w-0 rounded-lg border bg-white text-center text-2xl font-semibold tabular-nums text-slate-900 outline-none transition-colors focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:bg-slate-50 ${
                           error ? "border-red-500" : "border-slate-300"
                         }`}
                       />
@@ -503,7 +505,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-[15px] font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                   {submitting ? "Verifying…" : "Verify and sign in"}

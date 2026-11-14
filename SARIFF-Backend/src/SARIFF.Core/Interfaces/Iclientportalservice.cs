@@ -88,6 +88,8 @@ public class ClientProfileDto
     /// clients who only hold KES/USD — existing consumers are unaffected.
     /// </summary>
     public List<CurrencyBalanceDto> OtherBalances { get; set; } = new();
+    /// <summary>The bureau holding this account: the name a client's statement is issued by.</summary>
+    public string CompanyName { get; set; } = string.Empty;
 }
 
 /// <summary>One client balance in a specific (non-KES/USD) currency.</summary>
@@ -152,6 +154,8 @@ public class ClientStatementDto
     public decimal TotalDebits { get; set; }
     public decimal NetMovement { get; set; }
     public List<ClientTransactionDto> Transactions { get; set; } = new();
+    /// <summary>The bureau issuing the statement (its PDF was headed with the software's name).</summary>
+    public string CompanyName { get; set; } = string.Empty;
 }
 
 public class ClientAlertDto
@@ -193,6 +197,8 @@ public class CurrencyFlowDto
     public string CurrencyCode { get; set; } = string.Empty;
     public decimal Income { get; set; }
     public decimal Expenses { get; set; }
+    /// <summary>In a month's row: the balance in this currency at the end of that month.</summary>
+    public decimal Balance { get; set; }
 }
 
 public class CategoryBreakdownDto

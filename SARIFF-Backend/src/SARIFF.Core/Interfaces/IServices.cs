@@ -13,7 +13,7 @@ public interface IAuthService
     
     // Token management
     Task<ApiResponse<TokenResponseDto>> RefreshTokenAsync(RefreshTokenDto request, string ipAddress);
-    Task<ApiResponse<bool>> LogoutAsync(Guid userId);
+    Task<ApiResponse<bool>> LogoutAsync(Guid userId, UserRole? role = null, string? refreshToken = null);
 }
 
 public interface ICompanyService
@@ -99,6 +99,8 @@ public interface ITransactionService
     Task<ApiResponse<bool>> DeleteAsync(Guid companyId, Guid id, Guid userId, DeleteTransactionDto dto, Guid? clientContext = null);
     Task<ApiResponse<TransactionSummaryDto>> GetTodaySummaryAsync(Guid companyId);
     Task<ApiResponse<List<TransactionResponseDto>>> GetRecentAsync(Guid companyId, int count = 10);
+    /// <summary>Many transactions as response rows, with account names loaded in a few queries (not one per row).</summary>
+    Task<List<TransactionResponseDto>> ToResponsesAsync(IReadOnlyCollection<SARIFF.Core.Entities.Transaction> transactions);
 }
 
 /// <summary>
@@ -129,7 +131,6 @@ public interface IExchangeRateService
     Task<ApiResponse<ExchangeRateResponseDto>> GetCurrentRateAsync(Guid companyId, Currency foreignCurrency = Currency.USD);
     Task<ApiResponse<List<ExchangeRateResponseDto>>> GetHistoryAsync(Guid companyId);
     Task<ApiResponse<CurrencyConvertResultDto>> ConvertAsync(Guid companyId, CurrencyConvertDto dto);
-    Task<ApiResponse<TransactionResponseDto>> CreateExchangeTransactionAsync(Guid companyId, Guid userId, ExchangeTransactionDto dto);
 }
 /// <summary>
 
@@ -148,7 +149,7 @@ public interface IExchangeService
     Task<ApiResponse<ExchangeFloatDto>> FundFloatAsync(Guid companyId, Guid userId, FundFloatDto dto);
     Task<ApiResponse<ExchangeFloatDto>> WithdrawFloatAsync(Guid companyId, Guid userId, WithdrawFloatDto dto);
     Task<ApiResponse<ExchangeFloatDto>> SettleProfitAsync(Guid companyId, Guid userId, SettleProfitDto dto);
-    Task<ApiResponse<List<FloatMovementDto>>> GetFloatMovementsAsync(Guid companyId, DateTime? from, DateTime? to);
+    Task<ApiResponse<List<FloatMovementDto>>> GetFloatMovementsAsync(Guid companyId, DateTime? from, DateTime? to, int page = 1, int pageSize = 100);
     
     // Exchange Transactions
     Task<ApiResponse<ExchangeResponseDto>> CreateExchangeAsync(Guid companyId, Guid userId, CreateExchangeDto dto);
@@ -242,7 +243,6 @@ public interface INotificationService
     Task<bool> SendClientCredentialsAsync(Guid companyId, Guid clientId, string phoneNumber, string fullName, string code, string password, string companyName, string websiteUrl);
     
     // NEW: Send transaction processed notification to permanent client
-    Task<bool> SendClientTransactionProcessedAsync(Guid companyId, Guid clientId, string phoneNumber, string clientName, string companyName, string transactionCode, string transactionType, decimal amount, string currency, decimal balanceKES, decimal balanceUSD);
     
     // NEW: Send reversal notification to permanent client  
     Task<bool> SendReversalNotificationAsync(Guid companyId, Guid clientId, string phoneNumber, string clientName, string companyName, string originalCode, string reversalCode, decimal amount, string currency, string reason);
@@ -296,7 +296,7 @@ public interface ISystemLogService
     
     // API logging
     Task LogApiErrorAsync(string endpoint, string method, string errorMessage, 
-        string? stackTrace = null, string? ipAddress = null, Guid? companyId = null);
+        string? stackTrace = null, string? ipAddress = null, Guid? companyId = null, Guid? userId = null);
     
     // Query methods
     Task<ApiResponse<PagedResult<SystemLogResponseDto>>> GetLogsAsync(int page, int pageSize, string? level = null, bool includeResolved = false);
@@ -313,7 +313,7 @@ public interface ISuperAdminService
     
     // Companies
     Task<ApiResponse<PagedResult<CompanyStatsDto>>> GetAllCompaniesWithStatsAsync(
-        int page, int pageSize, string? search = null, string? status = null);
+        int page, int pageSize, string? search = null, string? status = null, Currency? baseCurrency = null);
     Task<ApiResponse<CompanyDetailDto>> GetCompanyDetailAsync(Guid companyId);
     Task<ApiResponse<CompanyDetailDto>> SetBaseCurrencyAsync(Guid companyId, SetBaseCurrencyDto dto);
     Task<ApiResponse<bool>> UpdateSubscriptionAsync(Guid companyId, UpdateSubscriptionDto dto);

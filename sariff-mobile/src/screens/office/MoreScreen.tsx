@@ -1,7 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../hooks/useAuth';
@@ -56,9 +55,10 @@ export default function MoreScreen() {
               onPress={() => navigation.navigate(item.screen)}
               activeOpacity={0.7}
             >
-              <LinearGradient colors={item.gradient as [string, string]} style={styles.menuIcon} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                <Ionicons name={item.icon} size={22} color="#FFF" />
-              </LinearGradient>
+              {/* one accent for every menu entry (was a different gradient each) */}
+              <View style={[styles.menuIcon, { backgroundColor: 'rgba(91,156,255,0.14)' }]}>
+                <Ionicons name={item.icon} size={22} color={colors.primary} />
+              </View>
               <View style={styles.menuText}>
                 <Text style={styles.menuLabel}>{item.label}</Text>
                 <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
@@ -69,7 +69,10 @@ export default function MoreScreen() {
         ))}
 
         {/* Logout */}
-        <TouchableOpacity style={[styles.logoutCard, shadows.sm]} onPress={logout} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.logoutCard, shadows.sm]} onPress={() => Alert.alert('Sign Out', 'Are you sure you want to sign out?', [   // one stray tap signed out mid-shift
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign Out', style: 'destructive', onPress: () => { logout(); } },
+        ])} activeOpacity={0.7}>
           <Ionicons name="log-out-outline" size={20} color={colors.danger} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
