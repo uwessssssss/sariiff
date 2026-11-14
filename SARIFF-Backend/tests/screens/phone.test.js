@@ -388,4 +388,17 @@ suite(async () => {
       expect(name && name.props.value === "", `the second invoice starts with client "${name && name.props.value}"`);
     } finally { world.context = undefined; }
   });
+
+  await proof("AU5", "Phone: the secret that lets a phone skip the SMS code never comes from Math.random", async (expect) => {
+    // A phone's JavaScript engine (Hermes) has no crypto.getRandomValues.
+    const hadCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto"); const realRandom = Math.random;
+    Object.defineProperty(globalThis, "crypto", { value: undefined, configurable: true, writable: true });
+    Math.random = () => 0.5;
+    delete phone.secure.sariff_identity_device;
+    for (const k of Object.keys(phone.secure)) if (/identity_device/.test(k)) delete phone.secure[k];
+    try {
+      const secret = await api.getIdentityDeviceSecret();
+      expect(secret === undefined || (/^[0-9a-f]{48}$/.test(secret) && new Set(secret).size > 4), `with Math.random fixed at 0.5 the secret is "${secret}"`);
+    } finally { Math.random = realRandom; if (hadCrypto) Object.defineProperty(globalThis, "crypto", hadCrypto); else delete globalThis.crypto; }
+  });
 });

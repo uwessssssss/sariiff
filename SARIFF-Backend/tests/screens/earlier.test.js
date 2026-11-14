@@ -483,4 +483,22 @@ suite(async () => {
       expect(server.requests.some((r) => r.url.includes("/api/auth/logout")), "after 4 idle minutes in every tab nobody was signed out");
     } finally { Date.now = realNow; delete global.window; delete global.document; delete global.sessionStorage; store["sariff_auth"] = before; delete store["sariff_last_active"]; }
   });
+
+  await proof("W21", "Office profile picture: still there when the app is opened again", async (expect) => {
+    world.context = { user: { id: "u1", name: "Amina", role: "office-user", roleNum: 1, companyId: "co1" }, logout: noop, isLoading: false };
+    try {
+      await withBrowser(async () => {
+        global.window.innerWidth = 1400; global.window.history = { replaceState() {} };
+        const { useOfficeUserDashboard } = app("components/office-shell/useOfficeUserDashboard");
+        const open = async () => { const m = mountHook(useOfficeUserDashboard, { userName: "Amina", onLogout: noop, activeTab: "settings" }); await tick(20); m.render(); return m; };
+        const first = await open();
+        const settingsPage = first.api.renderContent();
+        expect(settingsPage && typeof settingsPage.props.onProfileImageChange === "function", "the settings page was not drawn");
+        if (!settingsPage || !settingsPage.props.onProfileImageChange) return;
+        settingsPage.props.onProfileImageChange("data:image/jpeg;base64,PICTURE");
+        const reopened = await open();
+        expect(reopened.api.profileImage === "data:image/jpeg;base64,PICTURE", `after reopening, the picture is ${reopened.api.profileImage ? "a different one" : "gone"}`);
+      });
+    } finally { world.context = undefined; for (const k of Object.keys(store)) if (k.startsWith("sariff_profile_image_")) delete store[k]; }
+  });
 });
