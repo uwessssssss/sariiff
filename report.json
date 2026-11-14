@@ -1,0 +1,5071 @@
+{
+  "screens": [
+    {
+      "view": "desktop · Login",
+      "shot": "001-desktop-login.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          247
+        ],
+        [
+          "18px",
+          76
+        ],
+        [
+          "16px",
+          55
+        ],
+        [
+          "30px",
+          7
+        ],
+        [
+          "20px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          181
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          76
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          60
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          29
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          22
+        ],
+        [
+          "rgb(255, 255, 255)",
+          12
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          10
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 546,
+          "contentLeft": 796,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Login – phone number",
+      "shot": "002-desktop-login-phone-number.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "18px",
+          76
+        ],
+        [
+          "16px",
+          69
+        ],
+        [
+          "14px",
+          49
+        ],
+        [
+          "30px",
+          7
+        ],
+        [
+          "20px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.869 0.022 252.894)",
+          76
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          75
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          19
+        ],
+        [
+          "rgb(255, 255, 255)",
+          14
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          12
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          10
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 546,
+          "contentLeft": 796,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office dashboard",
+      "shot": "003-desktop-office-dashboard.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1921
+        ],
+        [
+          "12px",
+          776
+        ],
+        [
+          "16px",
+          67
+        ],
+        [
+          "18px",
+          26
+        ],
+        [
+          "24px",
+          20
+        ],
+        [
+          "30px",
+          8
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          897
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          435
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          403
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          186
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          179
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          147
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          127
+        ],
+        [
+          "rgb(51, 65, 85)",
+          105
+        ],
+        [
+          "rgb(255, 255, 255)",
+          94
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          84
+        ],
+        [
+          "oklch(0.473 0.137 46.201)",
+          64
+        ],
+        [
+          "rgb(15, 23, 42)",
+          49
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office clients",
+      "shot": "005-desktop-office-clients.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          310
+        ],
+        [
+          "14px",
+          308
+        ],
+        [
+          "16px",
+          54
+        ],
+        [
+          "24px",
+          10
+        ]
+      ],
+      "textColours": [
+        [
+          "rgb(255, 255, 255)",
+          126
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          120
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          99
+        ],
+        [
+          "rgb(51, 65, 85)",
+          65
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          58
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          47
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          34
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          32
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          25
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          23
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          9
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office cash",
+      "shot": "009-desktop-office-cash.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1340
+        ],
+        [
+          "12px",
+          781
+        ],
+        [
+          "16px",
+          311
+        ],
+        [
+          "18px",
+          34
+        ],
+        [
+          "24px",
+          30
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          775
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          479
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          287
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          225
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          204
+        ],
+        [
+          "rgb(51, 65, 85)",
+          116
+        ],
+        [
+          "rgb(255, 255, 255)",
+          107
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          95
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          94
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          45
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "rgb(15, 23, 42)",
+          20
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office banks",
+      "shot": "014-desktop-office-banks.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          260
+        ],
+        [
+          "12px",
+          192
+        ],
+        [
+          "16px",
+          80
+        ],
+        [
+          "24px",
+          13
+        ]
+      ],
+      "textColours": [
+        [
+          "rgb(51, 65, 85)",
+          99
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          93
+        ],
+        [
+          "rgb(255, 255, 255)",
+          68
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          66
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          56
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          40
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          31
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          24
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          17
+        ],
+        [
+          "rgb(15, 23, 42)",
+          12
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          11
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office mpesa",
+      "shot": "018-desktop-office-mpesa.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          417
+        ],
+        [
+          "14px",
+          371
+        ],
+        [
+          "24px",
+          51
+        ],
+        [
+          "16px",
+          40
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          212
+        ],
+        [
+          "rgb(255, 255, 255)",
+          117
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          94
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          87
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          77
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          75
+        ],
+        [
+          "rgb(51, 65, 85)",
+          65
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          33
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          32
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.596 0.145 163.225)",
+          22
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          19
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office expenses",
+      "shot": "022-desktop-office-expenses.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          215
+        ],
+        [
+          "12px",
+          127
+        ],
+        [
+          "18px",
+          18
+        ],
+        [
+          "30px",
+          10
+        ],
+        [
+          "24px",
+          8
+        ],
+        [
+          "16px",
+          5
+        ],
+        [
+          "20px",
+          2
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.869 0.022 252.894)",
+          98
+        ],
+        [
+          "rgb(255, 255, 255)",
+          53
+        ],
+        [
+          "oklch(0.551 0.027 264.364)",
+          50
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          41
+        ],
+        [
+          "oklch(0.21 0.034 264.665)",
+          39
+        ],
+        [
+          "oklch(0.97 0.014 254.604)",
+          31
+        ],
+        [
+          "rgb(51, 65, 85)",
+          30
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          10
+        ],
+        [
+          "oklch(0.373 0.034 259.733)",
+          7
+        ],
+        [
+          "oklch(0.446 0.03 256.802)",
+          1
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office exchange",
+      "shot": "025-desktop-office-exchange.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          618
+        ],
+        [
+          "12px",
+          269
+        ],
+        [
+          "24px",
+          51
+        ],
+        [
+          "18px",
+          21
+        ],
+        [
+          "16px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.21 0.034 264.665)",
+          228
+        ],
+        [
+          "oklch(0.446 0.03 256.802)",
+          189
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          98
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          74
+        ],
+        [
+          "oklch(0.97 0.014 254.604)",
+          67
+        ],
+        [
+          "rgb(255, 255, 255)",
+          63
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          49
+        ],
+        [
+          "rgb(51, 65, 85)",
+          48
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          44
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          44
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          18
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office reconciliation",
+      "shot": "031-desktop-office-reconciliation.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          215
+        ],
+        [
+          "16px",
+          194
+        ],
+        [
+          "12px",
+          48
+        ],
+        [
+          "20px",
+          46
+        ],
+        [
+          "24px",
+          22
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          136
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          92
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          80
+        ],
+        [
+          "rgb(255, 255, 255)",
+          78
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          53
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          37
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          16
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          8
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office invoices",
+      "shot": "033-desktop-office-invoices.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          223
+        ],
+        [
+          "12px",
+          173
+        ],
+        [
+          "16px",
+          52
+        ],
+        [
+          "18px",
+          13
+        ],
+        [
+          "24px",
+          8
+        ],
+        [
+          "30px",
+          1
+        ],
+        [
+          "20px",
+          1
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          130
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          114
+        ],
+        [
+          "rgb(51, 65, 85)",
+          50
+        ],
+        [
+          "rgb(255, 255, 255)",
+          45
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          45
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          39
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          33
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          9
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office reports",
+      "shot": "036-desktop-office-reports.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          2170
+        ],
+        [
+          "12px",
+          1223
+        ],
+        [
+          "18px",
+          95
+        ],
+        [
+          "30px",
+          35
+        ],
+        [
+          "24px",
+          19
+        ],
+        [
+          "16px",
+          11
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          1312
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          565
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          370
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          367
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          362
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          165
+        ],
+        [
+          "rgb(15, 23, 42)",
+          103
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          102
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          99
+        ],
+        [
+          "rgb(51, 65, 85)",
+          40
+        ],
+        [
+          "rgb(255, 255, 255)",
+          30
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Office settings",
+      "shot": "037-desktop-office-settings.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          816
+        ],
+        [
+          "12px",
+          379
+        ],
+        [
+          "16px",
+          146
+        ],
+        [
+          "18px",
+          128
+        ],
+        [
+          "24px",
+          10
+        ],
+        [
+          "30px",
+          1
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          536
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          239
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          232
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          116
+        ],
+        [
+          "rgb(255, 255, 255)",
+          114
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          98
+        ],
+        [
+          "rgb(51, 65, 85)",
+          65
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          37
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          11
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          6
+        ],
+        [
+          "oklch(0.596 0.145 163.225)",
+          1
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin Overview",
+      "shot": "041-desktop-admin-overview.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          707
+        ],
+        [
+          "16px",
+          95
+        ],
+        [
+          "12px",
+          62
+        ],
+        [
+          "24px",
+          17
+        ],
+        [
+          "18px",
+          2
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          481
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          230
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          48
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          39
+        ],
+        [
+          "rgb(255, 255, 255)",
+          26
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          19
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          11
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          4
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin Bureaus",
+      "shot": "043-desktop-admin-bureaus.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          351
+        ],
+        [
+          "12px",
+          141
+        ],
+        [
+          "24px",
+          7
+        ],
+        [
+          "16px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          252
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          131
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          49
+        ],
+        [
+          "rgb(255, 255, 255)",
+          35
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          9
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          3
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin Security",
+      "shot": "048-desktop-admin-security.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          680
+        ],
+        [
+          "16px",
+          93
+        ],
+        [
+          "12px",
+          49
+        ],
+        [
+          "24px",
+          13
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          352
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          196
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          180
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          48
+        ],
+        [
+          "rgb(255, 255, 255)",
+          26
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          6
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          2
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin Financial",
+      "shot": "050-desktop-admin-financial.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          520
+        ],
+        [
+          "16px",
+          86
+        ],
+        [
+          "12px",
+          40
+        ],
+        [
+          "24px",
+          33
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          328
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          193
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          47
+        ],
+        [
+          "rgb(255, 255, 255)",
+          41
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          25
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          15
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          5
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin Analytics",
+      "shot": "051-desktop-admin-analytics.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          320
+        ],
+        [
+          "16px",
+          60
+        ],
+        [
+          "24px",
+          29
+        ],
+        [
+          "12px",
+          25
+        ],
+        [
+          "20px",
+          7
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          251
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          86
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          47
+        ],
+        [
+          "rgb(255, 255, 255)",
+          27
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          5
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin Audit log",
+      "shot": "052-desktop-admin-audit-log.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          7871
+        ],
+        [
+          "12px",
+          358
+        ],
+        [
+          "16px",
+          20
+        ],
+        [
+          "24px",
+          9
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          7495
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          513
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          126
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          47
+        ],
+        [
+          "rgb(255, 255, 255)",
+          27
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          15
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          10
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Admin System",
+      "shot": "053-desktop-admin-system.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1028
+        ],
+        [
+          "12px",
+          381
+        ],
+        [
+          "16px",
+          54
+        ],
+        [
+          "24px",
+          13
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          865
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          430
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          50
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          48
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          25
+        ],
+        [
+          "rgb(255, 255, 255)",
+          24
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          21
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          13
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 245,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Client Dashboard",
+      "shot": "054-desktop-client-dashboard.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1404
+        ],
+        [
+          "12px",
+          201
+        ],
+        [
+          "16px",
+          43
+        ],
+        [
+          "18px",
+          26
+        ],
+        [
+          "24px",
+          10
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          1023
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          402
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          72
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          46
+        ],
+        [
+          "rgb(255, 255, 255)",
+          45
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          32
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          30
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          20
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          14
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 344,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Client Statements",
+      "shot": "055-desktop-client-statements.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          843
+        ],
+        [
+          "12px",
+          270
+        ],
+        [
+          "24px",
+          10
+        ],
+        [
+          "16px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          640
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          298
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          81
+        ],
+        [
+          "rgb(255, 255, 255)",
+          40
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          31
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          30
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          8
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 344,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Client Alerts",
+      "shot": "056-desktop-client-alerts.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "16px",
+          687
+        ],
+        [
+          "14px",
+          154
+        ],
+        [
+          "18px",
+          80
+        ],
+        [
+          "12px",
+          31
+        ],
+        [
+          "24px",
+          22
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          754
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          102
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          35
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          30
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          29
+        ],
+        [
+          "rgb(255, 255, 255)",
+          24
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 344,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Client Analytics",
+      "shot": "057-desktop-client-analytics.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          195
+        ],
+        [
+          "16px",
+          136
+        ],
+        [
+          "12px",
+          98
+        ],
+        [
+          "18px",
+          69
+        ],
+        [
+          "24px",
+          34
+        ],
+        [
+          "20px",
+          20
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          241
+        ],
+        [
+          "rgb(255, 255, 255)",
+          133
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          37
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          32
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          30
+        ],
+        [
+          "oklch(0.491 0.27 292.581)",
+          21
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          19
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          18
+        ],
+        [
+          "oklch(0.525 0.223 3.958)",
+          15
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 344,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "desktop · Client Profile",
+      "shot": "058-desktop-client-profile.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          180
+        ],
+        [
+          "16px",
+          159
+        ],
+        [
+          "14px",
+          142
+        ],
+        [
+          "20px",
+          54
+        ],
+        [
+          "24px",
+          43
+        ],
+        [
+          "30px",
+          10
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          227
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          108
+        ],
+        [
+          "rgb(255, 255, 255)",
+          70
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          53
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          34
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          30
+        ],
+        [
+          "oklch(0.525 0.223 3.958)",
+          20
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          18
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          15
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          7
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": {
+          "width": 192,
+          "contentLeft": 344,
+          "overlap": false
+        }
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Login",
+      "shot": "060-phone-login.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          237
+        ],
+        [
+          "16px",
+          55
+        ],
+        [
+          "30px",
+          7
+        ],
+        [
+          "20px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          181
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          60
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          29
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          27
+        ],
+        [
+          "rgb(255, 255, 255)",
+          7
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Login – phone number",
+      "shot": "061-phone-login-phone-number.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "16px",
+          69
+        ],
+        [
+          "14px",
+          39
+        ],
+        [
+          "30px",
+          7
+        ],
+        [
+          "20px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          75
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          24
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          12
+        ],
+        [
+          "rgb(255, 255, 255)",
+          9
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office dashboard",
+      "shot": "062-phone-office-dashboard.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1295
+        ],
+        [
+          "12px",
+          768
+        ],
+        [
+          "16px",
+          90
+        ],
+        [
+          "24px",
+          20
+        ],
+        [
+          "30px",
+          8
+        ],
+        [
+          "18px",
+          3
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          902
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          628
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          147
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          127
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          82
+        ],
+        [
+          "rgb(255, 255, 255)",
+          67
+        ],
+        [
+          "oklch(0.473 0.137 46.201)",
+          64
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          59
+        ],
+        [
+          "rgb(51, 65, 85)",
+          44
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          28
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          17
+        ],
+        [
+          "rgb(15, 23, 42)",
+          9
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [
+        "button \"Open daily report\" 121×20"
+      ],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office clients",
+      "shot": "065-phone-office-clients.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          285
+        ],
+        [
+          "14px",
+          193
+        ],
+        [
+          "16px",
+          37
+        ],
+        [
+          "24px",
+          10
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          120
+        ],
+        [
+          "rgb(255, 255, 255)",
+          105
+        ],
+        [
+          "rgb(51, 65, 85)",
+          65
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          58
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          47
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          39
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          32
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          23
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          9
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          9
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          9
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          8
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office cash",
+      "shot": "070-phone-office-cash.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1225
+        ],
+        [
+          "12px",
+          756
+        ],
+        [
+          "16px",
+          311
+        ],
+        [
+          "18px",
+          34
+        ],
+        [
+          "24px",
+          30
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          780
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          479
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          287
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          225
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          204
+        ],
+        [
+          "rgb(51, 65, 85)",
+          116
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          95
+        ],
+        [
+          "rgb(255, 255, 255)",
+          81
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          45
+        ],
+        [
+          "rgb(15, 23, 42)",
+          20
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          18
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office banks",
+      "shot": "076-phone-office-banks.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          167
+        ],
+        [
+          "14px",
+          145
+        ],
+        [
+          "16px",
+          60
+        ],
+        [
+          "24px",
+          13
+        ]
+      ],
+      "textColours": [
+        [
+          "rgb(51, 65, 85)",
+          99
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          66
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          61
+        ],
+        [
+          "rgb(255, 255, 255)",
+          41
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          40
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          31
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          17
+        ],
+        [
+          "rgb(15, 23, 42)",
+          12
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          11
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          4
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          3
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office mpesa",
+      "shot": "081-phone-office-mpesa.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          392
+        ],
+        [
+          "14px",
+          256
+        ],
+        [
+          "24px",
+          51
+        ],
+        [
+          "16px",
+          27
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          212
+        ],
+        [
+          "rgb(255, 255, 255)",
+          91
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          87
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          80
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          77
+        ],
+        [
+          "rgb(51, 65, 85)",
+          65
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          33
+        ],
+        [
+          "oklch(0.596 0.145 163.225)",
+          22
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          19
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          19
+        ],
+        [
+          "rgb(15, 23, 42)",
+          12
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          9
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office expenses",
+      "shot": "086-phone-office-expenses.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          102
+        ],
+        [
+          "14px",
+          100
+        ],
+        [
+          "18px",
+          18
+        ],
+        [
+          "30px",
+          10
+        ],
+        [
+          "24px",
+          8
+        ],
+        [
+          "16px",
+          5
+        ],
+        [
+          "20px",
+          2
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.551 0.027 264.364)",
+          50
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          41
+        ],
+        [
+          "oklch(0.21 0.034 264.665)",
+          39
+        ],
+        [
+          "rgb(255, 255, 255)",
+          31
+        ],
+        [
+          "oklch(0.97 0.014 254.604)",
+          31
+        ],
+        [
+          "rgb(51, 65, 85)",
+          30
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          15
+        ],
+        [
+          "oklch(0.373 0.034 259.733)",
+          7
+        ],
+        [
+          "oklch(0.446 0.03 256.802)",
+          1
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office exchange",
+      "shot": "090-phone-office-exchange.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          503
+        ],
+        [
+          "12px",
+          244
+        ],
+        [
+          "24px",
+          51
+        ],
+        [
+          "18px",
+          21
+        ],
+        [
+          "16px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.21 0.034 264.665)",
+          228
+        ],
+        [
+          "oklch(0.446 0.03 256.802)",
+          189
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          74
+        ],
+        [
+          "oklch(0.97 0.014 254.604)",
+          67
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          49
+        ],
+        [
+          "rgb(51, 65, 85)",
+          48
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          44
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          44
+        ],
+        [
+          "rgb(255, 255, 255)",
+          41
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          18
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          13
+        ],
+        [
+          "oklch(0.596 0.145 163.225)",
+          9
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office reconciliation",
+      "shot": "097-phone-office-reconciliation.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "16px",
+          165
+        ],
+        [
+          "14px",
+          64
+        ],
+        [
+          "20px",
+          46
+        ],
+        [
+          "12px",
+          23
+        ],
+        [
+          "24px",
+          22
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          120
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          85
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          53
+        ],
+        [
+          "rgb(255, 255, 255)",
+          21
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          17
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          16
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          8
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office invoices",
+      "shot": "100-phone-office-invoices.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "12px",
+          148
+        ],
+        [
+          "14px",
+          108
+        ],
+        [
+          "16px",
+          52
+        ],
+        [
+          "18px",
+          13
+        ],
+        [
+          "24px",
+          8
+        ],
+        [
+          "30px",
+          1
+        ],
+        [
+          "20px",
+          1
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          130
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          50
+        ],
+        [
+          "rgb(51, 65, 85)",
+          50
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          39
+        ],
+        [
+          "rgb(255, 255, 255)",
+          23
+        ],
+        [
+          "oklch(0.869 0.022 252.894)",
+          16
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          9
+        ],
+        [
+          "oklch(0.704 0.04 256.788)",
+          8
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [
+        "button \"Mark Sent\" 80×20",
+        "button \"Cancel\" 60×20"
+      ],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office reports",
+      "shot": "104-phone-office-reports.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          2055
+        ],
+        [
+          "12px",
+          1198
+        ],
+        [
+          "18px",
+          95
+        ],
+        [
+          "30px",
+          35
+        ],
+        [
+          "24px",
+          19
+        ],
+        [
+          "16px",
+          11
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          1317
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          565
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          370
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          367
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          362
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          165
+        ],
+        [
+          "rgb(15, 23, 42)",
+          103
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          102
+        ],
+        [
+          "rgb(51, 65, 85)",
+          40
+        ],
+        [
+          "rgb(255, 255, 255)",
+          9
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          7
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Office settings",
+      "shot": "106-phone-office-settings.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          701
+        ],
+        [
+          "12px",
+          354
+        ],
+        [
+          "16px",
+          146
+        ],
+        [
+          "18px",
+          128
+        ],
+        [
+          "24px",
+          10
+        ],
+        [
+          "30px",
+          1
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          536
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          239
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          237
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          116
+        ],
+        [
+          "rgb(255, 255, 255)",
+          92
+        ],
+        [
+          "rgb(51, 65, 85)",
+          65
+        ],
+        [
+          "oklch(0.279 0.041 260.031)",
+          37
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          11
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          6
+        ],
+        [
+          "oklch(0.596 0.145 163.225)",
+          1
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [
+        "input \"Auto Reconciliation\" 1×1",
+        "input \"Email Notifications\" 1×1"
+      ],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin Overview",
+      "shot": "111-phone-admin-overview.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          646
+        ],
+        [
+          "16px",
+          101
+        ],
+        [
+          "12px",
+          37
+        ],
+        [
+          "24px",
+          17
+        ],
+        [
+          "18px",
+          2
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          489
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          241
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          39
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          19
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          11
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          4
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [
+        "button \"All bureaus\" 77×20"
+      ],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin Bureaus",
+      "shot": "113-phone-admin-bureaus.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          289
+        ],
+        [
+          "12px",
+          116
+        ],
+        [
+          "16px",
+          11
+        ],
+        [
+          "24px",
+          7
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          259
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          142
+        ],
+        [
+          "rgb(255, 255, 255)",
+          10
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          9
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          3
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin Security",
+      "shot": "118-phone-admin-security.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          619
+        ],
+        [
+          "16px",
+          99
+        ],
+        [
+          "12px",
+          24
+        ],
+        [
+          "24px",
+          13
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          360
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          207
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          180
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          6
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          2
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin Financial",
+      "shot": "120-phone-admin-financial.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          460
+        ],
+        [
+          "16px",
+          92
+        ],
+        [
+          "24px",
+          33
+        ],
+        [
+          "12px",
+          15
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          337
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          204
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          25
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          15
+        ],
+        [
+          "rgb(255, 255, 255)",
+          14
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          5
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin Analytics",
+      "shot": "121-phone-admin-analytics.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          260
+        ],
+        [
+          "16px",
+          66
+        ],
+        [
+          "24px",
+          29
+        ],
+        [
+          "20px",
+          7
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          260
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          97
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          5
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin Audit log",
+      "shot": "122-phone-admin-audit-log.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          7788
+        ],
+        [
+          "12px",
+          321
+        ],
+        [
+          "16px",
+          26
+        ],
+        [
+          "24px",
+          9
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.554 0.046 257.417)",
+          7504
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          543
+        ],
+        [
+          "oklch(0.577 0.245 27.325)",
+          72
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          15
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          10
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Admin System",
+      "shot": "123-phone-admin-system.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          966
+        ],
+        [
+          "12px",
+          365
+        ],
+        [
+          "16px",
+          60
+        ],
+        [
+          "24px",
+          13
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.208 0.042 265.755)",
+          877
+        ],
+        [
+          "oklch(0.554 0.046 257.417)",
+          445
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          48
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          21
+        ],
+        [
+          "oklch(0.446 0.043 257.281)",
+          13
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [
+        "input \"\" 14×16"
+      ],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Client Dashboard",
+      "shot": "124-phone-client-dashboard.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          1297
+        ],
+        [
+          "12px",
+          170
+        ],
+        [
+          "16px",
+          43
+        ],
+        [
+          "18px",
+          26
+        ],
+        [
+          "24px",
+          10
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          1017
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          401
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          46
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          26
+        ],
+        [
+          "oklch(0.505 0.213 27.518)",
+          24
+        ],
+        [
+          "rgb(255, 255, 255)",
+          18
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          14
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [
+        "button \"See all\" 46×20",
+        "button \"See all\" 46×20"
+      ],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Client Statements",
+      "shot": "125-phone-client-statements.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          878
+        ],
+        [
+          "12px",
+          164
+        ],
+        [
+          "24px",
+          10
+        ],
+        [
+          "16px",
+          5
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          563
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          394
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          88
+        ],
+        [
+          "rgb(255, 255, 255)",
+          12
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Client Alerts",
+      "shot": "126-phone-client-alerts.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "16px",
+          687
+        ],
+        [
+          "14px",
+          101
+        ],
+        [
+          "18px",
+          80
+        ],
+        [
+          "24px",
+          22
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          754
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          107
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          29
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Client Analytics",
+      "shot": "127-phone-client-analytics.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "14px",
+          142
+        ],
+        [
+          "16px",
+          136
+        ],
+        [
+          "18px",
+          69
+        ],
+        [
+          "12px",
+          67
+        ],
+        [
+          "24px",
+          34
+        ],
+        [
+          "20px",
+          20
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          241
+        ],
+        [
+          "rgb(255, 255, 255)",
+          106
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          42
+        ],
+        [
+          "oklch(0.491 0.27 292.581)",
+          21
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          19
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          18
+        ],
+        [
+          "oklch(0.525 0.223 3.958)",
+          15
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    },
+    {
+      "view": "phone · Client Profile",
+      "shot": "128-phone-client-profile.jpg",
+      "axe": [],
+      "fontSizes": [
+        [
+          "16px",
+          159
+        ],
+        [
+          "12px",
+          149
+        ],
+        [
+          "14px",
+          89
+        ],
+        [
+          "20px",
+          54
+        ],
+        [
+          "24px",
+          43
+        ],
+        [
+          "30px",
+          10
+        ]
+      ],
+      "textColours": [
+        [
+          "oklch(0.446 0.043 257.281)",
+          227
+        ],
+        [
+          "oklch(0.208 0.042 265.755)",
+          113
+        ],
+        [
+          "oklch(0.508 0.118 165.612)",
+          53
+        ],
+        [
+          "rgb(255, 255, 255)",
+          45
+        ],
+        [
+          "oklch(0.525 0.223 3.958)",
+          20
+        ],
+        [
+          "oklch(0.488 0.243 264.376)",
+          18
+        ],
+        [
+          "oklch(0.546 0.245 262.881)",
+          15
+        ],
+        [
+          "oklch(0.555 0.163 48.998)",
+          7
+        ],
+        [
+          "oklch(0.372 0.044 257.287)",
+          6
+        ]
+      ],
+      "offScale": [],
+      "layout": {
+        "pageScrollsSideways": 0,
+        "overflow": [],
+        "clipped": [],
+        "sidebar": null
+      },
+      "smallTargets": [],
+      "sideScroll": null
+    }
+  ],
+  "modals": [
+    {
+      "view": "desktop · Office dashboard",
+      "name": "desktop · Office dashboard › New transaction",
+      "shot": "004-modal-desktop-office-dashboard-new-transaction.jpg",
+      "id": "sarif-audit-dialog-z04xf",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office clients",
+      "name": "desktop · Office clients › Add client",
+      "shot": "006-modal-desktop-office-clients-add-client.jpg",
+      "id": "sarif-audit-dialog-0z0et",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add New Client",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office clients",
+      "name": "desktop · Office clients › Statement",
+      "shot": "007-modal-desktop-office-clients-statement.jpg",
+      "id": "sarif-audit-dialog-9sd17",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Brian Okello",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office clients",
+      "name": "desktop · Office clients › Edit",
+      "shot": "008-modal-desktop-office-clients-edit.jpg",
+      "id": "sarif-audit-dialog-fwlxt",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Client",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office cash",
+      "name": "desktop · Office cash › Add account",
+      "shot": "010-modal-desktop-office-cash-add-account.jpg",
+      "id": "sarif-audit-dialog-slq6d",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add Cash Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office cash",
+      "name": "desktop · Office cash › Statement",
+      "shot": "011-modal-desktop-office-cash-statement.jpg",
+      "id": "sarif-audit-dialog-id9vq",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Cash USD",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office cash",
+      "name": "desktop · Office cash › Edit",
+      "shot": "012-modal-desktop-office-cash-edit.jpg",
+      "id": "sarif-audit-dialog-hzkyu",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Cash Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office cash",
+      "name": "desktop · Office cash › View",
+      "shot": "013-modal-desktop-office-cash-view.jpg",
+      "id": "sarif-audit-dialog-fc1nq",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Transaction Details",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office banks",
+      "name": "desktop · Office banks › Add bank account",
+      "shot": "015-modal-desktop-office-banks-add-bank-account.jpg",
+      "id": "sarif-audit-dialog-lawmt",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add New Bank Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office banks",
+      "name": "desktop · Office banks › Statement",
+      "shot": "016-modal-desktop-office-banks-statement.jpg",
+      "id": "sarif-audit-dialog-b95q6",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Stanbic Bank – 9030012345678",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office banks",
+      "name": "desktop · Office banks › Edit",
+      "shot": "017-modal-desktop-office-banks-edit.jpg",
+      "id": "sarif-audit-dialog-a0kw6",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Bank Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office mpesa",
+      "name": "desktop · Office mpesa › Add agent",
+      "shot": "019-modal-desktop-office-mpesa-add-agent.jpg",
+      "id": "sarif-audit-dialog-pckq7",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add mobile money agent",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office mpesa",
+      "name": "desktop · Office mpesa › Statement",
+      "shot": "020-modal-desktop-office-mpesa-statement.jpg",
+      "id": "sarif-audit-dialog-6cyb3",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Mpesa Agent – E2E-MP-1",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office mpesa",
+      "name": "desktop · Office mpesa › Edit",
+      "shot": "021-modal-desktop-office-mpesa-edit.jpg",
+      "id": "sarif-audit-dialog-6uy0z",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit mobile money agent",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office expenses",
+      "name": "desktop · Office expenses › Record Expense",
+      "shot": "023-modal-desktop-office-expenses-record-expense.jpg",
+      "id": "sarif-audit-dialog-w6e7h",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Record New Expense",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office expenses",
+      "name": "desktop · Office expenses › View",
+      "shot": "024-modal-desktop-office-expenses-view.jpg",
+      "id": "sarif-audit-dialog-wl2sd",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Office Rent",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office exchange",
+      "name": "desktop · Office exchange › New exchange",
+      "shot": "026-modal-desktop-office-exchange-new-exchange.jpg",
+      "id": "sarif-audit-dialog-q9hnf",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Exchange",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office exchange",
+      "name": "desktop · Office exchange › Fund Float Add UGX or foreign currency",
+      "shot": "027-modal-desktop-office-exchange-fund-float-add-ugx-or-foreign-curren.jpg",
+      "id": "sarif-audit-dialog-skyjp",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Fund Float",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office exchange",
+      "name": "desktop · Office exchange › Withdraw Transfer out",
+      "shot": "028-modal-desktop-office-exchange-withdraw-transfer-out.jpg",
+      "id": "sarif-audit-dialog-skyco",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Withdraw from Float",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office exchange",
+      "name": "desktop · Office exchange › Settle Profit UGX 1,508.2",
+      "shot": "029-modal-desktop-office-exchange-settle-profit-ugx-1-508-2.jpg",
+      "id": "sarif-audit-dialog-dez23",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Settle Profit",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office exchange",
+      "name": "desktop · Office exchange › View details",
+      "shot": "030-modal-desktop-office-exchange-view-details.jpg",
+      "id": "sarif-audit-dialog-iwx7l",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "EXC-2026-0006",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office reconciliation",
+      "name": "desktop · Office reconciliation › History",
+      "shot": "032-modal-desktop-office-reconciliation-history.jpg",
+      "id": "sarif-audit-dialog-0zt2a",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Reconciliation History",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office invoices",
+      "name": "desktop · Office invoices › Invoice details",
+      "shot": "034-modal-desktop-office-invoices-invoice-details.jpg",
+      "id": "sarif-audit-dialog-kmwsu",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Company Information",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office invoices",
+      "name": "desktop · Office invoices › Create Invoice",
+      "shot": "035-modal-desktop-office-invoices-create-invoice.jpg",
+      "id": "sarif-audit-dialog-lk7d7",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Create New Invoice",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office settings",
+      "name": "desktop · Office settings › Add Category",
+      "shot": "038-modal-desktop-office-settings-add-category.jpg",
+      "id": "sarif-audit-dialog-crmm2",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Expense Category",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office settings",
+      "name": "desktop · Office settings › Edit Category",
+      "shot": "039-modal-desktop-office-settings-edit-category.jpg",
+      "id": "sarif-audit-dialog-ouc1h",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Category",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Office settings",
+      "name": "desktop · Office settings › Set Password",
+      "shot": "040-modal-desktop-office-settings-set-password.jpg",
+      "id": "sarif-audit-dialog-93tbh",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Set Client Password",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Admin Overview",
+      "name": "desktop · Admin Overview › Add IP",
+      "shot": "042-modal-desktop-admin-overview-add-ip.jpg",
+      "id": "sarif-audit-dialog-ayknk",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Allow an address",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Admin Bureaus",
+      "name": "desktop · Admin Bureaus › Add bureau",
+      "shot": "044-modal-desktop-admin-bureaus-add-bureau.jpg",
+      "id": "sarif-audit-dialog-g6bbs",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add a bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Admin Bureaus",
+      "name": "desktop · Admin Bureaus › View Test Security Bureau",
+      "shot": "045-modal-desktop-admin-bureaus-view-test-security-bureau.jpg",
+      "id": "sarif-audit-dialog-lpp23",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Security Bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Admin Bureaus",
+      "name": "desktop · Admin Bureaus › View Test Kampala Bureau",
+      "shot": "046-modal-desktop-admin-bureaus-view-test-kampala-bureau.jpg",
+      "id": "sarif-audit-dialog-jw0kr",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Kampala Bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Admin Bureaus",
+      "name": "desktop · Admin Bureaus › View Alpha Forex Bureau",
+      "shot": "047-modal-desktop-admin-bureaus-view-alpha-forex-bureau.jpg",
+      "id": "sarif-audit-dialog-59y13",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Alpha Forex Bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Admin Security",
+      "name": "desktop · Admin Security › Add IP",
+      "shot": "049-modal-desktop-admin-security-add-ip.jpg",
+      "id": "sarif-audit-dialog-yii44",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Allow an address",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "desktop · Client Profile",
+      "name": "desktop · Client Profile › Change Password Update your login password",
+      "shot": "059-modal-desktop-client-profile-change-password-update-your-login-pas.jpg",
+      "id": "sarif-audit-dialog-zno5e",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Change Password",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office dashboard",
+      "name": "phone · Office dashboard › New",
+      "shot": "063-modal-phone-office-dashboard-new.jpg",
+      "id": "sarif-audit-dialog-hed3x",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office dashboard",
+      "name": "phone · Office dashboard › New transaction",
+      "shot": "064-modal-phone-office-dashboard-new-transaction.jpg",
+      "id": "sarif-audit-dialog-y1igb",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office clients",
+      "name": "phone · Office clients › New",
+      "shot": "066-modal-phone-office-clients-new.jpg",
+      "id": "sarif-audit-dialog-zfmq8",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office clients",
+      "name": "phone · Office clients › Add client",
+      "shot": "067-modal-phone-office-clients-add-client.jpg",
+      "id": "sarif-audit-dialog-j91qg",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add New Client",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office clients",
+      "name": "phone · Office clients › Statement",
+      "shot": "068-modal-phone-office-clients-statement.jpg",
+      "id": "sarif-audit-dialog-g6aa2",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Brian Okello",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office clients",
+      "name": "phone · Office clients › Edit",
+      "shot": "069-modal-phone-office-clients-edit.jpg",
+      "id": "sarif-audit-dialog-1h7za",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Client",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office cash",
+      "name": "phone · Office cash › New",
+      "shot": "071-modal-phone-office-cash-new.jpg",
+      "id": "sarif-audit-dialog-s3ho2",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office cash",
+      "name": "phone · Office cash › Add account",
+      "shot": "072-modal-phone-office-cash-add-account.jpg",
+      "id": "sarif-audit-dialog-50rib",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add Cash Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office cash",
+      "name": "phone · Office cash › Statement",
+      "shot": "073-modal-phone-office-cash-statement.jpg",
+      "id": "sarif-audit-dialog-1dzxv",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Cash USD",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office cash",
+      "name": "phone · Office cash › Edit",
+      "shot": "074-modal-phone-office-cash-edit.jpg",
+      "id": "sarif-audit-dialog-5boxx",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Cash Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office cash",
+      "name": "phone · Office cash › View",
+      "shot": "075-modal-phone-office-cash-view.jpg",
+      "id": "sarif-audit-dialog-ro2xl",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Transaction Details",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office banks",
+      "name": "phone · Office banks › New",
+      "shot": "077-modal-phone-office-banks-new.jpg",
+      "id": "sarif-audit-dialog-irs9r",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office banks",
+      "name": "phone · Office banks › Add bank account",
+      "shot": "078-modal-phone-office-banks-add-bank-account.jpg",
+      "id": "sarif-audit-dialog-c2gix",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add New Bank Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office banks",
+      "name": "phone · Office banks › Statement",
+      "shot": "079-modal-phone-office-banks-statement.jpg",
+      "id": "sarif-audit-dialog-m258k",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Stanbic Bank – 9030012345678",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office banks",
+      "name": "phone · Office banks › Edit",
+      "shot": "080-modal-phone-office-banks-edit.jpg",
+      "id": "sarif-audit-dialog-xwu2v",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Bank Account",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office mpesa",
+      "name": "phone · Office mpesa › New",
+      "shot": "082-modal-phone-office-mpesa-new.jpg",
+      "id": "sarif-audit-dialog-c664h",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office mpesa",
+      "name": "phone · Office mpesa › Add agent",
+      "shot": "083-modal-phone-office-mpesa-add-agent.jpg",
+      "id": "sarif-audit-dialog-6mrpt",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add mobile money agent",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office mpesa",
+      "name": "phone · Office mpesa › Statement",
+      "shot": "084-modal-phone-office-mpesa-statement.jpg",
+      "id": "sarif-audit-dialog-np6qa",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Mpesa Agent – E2E-MP-1",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office mpesa",
+      "name": "phone · Office mpesa › Edit",
+      "shot": "085-modal-phone-office-mpesa-edit.jpg",
+      "id": "sarif-audit-dialog-6t55b",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit mobile money agent",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office expenses",
+      "name": "phone · Office expenses › New",
+      "shot": "087-modal-phone-office-expenses-new.jpg",
+      "id": "sarif-audit-dialog-t5i3s",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office expenses",
+      "name": "phone · Office expenses › Record Expense",
+      "shot": "088-modal-phone-office-expenses-record-expense.jpg",
+      "id": "sarif-audit-dialog-sdira",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Record New Expense",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office expenses",
+      "name": "phone · Office expenses › View",
+      "shot": "089-modal-phone-office-expenses-view.jpg",
+      "id": "sarif-audit-dialog-8h6pr",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Office Rent",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office exchange",
+      "name": "phone · Office exchange › New",
+      "shot": "091-modal-phone-office-exchange-new.jpg",
+      "id": "sarif-audit-dialog-rs362",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office exchange",
+      "name": "phone · Office exchange › New exchange",
+      "shot": "092-modal-phone-office-exchange-new-exchange.jpg",
+      "id": "sarif-audit-dialog-eqrof",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Exchange",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office exchange",
+      "name": "phone · Office exchange › Fund Float Add UGX or foreign currency",
+      "shot": "093-modal-phone-office-exchange-fund-float-add-ugx-or-foreign-currency.jpg",
+      "id": "sarif-audit-dialog-m4roa",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Fund Float",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office exchange",
+      "name": "phone · Office exchange › Withdraw Transfer out",
+      "shot": "094-modal-phone-office-exchange-withdraw-transfer-out.jpg",
+      "id": "sarif-audit-dialog-ndbha",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Withdraw from Float",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office exchange",
+      "name": "phone · Office exchange › Settle Profit UGX 1,508.2",
+      "shot": "095-modal-phone-office-exchange-settle-profit-ugx-1-508-2.jpg",
+      "id": "sarif-audit-dialog-5whft",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Settle Profit",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office exchange",
+      "name": "phone · Office exchange › View details",
+      "shot": "096-modal-phone-office-exchange-view-details.jpg",
+      "id": "sarif-audit-dialog-6s2el",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "EXC-2026-0006",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office reconciliation",
+      "name": "phone · Office reconciliation › New",
+      "shot": "098-modal-phone-office-reconciliation-new.jpg",
+      "id": "sarif-audit-dialog-etkeh",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office reconciliation",
+      "name": "phone · Office reconciliation › History",
+      "shot": "099-modal-phone-office-reconciliation-history.jpg",
+      "id": "sarif-audit-dialog-9be3m",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Reconciliation History",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office invoices",
+      "name": "phone · Office invoices › New",
+      "shot": "101-modal-phone-office-invoices-new.jpg",
+      "id": "sarif-audit-dialog-0gjtw",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office invoices",
+      "name": "phone · Office invoices › Invoice details",
+      "shot": "102-modal-phone-office-invoices-invoice-details.jpg",
+      "id": "sarif-audit-dialog-ak35h",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Company Information",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office invoices",
+      "name": "phone · Office invoices › Create Invoice",
+      "shot": "103-modal-phone-office-invoices-create-invoice.jpg",
+      "id": "sarif-audit-dialog-t0cz1",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Create New Invoice",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office reports",
+      "name": "phone · Office reports › New",
+      "shot": "105-modal-phone-office-reports-new.jpg",
+      "id": "sarif-audit-dialog-8qyav",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office settings",
+      "name": "phone · Office settings › New",
+      "shot": "107-modal-phone-office-settings-new.jpg",
+      "id": "sarif-audit-dialog-ejyg2",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Transaction",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office settings",
+      "name": "phone · Office settings › Add Category",
+      "shot": "108-modal-phone-office-settings-add-category.jpg",
+      "id": "sarif-audit-dialog-amd0c",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "New Expense Category",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office settings",
+      "name": "phone · Office settings › Edit Category",
+      "shot": "109-modal-phone-office-settings-edit-category.jpg",
+      "id": "sarif-audit-dialog-uetj8",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Edit Category",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Office settings",
+      "name": "phone · Office settings › Set Password",
+      "shot": "110-modal-phone-office-settings-set-password.jpg",
+      "id": "sarif-audit-dialog-zo8dy",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Set Client Password",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Admin Overview",
+      "name": "phone · Admin Overview › Add IP",
+      "shot": "112-modal-phone-admin-overview-add-ip.jpg",
+      "id": "sarif-audit-dialog-1g1x9",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Allow an address",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Admin Bureaus",
+      "name": "phone · Admin Bureaus › Add bureau",
+      "shot": "114-modal-phone-admin-bureaus-add-bureau.jpg",
+      "id": "sarif-audit-dialog-ubyn7",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Add a bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Admin Bureaus",
+      "name": "phone · Admin Bureaus › View Test Security Bureau",
+      "shot": "115-modal-phone-admin-bureaus-view-test-security-bureau.jpg",
+      "id": "sarif-audit-dialog-zdq4o",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Security Bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Admin Bureaus",
+      "name": "phone · Admin Bureaus › View Test Kampala Bureau",
+      "shot": "116-modal-phone-admin-bureaus-view-test-kampala-bureau.jpg",
+      "id": "sarif-audit-dialog-qok4a",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Test Kampala Bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Admin Bureaus",
+      "name": "phone · Admin Bureaus › View Alpha Forex Bureau",
+      "shot": "117-modal-phone-admin-bureaus-view-alpha-forex-bureau.jpg",
+      "id": "sarif-audit-dialog-9lsvc",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Alpha Forex Bureau",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Admin Security",
+      "name": "phone · Admin Security › Add IP",
+      "shot": "119-modal-phone-admin-security-add-ip.jpg",
+      "id": "sarif-audit-dialog-ybo31",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Allow an address",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    },
+    {
+      "view": "phone · Client Profile",
+      "name": "phone · Client Profile › Change Password Update your login password",
+      "shot": "129-modal-phone-client-profile-change-password-update-your-login-passw.jpg",
+      "id": "sarif-audit-dialog-arvz4",
+      "hasRole": true,
+      "ariaModal": true,
+      "labelled": true,
+      "title": "Change Password",
+      "focusInside": true,
+      "tooTall": false,
+      "tooWide": false,
+      "tabEscapes": false,
+      "closedBy": "escape",
+      "axe": []
+    }
+  ],
+  "xss": [],
+  "errors": [],
+  "clickProblems": [],
+  "menus": {
+    "Office": {
+      "opened": true,
+      "focusIn": true,
+      "escapeCloses": true
+    },
+    "Admin": {
+      "opened": true,
+      "focusIn": true,
+      "escapeCloses": true
+    },
+    "Client": {
+      "opened": true,
+      "focusIn": true,
+      "escapeCloses": true
+    }
+  },
+  "gate": [
+    {
+      "label": "no serious/critical WCAG 2.1 AA failures (none)",
+      "ok": true
+    },
+    {
+      "label": "every pop-up is announced as a dialog (0 not)",
+      "ok": true
+    },
+    {
+      "label": "every pop-up takes focus (0 don't)",
+      "ok": true
+    },
+    {
+      "label": "Tab stays inside every pop-up (0 leak)",
+      "ok": true
+    },
+    {
+      "label": "Escape closes every pop-up (0 don't)",
+      "ok": true
+    },
+    {
+      "label": "no pop-up taller than the screen without scrolling (0)",
+      "ok": true
+    },
+    {
+      "label": "no pop-up wider than the screen (0)",
+      "ok": true
+    },
+    {
+      "label": "pop-ups found on phone as well as desktop (45 on phone)",
+      "ok": true
+    },
+    {
+      "label": "phone menu opens, takes focus and closes with Escape for office, admin and client (Office: ok; Admin: ok; Client: ok)",
+      "ok": true
+    },
+    {
+      "label": "every button can be pressed — nothing covers it (0 blocked)",
+      "ok": true
+    },
+    {
+      "label": "one type scale (0 screen(s) off it)",
+      "ok": true
+    },
+    {
+      "label": "nothing scrolls the page sideways or runs off the screen (0 screen(s))",
+      "ok": true
+    },
+    {
+      "label": "no text or control cut off (0 screen(s))",
+      "ok": true
+    },
+    {
+      "label": "sidebar never covers the content",
+      "ok": true
+    },
+    {
+      "label": "every screen was reached (0 sign-in failures)",
+      "ok": true
+    },
+    {
+      "label": "no script injection (0)",
+      "ok": true
+    },
+    {
+      "label": "no page errors (0)",
+      "ok": true
+    }
+  ]
+}
