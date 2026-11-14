@@ -1,7 +1,7 @@
 // Screen tests for the phone app's "by reading" fixes (M13-M35). See phone-kit.js.
 //   node phone.test.js <sariff-mobile/src> <web>                       every test must pass
 //   node phone.test.js <old sariff-mobile/src> <web> --expect-fail     every test must fail on the defect
-const { suite, app, mount, hook, text, find, tick, proof, server, toasts, world, phone, tappable, field, signedIn } = require("./phone-kit");
+const { vm, suite, app, mount, hook, text, find, tick, proof, server, toasts, world, phone, tappable, field, signedIn } = require("./phone-kit");
 
 const KES = 0, USD = 1, UGX = 2;
 const noop = () => {};
@@ -166,5 +166,64 @@ suite(async () => {
     const list = find(m.tree, (e) => typeof e.props.onEndReached === "function")[0];
     expect(!!list, "the list does not load more when scrolled to its end");
     if (list) { await list.props.onEndReached(); await draw(m, 3); expect(/Expense 60\b/.test(text(m.tree)), "expense 60 is still not reachable"); }
+  });
+
+  await proof("M31", "Phone More menu: Logout asks first (one stray tap signed out mid-shift)", async (expect) => {
+    let signedOut = false;
+    world.context = { user: { id: "u1", code: "KB-OFF-1", fullName: "Amina Hassan", role: 1 }, logout: () => { signedOut = true; }, isAuthenticated: true };
+    phone.reset();
+    try {
+      const m = mount(app("screens/office/MoreScreen").default, {});
+      const out = tappable(m.tree, /^Logout$/);
+      expect(!!out, `no Logout row: ${text(m.tree).slice(-200)}`);
+      if (!out) return;
+      out.props.onPress();
+      expect(!signedOut && phone.alerts.length === 1, signedOut ? "one tap signed out, with no question" : "no question was asked");
+      const yes = phone.alerts[0] && phone.alerts[0].buttons.find((b) => b.style === "destructive");
+      if (yes) yes.onPress();
+      expect(!phone.alerts[0] || signedOut, "answering Sign Out did not sign out");
+    } finally { world.context = undefined; }
+  });
+
+  await proof("M32", "Phone alerts: 'Read all' stays while older pages are not loaded yet", async (expect) => {
+    const alert = (n) => ({ id: `a${n}`, title: `Alert ${n}`, message: "Deposit received", isRead: true, createdAt: "2026-11-10T09:00:00Z", severity: 0, type: 0 });
+    server.reply((url) => (url.includes("/api/portal/alerts") ? { items: Array.from({ length: 20 }, (_, i) => alert(i + 1)), totalCount: 40, totalPages: 2 } : undefined));
+    world.context = { user: { id: "c1", code: "KB-CL-0001", fullName: "Amina Hassan", role: 2 }, logout: noop, isAuthenticated: true };
+    try {
+      const m = mount(app("screens/client/AlertsScreen").default, {});
+      await draw(m, 4);
+      const t = text(m.tree);
+      expect(/Alert 1\b/.test(t), `alerts not drawn${m.failed ? " (" + m.failed.message + ")" : ""}: ${t.slice(0, 160)}`);
+      expect(/Read all/.test(t), "page 1 is read, page 2 (maybe unread) is not loaded, and 'Read all' is gone");
+    } finally { world.context = undefined; }
+  });
+
+  await proof("M35", "Phone client profile: lists the currencies the client used (UGX), not an empty KES line", async (expect) => {
+    world.context = { user: { id: "c1", code: "KB-CL-0001", fullName: "Amina Hassan", role: 2 }, logout: noop, isAuthenticated: true };
+    server.reply((url) => (url.includes("/api/portal/profile") ? { id: "c1", code: "KB-CL-0001", fullName: "Amina Hassan", whatsAppNumber: "+256700000010", isActive: true, clientType: 0,
+      balanceKES: 0, balanceUSD: 0, totalInKES: 0, totalOutKES: 0, totalInUSD: 0, totalOutUSD: 0, openingBalanceKES: 0, openingBalanceUSD: 0,
+      otherBalances: [{ currency: UGX, currencyCode: "UGX", balance: 250000, openingBalance: 0, totalIn: 250000, totalOut: 0 }] } : undefined));
+    try {
+      const m = mount(app("screens/shared/ProfileScreen").default, {});
+      await draw(m, 4);
+      const t = text(m.tree);
+      expect(/Total Credited \(UGX\)/.test(t), `profile${m.failed ? " (" + m.failed.message + ")" : ""}: ${(t.match(/Total (Credited|Debited) \([A-Z]{3}\)/g) || ["no totals"]).join(", ")}`);
+      expect(!/Total Credited \(KES\)/.test(t), "a KES line is shown for a client who never used KES");
+    } finally { world.context = undefined; }
+  });
+
+  const chips = (tree, has) => (find(tree, (e) => Array.isArray(e.props.options) && e.props.options.some((o) => has.test(String(o.label))))[0] || { props: { options: [] } }).props.options;
+
+  await proof("M30", "Phone settle profit (Ugandan bureau): the home-currency chip is UGX, not KES", (expect) => {
+    const { SettleProfitSheet } = app("screens/office/exchange/sections/SettleProfitSheet");
+    const options = chips(SettleProfitSheet({ vm: vm({ base: UGX, baseCode: "UGX", modal: "settleProfit", float: { kesProfit: 50000, usdProfit: 0 }, floatSrcType: 0, formLoading: false, settleAccId: "", settleCurrency: UGX, getFloatAccountList: () => [] }) }), /^USD \(/);
+    const home = options.find((o) => /^UGX \(/.test(String(o.label)));
+    expect(home && home.value === UGX, `the "UGX" chip sends currency ${home ? home.value : "?"} (UGX is ${UGX}; ${KES} is KES, which the server refuses)`);
+  });
+
+  await proof("M33", "Phone withdraw float in UGX: Mobile money is offered as the destination", (expect) => {
+    const { FloatFundingSheet } = app("screens/office/exchange/sections/FloatFundingSheet");
+    const options = chips(FloatFundingSheet({ vm: vm({ base: UGX, baseCode: "UGX", modal: "withdrawFloat", floatCurrency: UGX, floatAmount: "", floatPurchaseRate: "", floatSrcType: 0, floatSrcId: "", formLoading: false, getFloatAccountList: () => [] }) }), /^Cash$/);
+    expect(options.some((o) => o.label === "Mobile money"), `account types offered: ${JSON.stringify(options.map((o) => o.label))}`);
   });
 });

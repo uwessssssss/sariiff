@@ -111,7 +111,7 @@ const stateless = {
   useReducer: (_r, init) => [init, () => {}],
   useEffect() {}, useLayoutEffect() {},
   useMemo: (f) => f(), useCallback: (f) => f, useRef: (v) => ({ current: v }),
-  useContext: (c) => (c && c._currentValue !== undefined ? c._currentValue : world.context), useId: () => "id",
+  useContext: (c) => { const v = c && c._currentValue; const blank = v == null || (typeof v === "object" && !Array.isArray(v) && Object.keys(v).length === 0); return blank && world.context !== undefined ? world.context : v; }, useId: () => "id",
 };
 
 /**
