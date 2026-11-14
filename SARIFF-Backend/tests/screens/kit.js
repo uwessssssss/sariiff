@@ -58,8 +58,10 @@ global.fetch = async (url, opts = {}) => {
   const method = (opts.method || "GET").toUpperCase();
   requests.push({ url: String(url), method, body, headers: opts.headers || {} });
   const data = await replyWith(String(url), body, method, opts.headers || {});
-  if (data && data.__status) return { ok: false, status: data.__status, json: async () => { throw new SyntaxError("Unexpected end of JSON input"); }, text: async () => "", blob: async () => new Blob([]) };
-  return { ok: true, status: 200, json: async () => ({ success: true, message: "ok", data }), text: async () => "", blob: async () => new Blob([]) };
+  const reply = (ok, status, textBody, type) => ({ ok, status, headers: { get: (h) => (String(h).toLowerCase() === "content-type" ? type : null) },
+    json: async () => JSON.parse(textBody), text: async () => textBody, blob: async () => new Blob([textBody]) });
+  if (data && data.__status) return reply(data.__status >= 200 && data.__status < 300, data.__status, data.__text ?? "", data.__text ? "text/html" : "application/json");
+  return reply(true, 200, JSON.stringify({ success: true, message: "ok", data }), "application/json");
 };
 const server = { requests, reply: (f) => { replyWith = f; }, clear: () => { requests.length = 0; } };
 

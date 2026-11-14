@@ -158,6 +158,14 @@ jobs:
           git fetch --depth=1 origin 65a7e0e28cbb55512167b34dadb50286d580b56d
           mkdir -p "$RUNNER_TEMP/before2" && git archive FETCH_HEAD web | tar -x -C "$RUNNER_TEMP/before2"
           node SARIFF-Backend/tests/screens/earlier.test.js "$RUNNER_TEMP/before2/web" "$PWD/web" --expect-fail
+      - name: Phone screen tests (every one must pass)
+        if: success() || failure()
+        run: node SARIFF-Backend/tests/screens/phone.test.js "$PWD/sariff-mobile/src" "$PWD/web"
+      - name: Proof — the phone tests on the app as it was before the fixes (every one must fail)
+        if: success() || failure()
+        run: |
+          git archive FETCH_HEAD sariff-mobile/src | tar -x -C "$RUNNER_TEMP/before2"
+          node SARIFF-Backend/tests/screens/phone.test.js "$RUNNER_TEMP/before2/sariff-mobile/src" "$PWD/web" --expect-fail
 
   mobile:
     runs-on: ubuntu-24.04
