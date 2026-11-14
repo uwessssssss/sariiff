@@ -224,7 +224,7 @@ Enums, entity defaults and every record default were read; DTO and interface bod
 
 ## Mobile (14,621 lines) — in progress
 
-There is no React Native test harness in the repo (CI type-checks the app and runs the shared logic tests in tests/app-logic), so mobile fixes below are found by reading and are NOT proven by a failing test. Each was checked against the code paths named.
+When these were found there was no React Native test harness, so they were fixed by reading. Since 14 Nov the phone screens run in tests/screens (phone-kit.js) and each fix below is proven there: see "Proof of the fixes first made by reading" at the end.
 
 | Id | Bug | Fix |
 |---|---|---|
@@ -250,30 +250,30 @@ Backend, found while reading the mobile expense form:
 | Id | Bug | Fix |
 |---|---|---|
 | M12 | Every money field read typed text with parseFloat, which stops at the first character it does not understand: "1,500" was recorded as 1, "15o0" as 15. Android number keyboards offer "," and pasted amounts carry thousands separators (proven failing first, f93b931: 9 of 17 cases) | utils/amount.ts parseAmount: commas only as thousands separators, anything else refused; every form refuses text that is not an amount before sending |
-| M13 | The SMS code boxes took one digit each, with no one-time-code hint: a code pasted or filled in from the SMS kept only its first digit. By reading | A whole code spreads over the boxes; the first box is marked as the one-time-code field (iOS and Android autofill) |
-| M14 | The super admin could sign in on the phone and landed in the bureau tabs, where every request is refused. By reading | Refused with "the super admin dashboard is on the web"; the session it opened is ended |
-| M15 | Phone sign-in: a failing encrypted store left the opening spinner up for good. By reading | Falls back to the phone-number step |
-| AU5 | React Native's Hermes engine has no crypto.getRandomValues without a polyfill, so [Likely] the AU4 device id came out empty on phones (every office sign-in asked for a code) and the phone-sign-in secret fell back to Math.random. Not proven on a device | expo-crypto (added through the fix-mobile-deps workflow, which regenerates the lock file on GitHub); no secure source means no trusted device, never Math.random |
-| M16 | Receipts and CSV exports on the phone bypassed the token refresh: after the one-hour sign-in they failed with "Server returned 401". By reading | Refresh once on 401, as every other request |
-| M17 | A Render outage page (HTML) showed as "JSON Parse error: Unexpected character <". By reading | Plain message: the server is starting or unavailable |
-| M18 | Unused helpers that would mislead: daily summaries sent startDate/endDate (the API reads from/to); "getMonthlyReport" fetched one day. By reading (route/parameter cross-check script over both apps) | Corrected / removed |
+| M13 | The SMS code boxes took one digit each, with no one-time-code hint: a code pasted or filled in from the SMS kept only its first digit (proven by a screen test: fails on the old screens, passes now) | A whole code spreads over the boxes; the first box is marked as the one-time-code field (iOS and Android autofill) |
+| M14 | The super admin could sign in on the phone and landed in the bureau tabs, where every request is refused (proven by a screen test: fails on the old screens, passes now) | Refused with "the super admin dashboard is on the web"; the session it opened is ended |
+| M15 | Phone sign-in: a failing encrypted store left the opening spinner up for good (proven by a screen test: fails on the old screens, passes now) | Falls back to the phone-number step |
+| AU5 | React Native's Hermes engine has no crypto.getRandomValues without a polyfill, so [Likely] the AU4 device id came out empty on phones (every office sign-in asked for a code) and the phone-sign-in secret fell back to Math.random. Proven by a screen test | expo-crypto (added through the fix-mobile-deps workflow, which regenerates the lock file on GitHub); no secure source means no trusted device, never Math.random |
+| M16 | Receipts and CSV exports on the phone bypassed the token refresh: after the one-hour sign-in they failed with "Server returned 401" (proven by a screen test: fails on the old screens, passes now) | Refresh once on 401, as every other request |
+| M17 | A Render outage page (HTML) showed as "JSON Parse error: Unexpected character <" (proven by a screen test: fails on the old screens, passes now) | Plain message: the server is starting or unavailable |
+| M18 | Unused helpers that would mislead: daily summaries sent startDate/endDate (the API reads from/to); "getMonthlyReport" fetched one day (proven by a screen test: fails on the old screens, passes now) (route/parameter cross-check script over both apps) | Corrected / removed |
 | M19 | The phone showed Ugandan shillings with cents ("USh 1,800,000.00") (proven failing first, d7f4552) | Whole shillings; statements, receipts, invoices and WhatsApp confirmations use each currency's decimals |
-| M20 | The exchange confirmation sent the received amount as String(n): "15467.5". By reading | Formatted in its currency |
-| M21 | Password and email fields let Android keyboards capitalise the first letter (the login password did so whenever shown). By reading | No auto-capitalisation or correction on those fields |
-| M22 | A password change ends every session on the server, this phone's too: the client was thrown out at the next tap with "Session expired". By reading (web: W12) | Says so and signs out |
-| M23 | Reports: ‹ › changed the date in the heading but left the previous day's figures under it. By reading | A new day loads its own report |
-| M24 | Reports: switching type quickly could draw one report's answer in another's view. By reading | Latest request only |
-| M25 | Office dashboard "today" compared the API's UTC date: from 00:00 to 03:00 the night's entries were left out. By reading | Local date |
-| M26 | Phone sign-in did not clear the screen cache or the home currency like the code+password sign-in. By reading | Cleared |
-| M27 | The phone's invoice PDF was headed "Sarif · Forex Bureau Services" on every invoice a bureau sent; values were not escaped. By reading | The bureau's name, address, phone, tax ID; every value escaped; discount shows its minus |
-| M28 | The expense list stopped at the latest 50 and its "total" was of those 50. By reading | Pages on scroll; total from the server |
-| M29 | A second invoice started with the first one's client and lines. By reading | Form reset |
-| M30 | Settle profit for a Ugandan bureau sent currency KES with its USD profit amount (the home-currency chip had the value 0): always refused, and KES accounts were offered. By reading | Home currency, default, and "no profit to settle" |
-| M31 | One tap on Logout in the More menu signed out mid-shift. By reading | Asks first |
-| M32 | Alerts: "Read all" disappeared when the loaded page was read even if older pages were not. By reading | Stays while more pages exist |
-| M33 | Withdrawing float in anything but KES hid mobile-money destinations (UGX float → MTN wallet). By reading | Wallets listed by their own currency |
-| M34 | The conversion preview showed × instead of ÷ when the counter account was a Ugandan bureau's UGX (display only). By reading (web: W13) | Compared with the home currency |
-| M35 | A client's profile always listed KES ("KES 0.00" for a Ugandan client). By reading | Currencies used |
+| M20 | The exchange confirmation sent the received amount as String(n): "15467.5" (proven by a screen test: fails on the old screens, passes now) | Formatted in its currency |
+| M21 | Password and email fields let Android keyboards capitalise the first letter (the login password did so whenever shown) (proven by a screen test: fails on the old screens, passes now) | No auto-capitalisation or correction on those fields |
+| M22 | A password change ends every session on the server, this phone's too: the client was thrown out at the next tap with "Session expired" (proven by a screen test: fails on the old screens, passes now) (web: W12) | Says so and signs out |
+| M23 | Reports: ‹ › changed the date in the heading but left the previous day's figures under it (proven by a screen test: fails on the old screens, passes now) | A new day loads its own report |
+| M24 | Reports: switching type quickly could draw one report's answer in another's view (proven by a screen test: fails on the old screens, passes now) | Latest request only |
+| M25 | Office dashboard "today" compared the API's UTC date: from 00:00 to 03:00 the night's entries were left out (proven by a screen test: fails on the old screens, passes now) | Local date |
+| M26 | Phone sign-in did not clear the screen cache or the home currency like the code+password sign-in (proven by a screen test: fails on the old screens, passes now) | Cleared |
+| M27 | The phone's invoice PDF was headed "Sarif · Forex Bureau Services" on every invoice a bureau sent; values were not escaped (proven by a screen test: fails on the old screens, passes now) | The bureau's name, address, phone, tax ID; every value escaped; discount shows its minus |
+| M28 | The expense list stopped at the latest 50 and its "total" was of those 50 (proven by a screen test: fails on the old screens, passes now) | Pages on scroll; total from the server |
+| M29 | A second invoice started with the first one's client and lines (proven by a screen test: fails on the old screens, passes now) | Form reset |
+| M30 | Settle profit for a Ugandan bureau sent currency KES with its USD profit amount (the home-currency chip had the value 0): always refused, and KES accounts were offered (proven by a screen test: fails on the old screens, passes now) | Home currency, default, and "no profit to settle" |
+| M31 | One tap on Logout in the More menu signed out mid-shift (proven by a screen test: fails on the old screens, passes now) | Asks first |
+| M32 | Alerts: "Read all" disappeared when the loaded page was read even if older pages were not (proven by a screen test: fails on the old screens, passes now) | Stays while more pages exist |
+| M33 | Withdrawing float in anything but KES hid mobile-money destinations (UGX float → MTN wallet) (proven by a screen test: fails on the old screens, passes now) | Wallets listed by their own currency |
+| M34 | The conversion preview showed × instead of ÷ when the counter account was a Ugandan bureau's UGX (display only) (proven by a screen test: fails on the old screens, passes now) (web: W13) | Compared with the home currency |
+| M35 | A client's profile always listed KES ("KES 0.00" for a Ugandan client) (proven by a screen test: fails on the old screens, passes now) | Currencies used |
 
 Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, clients.ts, invoices.ts; hooks/useAuth.tsx; utils/moneyflow.ts, cache.ts; components/InactivityWrapper.tsx; screens/office/TransactionsScreen.tsx, ClientsScreen.tsx, exchange/hooks/useExchangeScreenState.tsx. Read at logic-line level only (API calls, number parsing, totals): Accounts, Expenses, Reports, Invoices, Reconciliation, both dashboards, statements, alerts, analytics, profile. Not yet read: exchange sections, auth screens (Login, Otp, PhoneLogin), components/ui, utils/notifications and dates, navigation, types.
 
@@ -288,45 +288,45 @@ Read in full (logic; style sheets not audited): services/api/core.ts, auth.ts, c
 | Id | Bug | Fix |
 |---|---|---|
 | W1 | Tabs share one stored sign-in, but the "one refresh at a time" guard is per tab. When two tabs hit an expired token together both spent the same refresh token; since AU2 (refresh tokens are single-use, atomically) the second was refused, and that tab cleared the stored sign-in, including the token the first tab had just saved: every tab signed out. A regression caused by AU2, proven failing first in tests/app-logic/tabs.test.js | A refused refresh first waits up to 3 s for another tab's new token |
-| W2 | The idle sign-out timer ran per tab while the sign-in is shared: an office tab left in the background signed out after 3 minutes, ending the shared session and clearing the stored sign-in, so the tab in use was signed out too. Found by reading; the timer lives in a React provider the logic harness cannot run, so NOT proven by a test | Last activity is shared between tabs |
+| W2 | The idle sign-out timer ran per tab while the sign-in is shared: an office tab left in the background signed out after 3 minutes, ending the shared session and clearing the stored sign-in, so the tab in use was signed out too. Found (proven by a screen test: fails on the old screens, passes now); the timer lives in a React provider the logic harness cannot run, so NOT proven by a test | Last activity is shared between tabs |
 | W3 | The exchange form's client list was the lookup's first 200 clients with no search, so client 201 onward could not be chosen; its float accounts included switched-off bank accounts and wallets | A search box that asks the server; only active accounts |
 | W4 | Both apps offered switched-off expense categories, which the API now refuses (EX4) | Only active categories are offered |
 | W5 | The bank statement upload split each CSV line on every comma: a quoted "1,500.00" deposit whose description had a comma was dropped, and a "25,000.00" withdrawal was read as 25 (proven failing first, a4ec68d: 0 of 7) | A real CSV splitter; amounts read with thousands separators, "(2,000.00)" and trailing "-"/"DR" as money out; parser moved to lib/statement.ts |
 | W6 | Statement dates are written day first in Kenya and Uganda: "13/11/2026" was an invalid date and "05/11/2026" read as 11 May, so the date part of every match score was lost or wrong (proven failing first, 5464384) | Dates read day first (also "07-Nov-2026", "9 Nov 26", M-Pesa "2026-11-08 14:22:10") and stored as YYYY-MM-DD |
-| W7 | After an exchange with a client found by search (beyond the first 200), no receipt share was offered: the share looked the client up in the page's first-200 list. "STATEMENT.CSV" was refused for its capital letters. By reading | The modal hands over the chosen client; the extension check ignores case |
-| SM1 | Statements (web; phone client and account statements): switching currency or period quickly could leave the older answer on screen, KES lines under the USD tab, or client A's statement in client B's sheet. By reading | Only the latest request may fill the screen |
-| SM2 | Client portal list (web and phone) and its month summary: same race on search and filter chips. By reading | Same |
-| SM3 | A statement PDF printed with a search or in/out filter on listed the matching lines under the whole period's totals without saying so. By reading | The PDF says it is filtered and that totals are for the whole period |
-| SM4 | Client list (web, server search per keystroke), transaction list (phone) and the exchange client search: an answer for an earlier spelling could replace the current one. By reading | Same latest-answer rule |
-| W8 | Client portal (web): "Download statement" and "Print statement" held only the page of transactions on screen, cut at 50, under a "Client Account Statement" heading. By reading | Both fetch every transaction matching the filters on screen |
+| W7 | After an exchange with a client found by search (beyond the first 200), no receipt share was offered: the share looked the client up in the page's first-200 list. "STATEMENT.CSV" was refused for its capital letters (proven by a screen test: fails on the old screens, passes now) | The modal hands over the chosen client; the extension check ignores case |
+| SM1 | Statements (web; phone client and account statements): switching currency or period quickly could leave the older answer on screen, KES lines under the USD tab, or client A's statement in client B's sheet (proven by a screen test: fails on the old screens, passes now) | Only the latest request may fill the screen |
+| SM2 | Client portal list (web and phone) and its month summary: same race on search and filter chips (proven by a screen test: fails on the old screens, passes now) | Same |
+| SM3 | A statement PDF printed with a search or in/out filter on listed the matching lines under the whole period's totals without saying so (proven by a screen test: fails on the old screens, passes now) | The PDF says it is filtered and that totals are for the whole period |
+| SM4 | Client list (web, server search per keystroke), transaction list (phone) and the exchange client search: an answer for an earlier spelling could replace the current one (proven by a screen test: fails on the old screens, passes now) | Same latest-answer rule |
+| W8 | Client portal (web): "Download statement" and "Print statement" held only the page of transactions on screen, cut at 50, under a "Client Account Statement" heading (proven by a screen test: fails on the old screens, passes now) | Both fetch every transaction matching the filters on screen |
 | W9 | The home currency was cached even when its first request failed (KES for good: a Ugandan bureau's figures labelled KES until reload), and an answer for the previous bureau could land after a switch (proven failing first, cbf3df2: 2 of 3; web and phone fixed) | Failed loads not cached; answers from before a sign-out/switch dropped |
 | W10 | After the one-hour sign-in every super-admin screen failed ("Request failed with status 401": the 401 body was read before the status, so it never refreshed), and receipt, invoice PDF, statement, CSV and audit-log downloads failed (fetch without refresh) (proven failing first, e207042: 0 of 5) | One authorizedFetch refreshes once; super-admin checks 401 first |
-| W11 | A token refresh rebuilt the stored user with id = company id and an empty phone. By reading | Keeps what sign-in stored |
-| W12 | See M22 (portal password change). By reading | Signs out |
-| W13 | See M34. By reading | Home currency |
-| W14 | The transaction form asks for "Transaction Date *" but never sent it: a back-dated entry was recorded today. By reading | Sent (noon that local day); no future days offered |
-| W15 | Cash accounts were listed as "Cash 0" / "Cash 1" in the transaction form (the API sends no name). By reading | Currency code |
-| W16 | The WhatsApp confirmation was never offered for a client's UGX or EUR account (only _KES/_USD ids were recognised). By reading | Every currency |
-| W17 | On a forex entry the confirmation gave the typed amount in the other side's currency. By reading | The client's own amount and currency |
-| W18 | Reconciliation "Create Adjustment" said "✓ Adjustment entry created" and created nothing. By reading | Says how to clear a variance (expense / transaction); no fake success |
-| W19 | "Auto Match All" (or the "a" key) marked every pending transaction matched without comparing anything or asking. By reading | Says exactly that and asks |
-| W20 | "Accept all suggestions" could match two transactions to one statement line. By reading | Strongest pairs first, each used once |
-| W21 | "Profile picture updated successfully!" kept it in memory only. By reading | Kept on this browser per bureau, and says so |
-| W22 | Generated client passwords used Math.random. By reading | crypto.getRandomValues |
-| W23 | The web refused an invoice without a client email (the API and phone take one). By reading | Optional |
-| W24 | Reports "Date Range" (Today by default) filtered nothing. By reading; the new inDateRange is tested in app-logic | Applied, page resets |
-| W25 | The transactions report PDF listed the first 50 of every transaction ever, whatever the filters. By reading | Every row on screen |
-| W26 | The transactions report's CSV exported the daily summary. By reading | The transactions |
-| W27 | CSV cells not escaped: quotes broke rows; =,+,@ opened as formulas. By reading | Escaped |
-| W28 | The web login's code check (letters only, 2-4) refused real codes whose prefix has digits ("24/7 Forex" → 2FK-…) or one letter. By reading | Letters and digits, 1-4 |
-| W29 | Expenses paid by account transfer were labelled "Credit Card". By reading | Correct label |
-| W30 | Super-admin sign-out cleared the browser before asking the server, which then refused (no token): the refresh token stayed valid. By reading | Server first |
-| W31 | Portal statement PDF/print always showed KES and USD boxes (empty for Ugandan clients). By reading | Currencies held |
-| W32 | The portal profile showed KES and USD boxes first for every client, a Ugandan client's UGX under "Other". By reading | Currencies held |
-| W33 | Settings client table had KES and USD columns only. By reading | One Balances column |
-| W34 | Super-admin subscription days rounded milliseconds ("Expired 1 day ago" on the expiry day). By reading | Local calendar days |
-| W35 | Cash-flow holdings always showed KES (even at zero) instead of the home currency. By reading | Home currency |
-| W36 | The client password dialog showed KES and USD balances only. By reading | Every currency held |
+| W11 | A token refresh rebuilt the stored user with id = company id and an empty phone (proven by a screen test: fails on the old screens, passes now) | Keeps what sign-in stored |
+| W12 | See M22 (portal password change) (proven by a screen test: fails on the old screens, passes now) | Signs out |
+| W13 | See M34 (proven by a screen test: fails on the old screens, passes now) | Home currency |
+| W14 | The transaction form asks for "Transaction Date *" but never sent it: a back-dated entry was recorded today (proven by a screen test: fails on the old screens, passes now) | Sent (noon that local day); no future days offered |
+| W15 | Cash accounts were listed as "Cash 0" / "Cash 1" in the transaction form (the API sends no name) (proven by a screen test: fails on the old screens, passes now) | Currency code |
+| W16 | The WhatsApp confirmation was never offered for a client's UGX or EUR account (only _KES/_USD ids were recognised) (proven by a screen test: fails on the old screens, passes now) | Every currency |
+| W17 | On a forex entry the confirmation gave the typed amount in the other side's currency (proven by a screen test: fails on the old screens, passes now) | The client's own amount and currency |
+| W18 | Reconciliation "Create Adjustment" said "✓ Adjustment entry created" and created nothing (proven by a screen test: fails on the old screens, passes now) | Says how to clear a variance (expense / transaction); no fake success |
+| W19 | "Auto Match All" (or the "a" key) marked every pending transaction matched without comparing anything or asking (proven by a screen test: fails on the old screens, passes now) | Says exactly that and asks |
+| W20 | "Accept all suggestions" could match two transactions to one statement line (proven by a screen test: fails on the old screens, passes now) | Strongest pairs first, each used once |
+| W21 | "Profile picture updated successfully!" kept it in memory only (proven by a screen test: fails on the old screens, passes now) | Kept on this browser per bureau, and says so |
+| W22 | Generated client passwords used Math.random (proven by a screen test: fails on the old screens, passes now) | crypto.getRandomValues |
+| W23 | The web refused an invoice without a client email (the API and phone take one) (proven by a screen test: fails on the old screens, passes now) | Optional |
+| W24 | Reports "Date Range" (Today by default) filtered nothing (proven by a screen test: fails on the old screens, passes now); the new inDateRange is tested in app-logic | Applied, page resets |
+| W25 | The transactions report PDF listed the first 50 of every transaction ever, whatever the filters (proven by a screen test: fails on the old screens, passes now) | Every row on screen |
+| W26 | The transactions report's CSV exported the daily summary (proven by a screen test: fails on the old screens, passes now) | The transactions |
+| W27 | CSV cells not escaped: quotes broke rows; =,+,@ opened as formulas (proven by a screen test: fails on the old screens, passes now) | Escaped |
+| W28 | The web login's code check (letters only, 2-4) refused real codes whose prefix has digits ("24/7 Forex" → 2FK-…) or one letter (proven by a screen test: fails on the old screens, passes now) | Letters and digits, 1-4 |
+| W29 | Expenses paid by account transfer were labelled "Credit Card" (proven by a screen test: fails on the old screens, passes now) | Correct label |
+| W30 | Super-admin sign-out cleared the browser before asking the server, which then refused (no token): the refresh token stayed valid (proven by a screen test: fails on the old screens, passes now) | Server first |
+| W31 | Portal statement PDF/print always showed KES and USD boxes (empty for Ugandan clients) (proven by a screen test: fails on the old screens, passes now) | Currencies held |
+| W32 | The portal profile showed KES and USD boxes first for every client, a Ugandan client's UGX under "Other" (proven by a screen test: fails on the old screens, passes now) | Currencies held |
+| W33 | Settings client table had KES and USD columns only (proven by a screen test: fails on the old screens, passes now) | One Balances column |
+| W34 | Super-admin subscription days rounded milliseconds ("Expired 1 day ago" on the expiry day) (proven by a screen test: fails on the old screens, passes now) | Local calendar days |
+| W35 | Cash-flow holdings always showed KES (even at zero) instead of the home currency (proven by a screen test: fails on the old screens, passes now) | Home currency |
+| W36 | The client password dialog showed KES and USD balances only (proven by a screen test: fails on the old screens, passes now) | Every currency held |
 
 Read in full: lib/api/core.ts, providers/AuthProvider.tsx (sign-in, refresh, idle timer, device id), components/office/StatementModal.tsx, office/reconciliation/helpers.tsx and hooks/useReconciliationState.tsx (upload and matching), exchange/parts/NewExchangeModal.tsx and hooks/useExchangeSectionState.tsx (submit and share). Every web amount input checked: all are type="number", so a browser never hands over "1,500" (M12 does not apply to the web). Query strings in every lib/api file checked: searches are encoded. Not yet read: the rest.
 
@@ -351,39 +351,62 @@ Every file under components/*/sections and exchange/parts read in full (portal 7
 | Id | Bug | Fix |
 |---|---|---|
 | CL9 | Portal balance chart showed today's balance for all six months, other currencies from today too (proven failing first, d7b18df/33e3657) | Each month's closing balance per currency |
-| W37 | Office notes field did not say the client sees the notes (web and phone). By reading | Says so |
-| W38 | Portal "Print statement" downloads a PDF. By reading | "Download statement" |
-| W39 | Portal transaction copy said "Copied" when the clipboard refused. By reading | Success or error |
-| W40 | Portal analytics growth was green when negative. By reading | Red |
-| W41 | Bank delete: "permanently remove the account and all associated data"; the server soft-deletes only an account with no transactions. By reading | True wording, Inactive for accounts with history |
-| W42 | Mobile money agent delete: same promise. By reading | Same |
-| W43 | Client delete: "permanent", "removes transaction history"; the server refuses non-zero balances, recent or exchange history and keeps postings. Fixed KES/USD boxes in a UGX bureau. By reading | Lists the real rules; every currency held |
-| W44 | Mobile money net movement card said "Debit - Credit"; it includes the opening balance. By reading | "Opening + money in − money out" |
-| W45 | Edit agent: networks without wallet currency, networks the bureau can't hold; opening balance without currency. By reading | Same list as Add, with currency |
-| W46 | Record expense: KES/EUR offered to bureaus that can't hold them; changing currency dropped Mobile money even for an MTN UGX wallet; choosing Mobile money silently changed the currency. Expense delete promised a permanent delete (a reversal is posted). By reading | Allowed currencies; wallet-aware; true wording |
-| W47 | Quick calculator showed the literal "{baseCode} amount". By reading | Template |
-| W48 | New exchange and calculator promised spread x amount profit on purchases (none booked) and the wrong figure on sales (average cost). By reading | Server's own calculation; "None on a purchase" |
-| W49 | Set rate started from the USD rate (or 130/140) whatever currency was picked: saving EUR stored USD figures; a EUR save also landed on the USD card. By reading | Each currency's live rate, empty if none |
-| W50 | Rate history mixed currencies with no currency column. By reading | Currency column |
-| W51 | Rates under 1 (UGX in a KES bureau) shown as 0.03 in the trade table, detail and history. By reading | formatRate (4 decimals) |
-| W52 | Current rate card and exchange report did not say which currency the rate quotes. By reading | "per USD" |
-| W53 | Exchange detail copy said "Copied" when the clipboard refused. By reading | Success or error |
-| W54 | Invoice duplicate turned UGX/EUR invoices into USD and dropped the tax. By reading | Same currency and tax rate |
-| W55 | Reconciliation formatCurrency printed Math.abs: a short statement showed a positive variance, an overdrawn balance as money held. By reading | Keeps the minus |
-| W56 | Reconciliation comparison bar width NaN/negative for a zero or overdrawn balance. By reading | Guarded |
+| W37 | Office notes field did not say the client sees the notes (web and phone) (proven by a screen test: fails on the old screens, passes now) | Says so |
+| W38 | Portal "Print statement" downloads a PDF (proven by a screen test: fails on the old screens, passes now) | "Download statement" |
+| W39 | Portal transaction copy said "Copied" when the clipboard refused (proven by a screen test: fails on the old screens, passes now) | Success or error |
+| W40 | Portal analytics growth was green when negative (proven by a screen test: fails on the old screens, passes now) | Red |
+| W41 | Bank delete: "permanently remove the account and all associated data"; the server soft-deletes only an account with no transactions (proven by a screen test: fails on the old screens, passes now) | True wording, Inactive for accounts with history |
+| W42 | Mobile money agent delete: same promise (proven by a screen test: fails on the old screens, passes now) | Same |
+| W43 | Client delete: "permanent", "removes transaction history"; the server refuses non-zero balances, recent or exchange history and keeps postings. Fixed KES/USD boxes in a UGX bureau (proven by a screen test: fails on the old screens, passes now) | Lists the real rules; every currency held |
+| W44 | Mobile money net movement card said "Debit - Credit"; it includes the opening balance (proven by a screen test: fails on the old screens, passes now) | "Opening + money in − money out" |
+| W45 | Edit agent: networks without wallet currency, networks the bureau can't hold; opening balance without currency (proven by a screen test: fails on the old screens, passes now) | Same list as Add, with currency |
+| W46 | Record expense: (the currency list part was not a defect, see W57); changing currency dropped Mobile money even for an MTN UGX wallet; choosing Mobile money silently changed the currency. Expense delete promised a permanent delete (a reversal is posted) (proven by a screen test: fails on the old screens, passes now) | Allowed currencies; wallet-aware; true wording |
+| W47 | Quick calculator showed the literal "{baseCode} amount" (proven by a screen test: fails on the old screens, passes now) | Template |
+| W48 | New exchange and calculator promised spread x amount profit on purchases (none booked) and the wrong figure on sales (average cost) (proven by a screen test: fails on the old screens, passes now) | Server's own calculation; "None on a purchase" |
+| W49 | Set rate started from the USD rate (or 130/140) whatever currency was picked: saving EUR stored USD figures; a EUR save also landed on the USD card (proven by a screen test: fails on the old screens, passes now) | Each currency's live rate, empty if none |
+| W50 | Rate history mixed currencies with no currency column (proven by a screen test: fails on the old screens, passes now) | Currency column |
+| W51 | Rates under 1 (UGX in a KES bureau) shown as 0.03 in the trade table, detail and history (proven by a screen test: fails on the old screens, passes now) | formatRate (4 decimals) |
+| W52 | Current rate card and exchange report did not say which currency the rate quotes (proven by a screen test: fails on the old screens, passes now) | "per USD" |
+| W53 | Exchange detail copy said "Copied" when the clipboard refused (proven by a screen test: fails on the old screens, passes now) | Success or error |
+| W54 | Invoice duplicate turned UGX/EUR invoices into USD and dropped the tax (proven by a screen test: fails on the old screens, passes now) | Same currency and tax rate |
+| W55 | Reconciliation formatCurrency printed Math.abs: a short statement showed a positive variance, an overdrawn balance as money held (proven by a screen test: fails on the old screens, passes now) | Keeps the minus |
+| W56 | Reconciliation comparison bar width NaN/negative for a zero or overdrawn balance (proven by a screen test: fails on the old screens, passes now) | Guarded |
 | RP1 | Reports P&L: exchange profit always 0 (trades carry "date", the filter read transactionDate/createdAt); the 7-day trend was six placeholder zeros (proven failing first, 7222582) | lib/exchangeProfit.ts, real daily figures |
 | SA9 | Bureaus country filter applied to the 10 loaded rows only (proven failing first, 6f37c32: 13, want 1) | Server-side baseCurrency filter |
-| W57 | Reports currency filter offered KES/EUR to bureaus that can't hold them. By reading | Allowed currencies |
-| W58 | Reports mobile money header claimed the home currency for every wallet. By reading | "Balance" (each row shows its currency) |
-| W59 | Exchange report "USD bought" counted what the bureau SOLD (and the reverse). By reading | "sold to clients" / "bought from clients" |
-| W60 | Exchange report profit column showed "KES 0" on purchases. By reading | Dash |
-| W61 | Profit chart axis printed 0k for amounts under 1,000. By reading | Plain number |
-| W62 | Office settings: name editable and saved though every other screen says the administrator sets it; phone editable but never saved. By reading | Both read-only |
-| W63 | Expense category delete promised a permanent wipe; the server refuses a category with expenses. By reading | True wording |
-| W64 | Super admin "Money held": a KES M-Pesa wallet at a Ugandan bureau hidden behind a dash, yet counted in Total held. By reading | Shown |
-| W65 | Super admin overview volume table dropped a currency with no trades this month. By reading | Every currency |
-| W66 | Subscription fee label hard-coded KES. By reading | Platform currency constant |
+| W57 | Reports currency filter listed KES and EUR without asking what the bureau may hold. NOT A DEFECT today: a Kenyan bureau holds KES/USD/EUR and a Ugandan one all four, so the list was already right; found when the proof test could not be made to fail | Kept as a guard for a future home currency |
+| W58 | Reports mobile money header claimed the home currency for every wallet (proven by a screen test: fails on the old screens, passes now) | "Balance" (each row shows its currency) |
+| W59 | Exchange report "USD bought" counted what the bureau SOLD (and the reverse) (proven by a screen test: fails on the old screens, passes now) | "sold to clients" / "bought from clients" |
+| W60 | Exchange report profit column showed "KES 0" on purchases (proven by a screen test: fails on the old screens, passes now) | Dash |
+| W61 | Profit chart axis printed 0k for amounts under 1,000 (proven by a screen test: fails on the old screens, passes now) | Plain number |
+| W62 | Office settings: name editable and saved though every other screen says the administrator sets it; phone editable but never saved (proven by a screen test: fails on the old screens, passes now) | Both read-only |
+| W63 | Expense category delete promised a permanent wipe; the server refuses a category with expenses (proven by a screen test: fails on the old screens, passes now) | True wording |
+| W64 | Super admin "Money held": a KES M-Pesa wallet at a Ugandan bureau hidden behind a dash, yet counted in Total held (proven by a screen test: fails on the old screens, passes now) | Shown |
+| W65 | Super admin overview volume table dropped a currency with no trades this month (proven by a screen test: fails on the old screens, passes now) | Every currency |
+| W66 | Subscription fee label hard-coded KES. NOT A DEFECT: the platform currency is KES, the screen reads the same before and after | Uses the constant |
 
 Open, not changed: PUT /api/dashboard/settings still accepts a company Name from an office user (the web no longer sends it). Whether office users may rename their bureau is a product decision.
 
 Coverage now: every web section/part file read line by line in addition to the hooks and lib listed above; shadcn ui/* not audited (library code).
+
+
+## Proof of the fixes first made by reading (14 Nov)
+
+Every fix that was recorded "by reading" now has a test that draws the real screen (or calls the real hook or API client) with data that shows the defect. Each test was run twice in CI: on the app as it was before the fix, where it must fail on the defect itself, and on the app as it is now, where it must pass.
+
+| Suite | What it runs | Tests | Fail on the old app | Pass now |
+|---|---|---|---|---|
+| tests/screens/screens.test.js | Web screens, this round (W37-W65, SA9 web part), old app = 963935c | 35 | 35 | 35 |
+| tests/screens/earlier.test.js | Web screens and hooks, earlier rounds (W2-W36, SM1-SM4), old app = 65a7e0e | 35 | 35 | 35 |
+| tests/screens/phone.test.js | Phone screens, hooks and API client (M13-M35, AU5), old app = 65a7e0e | 26 | 26 | 26 |
+
+How: tests/screens/kit.js compiles the app's own .tsx files on the fly and calls each screen section with a view-model; it reads the element tree as a user would read the page and presses buttons by calling their handlers. Components with state run on a small hook runtime. For the phone, React Native and Expo are replaced by stand-ins (phone-kit.js); the screens, hooks and API client are the app's files, unchanged. The suites run in the CI job "screens" on every push; the proof steps stay in that job.
+
+What proving turned up:
+
+| Id | Finding |
+|---|---|
+| W64b | NEW DEFECT. The W64 fix was incomplete: a bureau's currency held only as mobile money (a Ugandan bureau's KES M-Pesa wallet) had its whole row dropped from "Money held". The proof test failed on the fixed code. Fixed in holdingsRows |
+| W57, W66, W46 (currency list) | Not defects: the test could not be made to fail on the old code, because the old screen was already right for both home currencies |
+| AU5 | Was "[Likely], not proven on a device". Proven: without crypto.getRandomValues the old phone secret was 48 identical digits from Math.random plus the time |
+
+Limits, stated plainly: these tests run the screens' logic and text in Node, not pixels in a browser or on a handset. Layout, fonts, colours on a real device, the SMS autofill prompt and biometric prompts are outside them.
