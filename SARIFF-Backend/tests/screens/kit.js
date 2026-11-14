@@ -46,7 +46,8 @@ Module._resolveFilename = function (request, parent, ...rest) {
 const store = {};
 global.localStorage = { getItem: (k) => store[k] ?? null, setItem: (k, v) => (store[k] = String(v)), removeItem: (k) => delete store[k] };
 store["sariff_auth"] = JSON.stringify({ token: "t", refreshToken: "r", user: { id: "u1", role: 1, whatsAppNumber: "+256700000001" }, expiresAt: "" });
-process.on("unhandledRejection", () => {});
+process.on("unhandledRejection", () => {});   // a refused clipboard etc. inside the app; test failures are reported by proof()
+process.exitCode = 3;                            // until finish() runs: a run that stops early is never a pass
 
 /** Requests the screens made: [{ url, method, body }]. reply(url, body, method) decides the answer's data. */
 const requests = [];
@@ -210,4 +211,15 @@ function mountHook(useIt, arg) {
   return { get api() { return m_api; }, render() { m.render(); return m_api; } };
 }
 
-module.exports = { hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };
+/** The home currency the screens will see (it is fetched once and shared, as in the app). */
+async function signedInBureau(home) {
+  replyWith = (url) => (url.includes("/currencies") ? { baseCurrency: home, currencies: [] } : undefined);
+  mountHook(require(path.join(SRC, "lib/useBaseCurrency")).useBaseCurrency);
+  await tick(30);
+}
+/** Run a test file: anything thrown outside a proof() stops the run with an error. */
+function suite(body) {
+  body().then(finish, (e) => { console.log(`SUITE STOPPED: ${e && e.stack ? e.stack : e}`); process.exit(2); });
+}
+
+module.exports = { signedInBureau, suite, hook, mountHook, SRC, WEB, fromWeb, React, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts, app: (p) => require(path.join(SRC, p)) };

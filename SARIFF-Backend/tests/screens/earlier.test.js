@@ -1,6 +1,6 @@
 // Screen tests for the earlier "by reading" fixes of the line audit (W14-W36).
 // Same kit and rules as screens.test.js; the proof run uses the screens as they were before W2.
-const { app, mount, mountHook, hook, text, find, tag, pressable, tick, vm, proof, finish, server, toasts } = require("./kit");
+const { suite, signedInBureau, app, mount, mountHook, hook, text, find, tag, pressable, tick, vm, proof, finish, server, toasts } = require("./kit");
 
 const KES = 0, USD = 1, UGX = 2;
 const noop = () => {};
@@ -8,9 +8,8 @@ const zeros = new Proxy({}, { get: () => 0 });
 const selectWith = (tree, has) => find(tree, (e) => tag(e) === "select").filter((s) => has.test(text(s)))[0];
 const box = (tree, placeholder) => find(tree, (e) => (tag(e) === "input" || tag(e) === "textarea") && placeholder.test(e.props.placeholder || ""))[0];
 
-(async () => {
-  server.reply((url) => (url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
-  await app("lib/useBaseCurrency").loadBaseCurrency();
+suite(async () => {
+  await signedInBureau(UGX);
 
   // ------------------------------------------------------------------ the transaction form, end to end
   const client = { id: "c1", fullName: "Amina Hassan", code: "KB-CL-0001", whatsAppNumber: "+256700000010", isActive: true, balanceKES: 0, balanceUSD: 0, otherBalances: [] };
@@ -210,5 +209,4 @@ const box = (tree, placeholder) => find(tree, (e) => (tag(e) === "input" || tag(
     expect(/Expires today/.test(t), `says: ${(t.match(/Expire[ds][^·]*/) || ["nothing"])[0]}`);
   });
 
-  finish();
-})();
+});

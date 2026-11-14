@@ -4,7 +4,7 @@
 //   node screens.test.js <old web> <web> --expect-fail
 //                                               on the screens as they were before the fixes every
 //                                               test must fail on the defect itself (the proof)
-const { app, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts } = require("./kit");
+const { suite, signedInBureau, app, mount, text, find, tag, pressable, tick, vm, proof, finish, server, clipboard, toasts } = require("./kit");
 
 const KES = 0, USD = 1, UGX = 2, EUR = 3;
 const iso = "2026-11-10T09:30:00Z";
@@ -15,10 +15,9 @@ const options = (tree, has) => {
 };
 const count = (s, re) => (s.match(re) || []).length;
 
-(async () => {
+suite(async () => {
   // The signed-in bureau is Ugandan (home currency UGX) unless a test says otherwise.
-  server.reply((url) => (url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
-  await app("lib/useBaseCurrency").loadBaseCurrency();
+  await signedInBureau(UGX);
 
   // ------------------------------------------------------------------ client portal
   await proof("W38", "Portal: the button that downloads a PDF says Download, not Print", (expect) => {
@@ -358,5 +357,4 @@ const count = (s, re) => (s.match(re) || []).length;
     expect(/the client sees them/i.test(t), `notes label: ${(t.match(/Notes[^|]{0,40}/) || [t.slice(0, 200)])[0]}`);
   });
 
-  finish();
-})();
+});
