@@ -456,4 +456,31 @@ suite(async () => {
       expect(/Filtered: 1 of 2/.test(words), "the PDF lists 1 of 2 lines under the whole period's totals without saying so");
     }
   });
+
+  await proof("W2", "Idle sign-out: a tab left in the background does not sign out while another tab is in use", async (expect) => {
+    const before = store["sariff_auth"]; const realNow = Date.now; let clock = realNow.call(Date);
+    const handlers = {};
+    global.window = { addEventListener() {}, removeEventListener() {}, dispatchEvent() {}, location: { href: "", protocol: "https:", pathname: "/office/dashboard" } };
+    global.document = { cookie: "", visibilityState: "hidden", addEventListener: (name, f) => { handlers[name] = f; }, removeEventListener() {} };
+    global.sessionStorage = { clear() {}, getItem: () => null, setItem() {}, removeItem() {} };
+    Date.now = () => clock;
+    try {
+      const { AuthProvider } = app("providers/AuthProvider");
+      const m = mount(AuthProvider, { children: null });
+      for (let i = 0; i < 4; i++) { await tick(10); m.render(); }
+      expect(typeof handlers.visibilitychange === "function", "the provider is not watching for idle time (not signed in?)");
+      // Four minutes pass in this tab with nobody touching it; the cashier is working in another tab.
+      clock += 4 * 60 * 1000;
+      store["sariff_last_active"] = String(clock - 2000);
+      global.document.visibilityState = "visible";
+      if (handlers.visibilitychange) handlers.visibilitychange();
+      await tick(30);
+      expect(!server.requests.some((r) => r.url.includes("/api/auth/logout")) && store["sariff_auth"] !== undefined, "the background tab signed out, ending the session the other tab was using");
+      // And with no activity anywhere it still signs out.
+      clock += 4 * 60 * 1000;
+      if (handlers.visibilitychange) handlers.visibilitychange();
+      await tick(30);
+      expect(server.requests.some((r) => r.url.includes("/api/auth/logout")), "after 4 idle minutes in every tab nobody was signed out");
+    } finally { Date.now = realNow; delete global.window; delete global.document; delete global.sessionStorage; store["sariff_auth"] = before; delete store["sariff_last_active"]; }
+  });
 });
