@@ -68,4 +68,100 @@ suite(async () => {
     expect(email && email.props.autoCapitalize === "none", `email box: autoCapitalize=${email && email.props.autoCapitalize}`);
     expect(name && name.props.autoCapitalize !== "none", "an ordinary box must keep the keyboard's default");
   });
+
+  // ------------------------------------------------------------------ screens
+  const draw = async (m, times = 4) => { for (let i = 0; i < times; i++) { await tick(15); try { m.render(); } catch (e) { m.failed = e; } } return m.tree; };
+  const labelled = (tree, label) => find(tree, (e) => e.props.accessibilityLabel === label && typeof e.props.onPress === "function")[0];
+  const day = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  await proof("M22", "Phone profile: after a password change the client is signed out", async (expect) => {
+    let signedOut = false;
+    world.context = { user: { id: "c1", code: "KB-CL-0001", fullName: "Amina Hassan", role: 2 }, logout: async () => { signedOut = true; }, isAuthenticated: true };
+    server.reply(() => ({}));
+    try {
+      const m = mount(app("screens/shared/ProfileScreen").default, {});
+      await draw(m);
+      tappable(m.tree, /^Change Password$/).props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Current Password/).props.onChangeText("old-pass-1");
+      field(m.render(), /New Password/).props.onChangeText("NewPass123");
+      field(m.render(), /Confirm Password/).props.onChangeText("NewPass123");
+      await tappable(m.render(), /^Update Password$/).props.onPress();
+      await draw(m, 2);
+      expect(server.requests.some((r) => /password/i.test(r.url)), `no password request: ${JSON.stringify(toasts)}`);
+      expect(signedOut, "the client was left signed in with a session the server has ended");
+    } finally { world.context = undefined; }
+  });
+
+  await proof("M23", "Phone reports: ‹ loads the previous day's report (the heading changed, the figures did not)", async (expect) => {
+    server.reply((url) => (url.includes("/api/report/daily") ? { date: url.split("date=")[1], openingBalances: {}, closingBalances: {}, transactions: [], totalTransactions: 0 } : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
+    const m = mount(app("screens/office/ReportsScreen").default, {});
+    await draw(m, 2);
+    const generate = tappable(m.tree, /^Generate .*Report$/);
+    expect(!!generate, `no Generate button: ${text(m.tree).slice(0, 160)}`);
+    if (generate) await generate.props.onPress();
+    await draw(m);
+    const previous = labelled(m.tree, "Previous");
+    expect(!!previous, `the daily report was not drawn${m.failed ? ": " + m.failed.message : ""}`);
+    if (previous) previous.props.onPress();
+    await draw(m);
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const asked = server.requests.filter((r) => r.url.includes("/api/report/daily")).map((r) => r.url.split("date=")[1]);
+    expect(asked.includes(day(yesterday)), `days loaded: ${JSON.stringify(asked)} (the heading now says ${day(yesterday)})`);
+  });
+
+  await proof("M25", "Phone dashboard: an entry made at 01:30 at night counts as today", async (expect) => {
+    const now = new Date();
+    const night = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 1, 30);          // 22:30 UTC the day before
+    const before = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 15, 0);
+    const txn = (id, when, description) => ({ id, code: id, transactionDate: when.toISOString(), createdAt: when.toISOString(), description, amount: 1000, currency: UGX, transactionType: 0,
+      sourceAccountType: 0, destAccountType: 3, sourceAccountName: "Cash UGX", destAccountName: "Amina", reference: id });
+    world.context = { user: { id: "u1", code: "KB-OFF-1", fullName: "Amina Hassan", role: 1, companyName: "Kampala Bureau" }, logout: noop, isAuthenticated: true };
+    server.reply((url) => (/\/api\/dashboard$/.test(url) ? { recentTransactions: [txn("T-NIGHT", night, "NIGHT DEPOSIT"), txn("T-BEFORE", before, "YESTERDAY RENT")], todayTransactions: { totalCount: 1 }, holdings: [], cashBalances: [], bankBalances: [] }
+      : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : undefined));
+    try {
+      const m = mount(app("screens/office/OfficeDashboardScreen").default, {});
+      await draw(m, 6);
+      const t = text(m.tree);
+      expect(/NIGHT DEPOSIT/.test(t), `the 01:30 entry is not on the dashboard${m.failed ? " (" + m.failed.message + ")" : ""}: ${t.slice(0, 200)}`);
+      expect(!/YESTERDAY RENT/.test(t), "with nothing counted as today, yesterday's entries were listed instead");
+    } finally { world.context = undefined; }
+  });
+
+  await proof("M27", "Phone invoice PDF: headed with the bureau's name, and an & or < in a name does not break it", async (expect) => {
+    const invoice = { id: "i1", invoiceNumber: "INV-9", clientName: "Brown & Sons <Ltd>", clientEmail: "", clientPhone: "", clientAddress: "", status: 0, currency: UGX, invoiceDate: "2026-11-10T00:00:00Z", dueDate: "2026-11-20T00:00:00Z",
+      items: [{ description: "Service", quantity: 1, unitPrice: 100000, amount: 100000 }], subtotal: 100000, taxAmount: 0, taxRate: 0, discount: 0, total: 100000, notes: "" };
+    server.reply((url) => (/\/api\/invoice\/i1$/.test(url) ? invoice : url.includes("/api/invoice?") ? { items: [invoice], totalCount: 1, totalPages: 1 }
+      : url.includes("/api/dashboard/company") ? { name: "Kampala Bureau", address: "Kampala Rd", whatsAppNumber: "+256700000001", taxId: "TIN-1" }
+      : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : url.includes("/api/client") ? { items: [], totalCount: 0 } : undefined));
+    phone.reset();
+    const m = mount(app("screens/office/InvoicesScreen").default, {});
+    await draw(m, 5);
+    const download = labelled(m.tree, "Download");
+    expect(!!download, `no invoice row${m.failed ? " (" + m.failed.message + ")" : ""}: ${text(m.tree).slice(0, 160)}`);
+    if (download) await download.props.onPress();
+    await tick(40);
+    const printed = phone.calls.find((c) => c[0] === "expo-print" && c[1] === "printToFileAsync");
+    const html = printed ? printed[2][0].html : "";
+    expect(!!printed, `nothing was sent to the printer: ${JSON.stringify(toasts)}`);
+    if (printed) {
+      expect(/Kampala Bureau/.test(html) && !/Forex Bureau Services/.test(html), `the invoice is headed: ${(html.match(/font-weight:800[^>]*>([^<]*)</) || [])[1]}`);
+      expect(html.includes("Brown &amp; Sons &lt;Ltd&gt;"), "the client's name is not escaped");
+    }
+  });
+
+  await proof("M28", "Phone expenses: the total is of every expense and older ones load on scroll", async (expect) => {
+    const expense = (n) => ({ id: `e${n}`, code: `EXP-${n}`, description: `Expense ${n}`, amount: 1000, currency: UGX, categoryName: "Rent", expenseDate: "2026-11-10T09:00:00Z", createdAt: "2026-11-10T09:00:00Z", paymentMethod: 0 });
+    server.reply((url) => (url.includes("/api/expense/category") ? [] : url.includes("/api/expense/stats") ? { byCurrency: [{ currency: UGX, total: 60000 }], totalExpenses: 60 }
+      : /\/api\/expense\?page=1&/.test(url) ? { items: Array.from({ length: 50 }, (_, i) => expense(i + 1)), totalCount: 60, totalPages: 2 }
+      : /\/api\/expense\?page=2&/.test(url) ? { items: Array.from({ length: 10 }, (_, i) => expense(i + 51)), totalCount: 60, totalPages: 2 }
+      : url.includes("/currencies") ? { baseCurrency: UGX, currencies: [] } : []));
+    const m = mount(app("screens/office/ExpensesScreen").default, {});
+    await draw(m, 5);
+    let t = text(m.tree);
+    expect(/60,000/.test(t), `total shown for 60 expenses of 1,000: ${(t.match(/USh[\s\d,.]+|UGX[\s\d,.]+/) || ["?"])[0]}${m.failed ? " (" + m.failed.message + ")" : ""}`);
+    const list = find(m.tree, (e) => typeof e.props.onEndReached === "function")[0];
+    expect(!!list, "the list does not load more when scrolled to its end");
+    if (list) { await list.props.onEndReached(); await draw(m, 3); expect(/Expense 60\b/.test(text(m.tree)), "expense 60 is still not reachable"); }
+  });
 });

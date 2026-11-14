@@ -23,7 +23,7 @@ const phone = {
 };
 
 const host = (name) => name;                                     // <View> is the element "View"
-const named = (extra = {}) => new Proxy(extra, { get: (t, k) => (k in t ? t[k] : typeof k === "symbol" ? undefined : k === "__esModule" ? false : host(String(k))) });
+const named = (extra = {}) => new Proxy(extra, { get: (t, k) => (k in t ? t[k] : typeof k === "symbol" ? undefined : k === "__esModule" ? true : k === "default" ? named(extra) : host(String(k))) });
 const el = React.createElement;
 const part = (x) => (x == null ? null : typeof x === "function" ? el(x) : x);
 const animation = { start: (done) => done && done({ finished: true }), stop() {}, reset() {} };
@@ -60,7 +60,8 @@ const reactNative = named({
 const asyncModule = (name, extra = {}) => new Proxy(extra, {
   get: (t, k) => {
     if (k in t) return t[k];
-    if (typeof k === "symbol" || k === "__esModule") return undefined;
+    if (k === "__esModule") return true;
+    if (typeof k === "symbol") return undefined;
     if (k === "default") return asyncModule(name, extra);
     const key = String(k);
     if (/^[A-Z]/.test(key)) return new Proxy({}, { get: (_e, v) => String(v) });   // an enum such as ImpactFeedbackStyle.Light
