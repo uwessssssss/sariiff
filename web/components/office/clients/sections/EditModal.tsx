@@ -128,11 +128,11 @@ export function EditModal({ vm }: { vm: ClientManagementVM }) {
                       {numberMissing && <p className="mt-1 text-xs text-red-600">A WhatsApp number is required</p>}
                     </div>
                     <div>
-                      <label htmlFor="edit-email" className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700"><Mail className="w-4 h-4 text-slate-500" />Email <span className="font-normal text-slate-400">(optional)</span></label>
+                      <label htmlFor="edit-email" className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700"><Mail className="w-4 h-4 text-slate-500" />Email <span className="font-normal text-slate-500">(optional)</span></label>
                       <input id="edit-email" type="email" value={editFormData.email ?? ""} onChange={(e) => set("email", e.target.value)} className={inputClass} />
                     </div>
                     <div>
-                      <label htmlFor="edit-idPassport" className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700"><Hash className="w-4 h-4 text-slate-500" />ID / Passport <span className="font-normal text-slate-400">(optional)</span></label>
+                      <label htmlFor="edit-idPassport" className="mb-1.5 flex items-center gap-2 text-sm font-semibold text-slate-700"><Hash className="w-4 h-4 text-slate-500" />ID / Passport <span className="font-normal text-slate-500">(optional)</span></label>
                       <input id="edit-idPassport" type="text" value={editFormData.idPassport ?? ""} onChange={(e) => set("idPassport", e.target.value)} className={inputClass} />
                     </div>
                   </div>
