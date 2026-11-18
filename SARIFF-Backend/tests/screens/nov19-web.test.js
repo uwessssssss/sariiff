@@ -35,7 +35,7 @@ suite(async () => {
         for (let i = 0; i < 8; i++) { await tick(15); m.render(); }
         shown = m.api.stats;
       });
-      expect(!!shown && shown.todayTransactions && shown.todayTransactions.totalCount === 3, "the dashboard figures wait for the list of postings (still loading)");
+      expect(!!shown && shown.todayTransactions === 3, `the dashboard figures wait for the list of postings (still loading): stats = ${JSON.stringify(shown && { todayTransactions: shown.todayTransactions })}`);
     } finally { world.context = undefined; }
   });
 
