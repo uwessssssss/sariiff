@@ -193,7 +193,7 @@ export default function ClientsScreen() {
   const handleUpdate = async () => {
     if (!selectedClient || !editName.trim()) { Toast.show({ type: 'error', text1: 'Name required' }); return; }
     setFormLoading(true);
-    const res = await api.updateClient(selectedClient.id, { fullName: editName, whatsAppNumber: editPhone, email: editEmail || undefined, idPassport: editIdPassport || undefined });
+    const res = await api.updateClient(selectedClient.id, { fullName: editName.trim(), whatsAppNumber: editPhone.trim(), email: editEmail.trim(), idPassport: editIdPassport.trim() /* "" clears it on the server; undefined meant "no change", so an email could never be removed */ });
     if (res.success) { Toast.show({ type: 'success', text1: 'Client updated' }); setShowEdit(false); setShowDetail(false); loadClients(1); }
     else Toast.show({ type: 'error', text1: 'Failed', text2: res.message });
     setFormLoading(false);

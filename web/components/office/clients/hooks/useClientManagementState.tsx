@@ -11,7 +11,7 @@ import { useCallback, useRef, useState } from "react";
 /** ClientManagement: state (part 1 of 2 of useClientManagement). */
 export function useClientManagementState() {
   // Kenyan bureaus don't use UGX; Ugandan ones use KES too (lib/useBaseCurrency).
-  const { has: currencyOk, base: homeCurrency } = useAllowedCurrencies();
+  const { has: currencyOk, base: homeCurrency, allowed: allowedCurrencies } = useAllowedCurrencies();
   const samples = useCountrySamples();
  // placeholders in the bureau's own country
   // ==============================================
@@ -241,10 +241,12 @@ export function useClientManagementState() {
     setIsSubmitting(true);
     try {
       const dto: UpdateClientDto = {
-        fullName: editFormData.fullName || undefined,
-        email: editFormData.email || undefined,
-        whatsAppNumber: editFormData.whatsAppNumber || undefined,
-        idPassport: editFormData.idPassport || undefined,
+        fullName: (editFormData.fullName || "").trim() || undefined,
+        // An emptied box is sent as "" so the server clears it. It used to send
+        // undefined ("no change"), so an email or ID typed by mistake could never be removed.
+        email: (editFormData.email ?? "").trim(),
+        whatsAppNumber: (editFormData.whatsAppNumber || "").trim() || undefined,
+        idPassport: (editFormData.idPassport ?? "").trim(),
         isActive: editFormData.isActive,
       };
 
@@ -403,6 +405,7 @@ export function useClientManagementState() {
 
   return {
     currencyOk,
+    allowedCurrencies,
     homeCurrency,
     samples,
     activeTab,

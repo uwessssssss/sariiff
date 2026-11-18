@@ -58,6 +58,8 @@ export default function OfficeDashboardScreen() {
   const [stats, setStats] = useState<DashboardStatsDto | null>(
     _cached?.stats || null,
   );
+  const [showingToday, setShowingToday] = useState(true);
+  const [listLimit, setListLimit] = useState(20);
   const [transactions, setTransactions] = useState<TransactionDto[]>(
     _cached?.transactions || [],
   );
@@ -87,32 +89,32 @@ export default function OfficeDashboardScreen() {
         })
         .catch(() => {});
 
-      const statsRes = await api.getDashboardStats();
+      // The dashboard sends only its 10 latest postings: on a busy day most of today's were
+      // missing here (and at most 8 were drawn), while the web lists every one of today's.
+      // Ask for the same 200 latest the web asks for and keep today's.
+      const [statsRes, recentRes] = await Promise.all([
+        api.getDashboardStats(),
+        api.getRecentTransactions(200).catch(() => null),
+      ]);
       if (statsRes.success) {
         setStats(statsRes.data);
-        if (statsRes.data?.recentTransactions) {
-          // Filter to today's transactions only
-          const today = localDate();
-          const todayTxns = statsRes.data.recentTransactions.filter(
-            (t: any) => {
-              // The API sends UTC ("…Z"): its date part is still yesterday from 00:00 to 03:00
-              // in Nairobi/Kampala, so the night's entries were left out of "today".
-              const when = new Date(t.transactionDate || t.createdAt || "");
-              return !isNaN(when.getTime()) && localDate(when) === today;
-            },
-          );
-          const finalTxns =
-            todayTxns.length > 0
-              ? todayTxns
-              : statsRes.data.recentTransactions.slice(0, 5);
-          setTransactions(finalTxns);
-          cacheSet("office_dashboard", {
-            stats: statsRes.data,
-            transactions: finalTxns,
-          });
-        } else {
-          cacheSet("office_dashboard", { stats: statsRes.data, transactions });
-        }
+        const recent: TransactionDto[] =
+          recentRes && recentRes.success && Array.isArray(recentRes.data)
+            ? recentRes.data
+            : statsRes.data?.recentTransactions || [];
+        // The API sends UTC ("…Z"): its date part is still yesterday from 00:00 to 03:00
+        // in Nairobi/Kampala, so compare local dates.
+        const today = localDate();
+        const todayTxns = recent
+          .filter((t: any) => {
+            const when = new Date(t.transactionDate || t.createdAt || "");
+            return !isNaN(when.getTime()) && localDate(when) === today;
+          })
+          .sort((a: any, b: any) => new Date(b.createdAt || b.transactionDate).getTime() - new Date(a.createdAt || a.transactionDate).getTime());
+        setShowingToday(todayTxns.length > 0);
+        const finalTxns = todayTxns.length > 0 ? todayTxns : recent.slice(0, 5);
+        setTransactions(finalTxns);
+        cacheSet("office_dashboard", { stats: statsRes.data, transactions: finalTxns });
       }
     } catch {}
   }, []);
@@ -525,13 +527,18 @@ export default function OfficeDashboardScreen() {
         {/* ====== RECENT TRANSACTIONS ====== */}
         <Animated.View style={makeAnim(5)}>
           <SectionHeader
-            title="Recent Transactions"
+            title={showingToday ? `Today's Transactions (${transactions.length})` : "Recent Transactions"}
             action="View All"
             onAction={() => navigation.navigate("Transactions")}
           />
+          {!showingToday && transactions.length > 0 && (
+            <Text style={{ color: colors.textTertiary, fontSize: 12, marginTop: -4, marginBottom: 8 }}>
+              Nothing posted today yet. The latest postings:
+            </Text>
+          )}
         </Animated.View>
 
-        {transactions.slice(0, 8).map((txn, i) => (
+        {transactions.slice(0, listLimit).map((txn, i) => (
           <Animated.View key={txn.id} style={makeAnim(Math.min(6 + i, 9))}>
             <TransactionRow
               type={
@@ -552,6 +559,17 @@ export default function OfficeDashboardScreen() {
             />
           </Animated.View>
         ))}
+        {transactions.length > listLimit && (
+          <TouchableOpacity
+            accessibilityRole="button"
+            onPress={() => setListLimit((n) => n + 20)}
+            style={{ alignItems: "center", paddingVertical: 12 }}
+          >
+            <Text style={{ color: colors.primary, fontWeight: "600" }}>
+              Show {Math.min(20, transactions.length - listLimit)} more of today's ({transactions.length - listLimit} left)
+            </Text>
+          </TouchableOpacity>
+        )}
         <View style={{ height: 100 }} />
       </ScrollView>
     </View>

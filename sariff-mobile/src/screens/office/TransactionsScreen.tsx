@@ -72,8 +72,13 @@ export default function TransactionsScreen() {
 
   // One request per keystroke or filter tap: only the answer for what is on screen now may fill the list.
   const listSeq = useRef(0);
+  // The list's end can be reached several times while page N+1 is still loading: without
+  // this, page N+1 was fetched and appended twice (every row of it shown twice).
+  const loadingMore = useRef(false);
   const loadTxns = useCallback(async (p = 1, append = false) => {
+    if (append && loadingMore.current) return;
     const seq = append ? listSeq.current : ++listSeq.current;
+    if (append) loadingMore.current = true;
     try {
       const filters: any = {};
       if (searchText.trim()) filters.search = searchText.trim();
@@ -82,8 +87,15 @@ export default function TransactionsScreen() {
       if (filter === 'debit') filters.type = TransactionType.Debit;
       const r = await api.getTransactions(p, 25, Object.keys(filters).length > 0 ? filters : undefined);
       if (seq !== listSeq.current) return;
-      if (r.success && r.data) { setTxns(prev => append ? [...prev, ...(r.data.items || [])] : (r.data.items || [])); setTotalPages(r.data.totalPages || 1); setPage(p); }
-    } catch {}
+      if (r.success && r.data) {
+        setTxns(prev => {
+          if (!append) return r.data.items || [];
+          const seen = new Set(prev.map(t => t.id));   // a posting made meanwhile shifts pages: no row twice
+          return [...prev, ...(r.data.items || []).filter((t: any) => !seen.has(t.id))];
+        });
+        setTotalPages(r.data.totalPages || 1); setPage(p);
+      }
+    } catch {} finally { if (append) loadingMore.current = false; }
   }, [searchText, filterCurrency, filter]);
   const loadAccs = useCallback(async () => {
     try { const [c, b, m, cl] = await Promise.all([api.getCashAccounts(), api.getBankAccounts(), api.getMpesaAgents(), api.getAllClients()]);
