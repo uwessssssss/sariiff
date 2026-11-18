@@ -410,3 +410,18 @@ What proving turned up:
 | AU5 | Was "[Likely], not proven on a device". Proven: without crypto.getRandomValues the old phone secret was 48 identical digits from Math.random plus the time |
 
 Limits, stated plainly: these tests run the screens' logic and text in Node, not pixels in a browser or on a handset. Layout, fonts, colours on a real device, the SMS autofill prompt and biometric prompts are outside them.
+
+## 18 Nov: reported by the owner
+
+Each proven in tests/screens/latest-web.test.js and latest-phone.test.js: CI runs them on the app before the change (4556a36), where each fails on the defect, and on the app now.
+
+| Id | Defect | Fix |
+|---|---|---|
+| M37 | Phone dashboard showed few transactions: it used the dashboard's 10 latest postings and drew at most 8, so on a busy day most of today's were missing (the web asks for 200 and lists all of today's) | Loads the same 200 latest, lists every one of today's, 20 at a time, heading with the count |
+| M38 | Phone transactions: reaching the list's end twice while page 2 loaded fetched and showed page 2 twice | One page load at a time; no row added twice |
+| W68 | Balance alerts had no web screen (the API and the phone had them) | Balance alerts tab in Edit client: list, pause, remove, add (below or above, any allowed currency); bureau-wide rules shown apart |
+| W67 / M36 | Edit client could not remove an email or ID: an emptied box was sent as "no change" (web and phone) | Sent as empty, which the server clears |
+| W69 | No screen could set a client inactive, though the server supports it (and signs the client out) | Active switch in Edit client, with what it does |
+| W70 | Edit client: Save pressable with nothing changed; an empty name or number was sent and refused by the server with no hint on the form | Save off until something changes; required fields marked; warning that a new number unlinks the phone login |
+
+Known limit: the dashboard lists today's postings among the 200 latest, on the web and now the phone. A bureau with more than 200 postings in a day sees the newest 200 there; the Transactions screen has them all.
