@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { SarifMark } from "@/components/SarifMark";
@@ -46,6 +47,16 @@ export default function LoginPage() {
 
   // Step 2 — verification code
   const [step, setStep] = useState<"credentials" | "otp">("credentials");
+  // While the person reads the SMS and types the code, fetch the dashboard's code in the
+  // background: after the code is accepted the page opens at once instead of downloading
+  // ~140 KB of JavaScript first (seconds on a phone connection).
+  const router = useRouter();
+  useEffect(() => {
+    if (step !== "otp") return;
+    for (const path of ["/office/dashboard", "/client/dashboard", "/admin/dashboard"]) {
+      try { router.prefetch(path); } catch { /* prefetch is best-effort */ }
+    }
+  }, [step, router]);
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [cooldown, setCooldown] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);

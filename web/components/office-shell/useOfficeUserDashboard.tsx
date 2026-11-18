@@ -9,7 +9,7 @@ import { foreignCurrenciesFor, useBaseCurrency } from "@/lib/useBaseCurrency";
 import { toast } from "sonner";
 import { ui } from "../office/theme";
 import { useAuth } from "@/providers/AuthProvider";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /** All of OfficeUserDashboard's state, effects and handlers. The screen and its sections read them from here. */
 export function useOfficeUserDashboard({
@@ -48,7 +48,7 @@ export function useOfficeUserDashboard({
   // would otherwise sit empty for a bureau not using that currency.
   const [activeCurrencies, setActiveCurrencies] = useState<number[]>([0, 1]);
   // Home currency (KES / UGX): rates are "home per 1 foreign"
-  const { base, baseCode } = useBaseCurrency();
+  const { base, baseCode, loaded: baseLoaded } = useBaseCurrency();
   const [totalIn, setTotalIn] = useState<string>("USD");
   // 0 = no USD rate set. It used to start at 129 (a KES rate), so a bureau with no
   // rate — or a Ugandan one — saw a made-up "Everything in USD" total.
@@ -56,6 +56,10 @@ export function useOfficeUserDashboard({
   // Home-currency value of 1 unit of each other foreign currency (mid rate), when set
   const [otherRates, setOtherRates] = useState<Record<number, number>>({});
   const [rateEdited, setRateEdited] = useState(false);
+  // Read inside the 60-second refresh without making it a dependency (editing the rate
+  // used to reload the whole dashboard).
+  const rateEditedRef = useRef(rateEdited);
+  rateEditedRef.current = rateEdited;
   useEffect(() => setActiveTab(initialTab), [initialTab]);
   // Collapse the sidebar to icons on tablet widths, expand on laptops.
   useEffect(() => {
@@ -72,6 +76,11 @@ export function useOfficeUserDashboard({
     window.history.replaceState(null, "", href);
   }, []);
   // -------------------------------------------------------------- data
+  // Each answer is shown as soon as it lands: the figures used to wait for the slowest of
+  // three requests (the 100 latest postings, each with its account names). And nothing here
+  // depends on the home currency, so the first load is no longer thrown away and repeated
+  // when the home currency arrives (a Ugandan bureau loaded the whole dashboard twice after
+  // every sign-in). The foreign rates that do depend on it load in their own effect below.
   const fetchDashboardData = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -83,65 +92,53 @@ export function useOfficeUserDashboard({
         })
         .catch(() => {});
 
-      const [statsResult, txnResult, rateResult] = await Promise.all([
-        getDashboardStats(),
-        getRecentTransactions(200),
-        getCurrentExchangeRate(),
-      ]);
-
-      setStats(statsResult.success && statsResult.data ? statsResult.data : EMPTY_STATS);
-
-      if (txnResult.success && txnResult.data) {
-        // Keep only today's (local date; avoids UTC mismatch). Uses the
-        // business date (transactionDate), falling back to createdAt.
-        const today = new Date().toLocaleDateString("en-CA");
-        const items = txnResult.data
-          .filter(
-            (t: TransactionDto) =>
-              new Date(t.transactionDate || t.createdAt).toLocaleDateString("en-CA") === today,
-          )
-          .sort(
-            (a: TransactionDto, b: TransactionDto) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          )
-          .map((t: TransactionDto): TodayTxn => {
-            const isDebit = t.transactionType === 0;
-            // Client accounts: credit = money in for the client.
-            // Asset accounts (cash, bank, M-Pesa): debit = money in.
-            const isClient = t.sourceAccountType === 3;
-            return {
-              code: t.code,
-              reference: t.reference,
-              time: t.createdAt,
-              description: t.description,
-              account: t.sourceAccountName || "—",
-              otherSide: t.destAccountName || "—",
-              amount: t.amount,
-              currency: getCurrencyLabel(t.currency),
-              isDebit,
-              isMoneyIn: isClient ? !isDebit : isDebit,
-              reversed: !!(t.isReversed || t.isReversal),
-            };
-          });
-        setTodayTxns(items);
-      }
-
-      if (!rateEdited) {
-        setExchangeRate(
-          rateResult.success && rateResult.data ? (rateResult.data.buyRate + rateResult.data.sellRate) / 2 : 0,
-        );
-      }
-      // Other foreign rates (optional) — used to fold them into "Everything in"
-      const others = foreignCurrenciesFor(base).filter((c) => c !== 1);
-      const extra = await Promise.all(
-        others.map((c) => getCurrentExchangeRate(c).catch(() => null)),
-      );
-      const nextRates: Record<number, number> = {};
-      others.forEach((c, i) => {
-        const r = extra[i];
-        if (r && r.success && r.data) nextRates[c] = (r.data.buyRate + r.data.sellRate) / 2;
+      const statsP = getDashboardStats().then((statsResult) => {
+        setStats(statsResult.success && statsResult.data ? statsResult.data : EMPTY_STATS);
       });
-      setOtherRates(nextRates);
+      const txnP = getRecentTransactions(100).then((txnResult) => {
+        if (txnResult.success && txnResult.data) {
+          // Keep only today's (local date; avoids UTC mismatch). Uses the
+          // business date (transactionDate), falling back to createdAt.
+          const today = new Date().toLocaleDateString("en-CA");
+          const items = txnResult.data
+            .filter(
+              (t: TransactionDto) =>
+                new Date(t.transactionDate || t.createdAt).toLocaleDateString("en-CA") === today,
+            )
+            .sort(
+              (a: TransactionDto, b: TransactionDto) =>
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            )
+            .map((t: TransactionDto): TodayTxn => {
+              const isDebit = t.transactionType === 0;
+              // Client accounts: credit = money in for the client.
+              // Asset accounts (cash, bank, M-Pesa): debit = money in.
+              const isClient = t.sourceAccountType === 3;
+              return {
+                code: t.code,
+                reference: t.reference,
+                time: t.createdAt,
+                description: t.description,
+                account: t.sourceAccountName || "—",
+                otherSide: t.destAccountName || "—",
+                amount: t.amount,
+                currency: getCurrencyLabel(t.currency),
+                isDebit,
+                isMoneyIn: isClient ? !isDebit : isDebit,
+                reversed: !!(t.isReversed || t.isReversal),
+              };
+            });
+          setTodayTxns(items);
+        }
+      });
+      const rateP = getCurrentExchangeRate().then((rateResult) => {
+        if (!rateEditedRef.current) {
+          setExchangeRate(
+            rateResult.success && rateResult.data ? (rateResult.data.buyRate + rateResult.data.sellRate) / 2 : 0,
+          );
+        }
+      });
+      await Promise.all([statsP, txnP, rateP]);
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -150,7 +147,24 @@ export function useOfficeUserDashboard({
     } finally {
       setRefreshing(false);
     }
-  }, [rateEdited, base]);
+  }, []);
+  // Other foreign rates (EUR, KES at a Ugandan bureau, ...), used to fold them into
+  // "Everything in": these depend on the home currency, so they wait for it.
+  useEffect(() => {
+    if (!baseLoaded) return;
+    let current = true;
+    const others = foreignCurrenciesFor(base).filter((c) => c !== 1);
+    Promise.all(others.map((c) => getCurrentExchangeRate(c).catch(() => null))).then((extra) => {
+      if (!current) return;
+      const nextRates: Record<number, number> = {};
+      others.forEach((c, i) => {
+        const r = extra[i];
+        if (r && r.success && r.data) nextRates[c] = (r.data.buyRate + r.data.sellRate) / 2;
+      });
+      setOtherRates(nextRates);
+    });
+    return () => { current = false; };
+  }, [base, baseLoaded]);
   useEffect(() => {
     fetchDashboardData();
     const interval = setInterval(fetchDashboardData, 60000);
@@ -401,6 +415,7 @@ export function useOfficeUserDashboard({
                   <button
                     onClick={() => {
                       setRateEdited(false);
+                      rateEditedRef.current = false;   // before the reload reads it
                       fetchDashboardData();
                     }}
                     className="h-10 shrink-0 rounded-lg px-3 text-sm font-medium text-blue-300 hover:bg-white/10"

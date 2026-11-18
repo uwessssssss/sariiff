@@ -417,11 +417,26 @@ Each proven in tests/screens/latest-web.test.js and latest-phone.test.js: CI run
 
 | Id | Defect | Fix |
 |---|---|---|
-| M37 | Phone dashboard showed few transactions: it used the dashboard's 10 latest postings and drew at most 8, so on a busy day most of today's were missing (the web asks for 200 and lists all of today's) | Loads the same 200 latest, lists every one of today's, 20 at a time, heading with the count |
+| M37 | Phone dashboard showed few transactions: it used the dashboard's 10 latest postings and drew at most 8, so on a busy day most of today's were missing (the web asks for 200 and lists all of today's) | Loads the latest 100 (the server's cap; the web asked for 200 and got 100 too), lists every one of today's, 20 at a time, heading with the count |
 | M38 | Phone transactions: reaching the list's end twice while page 2 loaded fetched and showed page 2 twice | One page load at a time; no row added twice |
 | W68 | Balance alerts had no web screen (the API and the phone had them) | Balance alerts tab in Edit client: list, pause, remove, add (below or above, any allowed currency); bureau-wide rules shown apart |
 | W67 / M36 | Edit client could not remove an email or ID: an emptied box was sent as "no change" (web and phone) | Sent as empty, which the server clears |
 | W69 | No screen could set a client inactive, though the server supports it (and signs the client out) | Active switch in Edit client, with what it does |
 | W70 | Edit client: Save pressable with nothing changed; an empty name or number was sent and refused by the server with no hint on the form | Save off until something changes; required fields marked; warning that a new number unlinks the phone login |
 
-Known limit: the dashboard lists today's postings among the 200 latest, on the web and now the phone. A bureau with more than 200 postings in a day sees the newest 200 there; the Transactions screen has them all.
+Known limit (corrected 19 Nov: the server caps "recent" at 100, not 200 as written here first): the dashboard lists today's postings among the 100 latest, on the web and the phone. A bureau with more than 100 postings in a day sees the newest 100 there; the Transactions screen has them all.
+
+
+## 19 Nov: office dashboard slow to open after the SMS code
+
+Each proven in tests/screens/nov19-*.test.js, run in CI on the app before (108c9b0), where each fails, and now.
+
+| Id | Cause | Fix |
+|---|---|---|
+| W71 | Web: the dashboard load depended on the home currency, which is reset at every sign-in. It loaded with KES, then the home currency arrived and the whole dashboard (figures, 100 postings, rates) was thrown away and loaded again. Every sign-in at a Ugandan bureau paid for two loads | The figures do not depend on it; only the extra foreign rates wait for it, in their own request |
+| W72 | Web: the figures waited for the slowest of three requests (the latest postings, each with account names) | Each part is shown as it arrives |
+| W73 | Web: after the code was accepted the browser first downloaded the dashboard's JavaScript (~140 KB) | Fetched in the background while the SMS code is typed |
+| M39 | Phone: my 18 Nov change (M37) made the dashboard wait for the latest postings as well as the figures, and the sections faded in only after every request. A regression I introduced | Figures show and fade in as soon as they arrive; today's list fills in after |
+| W74 | Web: "Use today's rate" after typing a rate: found while changing the load; the reload now reads the reset flag correctly | Reset before the reload |
+
+Not changed, and probably part of what you feel on Render: each request crosses from East Africa to the server and back. The server answers the dashboard in about 25 ms in the CI measurement; the rest of the wait is the network and the device.

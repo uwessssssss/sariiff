@@ -89,15 +89,17 @@ export default function OfficeDashboardScreen() {
         })
         .catch(() => {});
 
-      // The dashboard sends only its 10 latest postings: on a busy day most of today's were
-      // missing here (and at most 8 were drawn), while the web lists every one of today's.
-      // Ask for the same 200 latest the web asks for and keep today's.
-      const [statsRes, recentRes] = await Promise.all([
-        api.getDashboardStats(),
-        api.getRecentTransactions(200).catch(() => null),
-      ]);
+      // The dashboard's figures are shown as soon as they arrive; today's list fills in when
+      // the latest postings land (they come with account names, so they are the slower
+      // answer: waiting for both kept the whole screen on its spinner after sign-in).
+      // The dashboard itself sends only its 10 latest postings and the list used to draw at
+      // most 8 of them, so ask for the latest 100 (the most the server gives) and keep today's.
+      const recentP = api.getRecentTransactions(100).catch(() => null);
+      const statsRes = await api.getDashboardStats();
       if (statsRes.success) {
         setStats(statsRes.data);
+        setLoading(false);
+        const recentRes = await recentP;
         const recent: TransactionDto[] =
           recentRes && recentRes.success && Array.isArray(recentRes.data)
             ? recentRes.data
@@ -141,9 +143,17 @@ export default function OfficeDashboardScreen() {
       }
       await loadData();
       setLoading(false);
-      animateIn();
     })();
   }, []);
+  // Fade the sections in the moment there is something to show (the cache, or the
+  // dashboard's figures). It used to wait for every request, today's list included, so
+  // the screen stayed blank after sign-in although the figures had arrived.
+  const animated = useRef(false);
+  useEffect(() => {
+    if (loading || animated.current) return;
+    animated.current = true;
+    animateIn();
+  }, [loading]);
 
   const onRefresh = async () => {
     setRefreshing(true);

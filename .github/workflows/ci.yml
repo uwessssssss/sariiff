@@ -178,6 +178,18 @@ jobs:
           mkdir -p "$RUNNER_TEMP/before3" && git archive FETCH_HEAD web sariff-mobile/src | tar -x -C "$RUNNER_TEMP/before3"
           node SARIFF-Backend/tests/screens/latest-web.test.js "$RUNNER_TEMP/before3/web" "$PWD/web" --expect-fail
           TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/latest-phone.test.js "$RUNNER_TEMP/before3/sariff-mobile/src" "$PWD/web" --expect-fail
+      - name: Screen tests, 19 Nov dashboard after sign-in (every one must pass)
+        if: success() || failure()
+        run: |
+          node SARIFF-Backend/tests/screens/nov19-web.test.js "$PWD/web"
+          TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/nov19-phone.test.js "$PWD/sariff-mobile/src" "$PWD/web"
+      - name: Proof — the 19 Nov tests on the app as it was before (every one must fail)
+        if: success() || failure()
+        run: |
+          git fetch --depth=1 origin 108c9b0b24e94ef6e5384622ff3001aea333e68a
+          mkdir -p "$RUNNER_TEMP/before4" && git archive FETCH_HEAD web sariff-mobile/src | tar -x -C "$RUNNER_TEMP/before4"
+          node SARIFF-Backend/tests/screens/nov19-web.test.js "$RUNNER_TEMP/before4/web" "$PWD/web" --expect-fail
+          TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/nov19-phone.test.js "$RUNNER_TEMP/before4/sariff-mobile/src" "$PWD/web" --expect-fail
 
   mobile:
     runs-on: ubuntu-24.04
