@@ -10,7 +10,7 @@ import { type ClientManagementVM } from "../useClientManagement";
 import { BalanceAlertsPanel } from "./BalanceAlertsPanel";
 
 const inputClass =
-  "rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all";
+  "rounded-lg w-full px-4 py-3 bg-white border border-slate-200 text-slate-900 font-medium placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all";
 
 export function EditModal({ vm }: { vm: ClientManagementVM }) {
   const { allowedCurrencies, editFormData, fetchClients, handleUpdateClient, homeCurrency, isSubmitting, samples, selectedClient, setEditFormData, setSelectedClient, setShowConvertModal, setShowDeleteConfirm, setShowEditModal, showEditModal } = vm;
