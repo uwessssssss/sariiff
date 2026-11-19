@@ -157,6 +157,29 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   if (exp?.data?.id)
     await op("Delete the rent expense (reversal)", () => api("DELETE", `/api/expense/${exp.data.id}`, T),
       [{ label: "till", read: () => bal.cash(TILL), delta: 20000 }]);
+  // ---------- mobile money commission on the real database (19 Nov): income gross, tax recoverable
+  const income = async (cur) => (list((await get("/api/income/summary"))?.byCurrency).find((r) => r.currency === cur)) || {};
+  const ugx0 = await income(UGX);
+  const com = await op("Commission UGX 50,000 earned, 5,000 tax withheld, paid into MTN",
+    () => api("POST", "/api/income/commission", T, { destAccountType: Acc.Mpesa, destAccountId: MTN, currency: UGX, grossAmount: 50000, withholdingTax: 5000, reference: "MTN-COM-OCT" }),
+    [{ label: "MTN wallet", read: () => bal.wallet(MTN), delta: 45000 }]);
+  const ugx1 = await income(UGX);
+  check("Commission is income, gross: UGX +50,000", eq(round2((ugx1.commissionGross ?? NaN) - (ugx0.commissionGross ?? 0)), 50000), JSON.stringify(ugx1));
+  check("Tax withheld is recoverable: UGX +5,000", eq(round2((ugx1.withholdingTaxRecoverable ?? NaN) - (ugx0.withholdingTaxRecoverable ?? 0)), 5000), JSON.stringify(ugx1));
+  check("E-float in the summary = the wallets' balances", eq(ugx1.eFloat, round2(list(await get("/api/mpesa")).filter((w) => w.isActive && (w.currency ?? UGX) === UGX).reduce((t, w) => t + w.balance, 0))), JSON.stringify(ugx1));
+  await refused("Commission whose tax is not less than it",
+    () => api("POST", "/api/income/commission", T, { destAccountType: Acc.Mpesa, destAccountId: MTN, currency: UGX, grossAmount: 1000, withholdingTax: 1000 }),
+    [() => bal.wallet(MTN)]);
+  await op("Commission KES 3,000 (300 tax) into the M-Pesa (KES) wallet",
+    () => api("POST", "/api/income/commission", T, { destAccountType: Acc.Mpesa, destAccountId: MPESA, currency: Cur.KES, grossAmount: 3000, withholdingTax: 300 }),
+    [{ label: "M-Pesa wallet", read: () => bal.wallet(MPESA), delta: 2700 }]);
+  if (com?.data?.taxPosting?.id) {
+    await op("Reverse the commission's tax posting",
+      () => api("DELETE", `/api/transaction/${com.data.taxPosting.id}`, T, { reason: "Wrong tax amount" }),
+      [{ label: "MTN wallet (untouched)", read: () => bal.wallet(MTN), delta: 0 }]);
+    const ugx2 = await income(UGX);
+    check("…the tax to claim and the gross both drop by 5,000", eq(round2(ugx1.withholdingTaxRecoverable - ugx2.withholdingTaxRecoverable), 5000) && eq(round2(ugx1.commissionGross - ugx2.commissionGross), 5000), JSON.stringify(ugx2));
+  }
   await refused("Expense larger than the account holds",
     () => api("POST", "/api/expense", T, { categoryId: cat.data?.id, description: "Too big", vendorPayee: null, amount: 999999999, currency: UGX, paymentMethod: 0, paymentAccountType: Acc.Cash, paymentAccountId: TILL, reference: null, expenseDate: new Date().toISOString() }),
     [() => bal.cash(TILL)]);
