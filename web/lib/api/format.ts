@@ -39,6 +39,8 @@ export function getAccountTypeLabel(type: AccountType): string {
     [AccountType.Mpesa]: "Mobile money",
     [AccountType.Client]: "Client",
     [AccountType.Expense]: "Expense",
+    [AccountType.Income]: "Income",
+    [AccountType.TaxRecoverable]: "Withholding tax",
   };
   return labels[type] || "Unknown";
 }

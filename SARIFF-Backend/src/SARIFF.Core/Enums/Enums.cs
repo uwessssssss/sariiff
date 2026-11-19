@@ -62,7 +62,17 @@ public enum AccountType
     Bank = 1,
     Mpesa = 2,
     Client = 3,
-    Expense = 4 
+    Expense = 4,
+    /// <summary>
+    /// Income the bureau earns: mobile money commission, fees charged to clients, other.
+    /// Keeps no stored balance (like Expense); the account id is one of IncomeAccounts' fixed ids.
+    /// </summary>
+    Income = 5,
+    /// <summary>
+    /// Withholding tax the network kept from commission: an asset, a credit against the
+    /// bureau's income tax. No stored balance; the id is IncomeAccounts.WithholdingTax.
+    /// </summary>
+    TaxRecoverable = 6
 }
 
 /// <summary>

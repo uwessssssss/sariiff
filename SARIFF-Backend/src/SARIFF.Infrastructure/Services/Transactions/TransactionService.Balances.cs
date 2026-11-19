@@ -57,6 +57,8 @@ public partial class TransactionService
             // (Any id used to be accepted: cash could leave a till against nothing.)
             AccountType.Expense => await _context.ExpenseCategories.AnyAsync(c => c.Id == accountId && c.CompanyId == companyId && !c.IsDeleted)
                 ? 0m : null,
+            // Income and withholding-tax accounts keep no balance either; only the fixed ids exist.
+            AccountType.Income or AccountType.TaxRecoverable => IncomeAccounts.Known(type, accountId) ? 0m : null,
             _ => null
         };
     }
@@ -123,7 +125,9 @@ public partial class TransactionService
                 }
                 break;
             case AccountType.Expense:
-                // Expense categories don't track running balance - no update needed
+            case AccountType.Income:
+            case AccountType.TaxRecoverable:
+                // These don't track a running balance - no update needed
                 break;
         }
     }
@@ -152,6 +156,8 @@ public partial class TransactionService
         AccountType.Bank => "bank account",
         AccountType.Mpesa => "mobile money account",
         AccountType.Client => "client account",
+        AccountType.Income => "income account",
+        AccountType.TaxRecoverable => "withholding tax account",
         _ => "account"
     };
 
@@ -209,6 +215,7 @@ public partial class TransactionService
             AccountType.Client => await _context.Users.Where(u => u.Id == accountId).Select(u => u.FullName).FirstOrDefaultAsync() ?? "Client",
             // Expense postings point at their category: show its name, not "Unknown".
             AccountType.Expense => await _context.ExpenseCategories.Where(c => c.Id == accountId).Select(c => c.Name).FirstOrDefaultAsync() ?? "Expense",
+            AccountType.Income or AccountType.TaxRecoverable => IncomeAccounts.Name(type, accountId),
             _ => "Unknown"
         };
     }

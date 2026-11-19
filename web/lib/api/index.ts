@@ -17,3 +17,4 @@ export * from "./reports";
 export * from "./format";
 export * from "./alerts";
 export * from "./identity";
+export * from "./income";

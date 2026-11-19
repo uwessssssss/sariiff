@@ -264,6 +264,11 @@ public class StatementHelper
                 accountName = $"Cash {relatedCurrency}";
                 accountCode = "CASH";
                 break;
+            case AccountType.Income:
+            case AccountType.TaxRecoverable:
+                accountName = IncomeAccounts.Name(relatedType, relatedId);
+                accountCode = relatedType == AccountType.Income ? "INCOME" : "WHT";
+                break;
         }
 
         return new RelatedAccountDto(
@@ -421,6 +426,8 @@ public class StatementHelper
             AccountType.Mpesa => true,
             AccountType.Client => false,
             AccountType.Expense => false, // Expense accounts are not asset accounts
+            AccountType.Income => false,
+            AccountType.TaxRecoverable => false,
             _ => true
         };
     }

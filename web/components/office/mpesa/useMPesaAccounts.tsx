@@ -170,6 +170,10 @@ export function useMPesaAccounts() {
     setIsLoading(false);
     toast.success("Data refreshed!");
   };
+  // After commission lands in a wallet: new balances, without the spinner or a toast.
+  const reloadQuietly = useCallback(async () => {
+    await Promise.all([fetchAgents(), fetchStats()]);
+  }, [fetchAgents, fetchStats]);
   // Create new M-Pesa agent
   const handleCreateAgent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -399,6 +403,7 @@ export function useMPesaAccounts() {
     fetchAgents,
     fetchStats,
     handleRefresh,
+    reloadQuietly,
     handleCreateAgent,
     handleUpdateAgent,
     handleDeleteAgent,

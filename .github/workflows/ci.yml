@@ -183,6 +183,8 @@ jobs:
         run: |
           node SARIFF-Backend/tests/screens/nov19-web.test.js "$PWD/web"
           TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/nov19-phone.test.js "$PWD/sariff-mobile/src" "$PWD/web"
+          node SARIFF-Backend/tests/screens/income-web.test.js "$PWD/web"
+          TZ=Africa/Nairobi node SARIFF-Backend/tests/screens/income-phone.test.js "$PWD/sariff-mobile/src" "$PWD/web"
       - name: Proof — the 19 Nov tests on the app as it was before (every one must fail)
         if: success() || failure()
         run: |

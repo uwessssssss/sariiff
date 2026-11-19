@@ -375,3 +375,10 @@ public interface IClientIdentityService
     /// <summary>Remove trusted devices after a password change at any linked bureau.</summary>
     Task ForgetDevicesForClientAsync(Guid clientId);
 }
+
+/// <summary>Income the bureau earns: mobile money commission (with withholding tax) and its summary.</summary>
+public interface ICommissionService
+{
+    Task<ApiResponse<CommissionResultDto>> RecordAsync(Guid companyId, Guid userId, RecordCommissionDto dto);
+    Task<ApiResponse<IncomeSummaryDto>> SummaryAsync(Guid companyId, DateTime? from, DateTime? to);
+}

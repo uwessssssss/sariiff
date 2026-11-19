@@ -440,3 +440,27 @@ Each proven in tests/screens/nov19-*.test.js, run in CI on the app before (108c9
 | W74 | Web: "Use today's rate" after typing a rate: found while changing the load; the reload now reads the reset flag correctly | Reset before the reload |
 
 Not changed, and probably part of what you feel on Render: each request crosses from East Africa to the server and back. The server answers the dashboard in about 25 ms in the CI measurement; the rest of the wait is the network and the device.
+
+## 19 Nov: mobile money commission, withholding tax and float (owner's question)
+
+Owner: "how will mobile money commission be treated in terms of debit and credit? How about floats? What else did I forget?"
+Finding before the change: the word "commission" appeared nowhere in the backend, and there was no income account type (Cash, Bank, Mpesa, Client, Expense only). Commission could only be booked as a negative expense.
+
+A new feature, not a defect fix, so there is no "before" to prove against. Its tests are acceptance tests on the current code.
+
+| Item | What it does | Tests |
+|---|---|---|
+| Income and withholding-tax account types (5, 6) | Fixed accounts (`IncomeAccounts`: commission, fees, other; withholding tax). They keep no stored balance, like Expense, so **no table and no migration**. Old rows and old apps are unaffected | xUnit CommissionTests |
+| Record commission (`POST /api/income/commission`) | Gross G, tax W into a wallet, bank or till: Dr destination G−W / Cr commission income G−W, and Dr withholding tax W / Cr commission income W. Income is recorded gross. Both postings commit or neither. Transaction PIN is enforced when switched on | xUnit; web I1, I2; phone I4, I5 |
+| Income and float summary (`GET /api/income/summary`) | Per currency, never added across: commission gross/tax/net and fees for the period (this month by default); tax still to claim (all time); e-float (active wallets) and cash on hand now | xUnit; web I3 |
+| Fee charged to a client | Generic posting: source Income (Fees), destination client → Dr client, Cr fee income | xUnit |
+| Customer cash-in / cash-out | Unchanged: swaps cash for e-float, earns nothing; the total float is unchanged | xUnit |
+| Reversal | Reversing the net posting and the tax posting takes the commission out of income and the wallet | xUnit |
+| Labels | Web and phone show "Income" and "Withholding tax" instead of "Unknown" | — |
+
+Known limits, stated plainly:
+- Cash basis: commission is recorded when the network pays it. Accruing it at month end (a commission receivable) is not built.
+- Reversing the net posting does not reverse the tax posting automatically; both must be reversed.
+- Claiming the tax back (offsetting it against income tax) has no screen yet; the amount to claim is shown.
+- Withholding-tax rates are not coded in; staff enter the amount from the network's statement.
+- The phone records commission (long-press a wallet) but does not show the summary table yet; the web does.

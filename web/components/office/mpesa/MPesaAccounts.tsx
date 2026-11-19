@@ -13,6 +13,7 @@ import { AgentsTable } from "./sections/AgentsTable";
 import { AddAgentPanel } from "./sections/AddAgentPanel";
 import { EditAgentPanel } from "./sections/EditAgentPanel";
 import { DeleteAgentPanel } from "./sections/DeleteAgentPanel";
+import { CommissionPanel } from "./sections/CommissionPanel";
 
 export function MPesaAccounts() {
   const vm = useMPesaAccounts();
@@ -75,6 +76,9 @@ export function MPesaAccounts() {
           ))}
         </div>
       )}
+
+      {/* Commission (income, gross; tax withheld is claimed back) and e-float vs cash */}
+      <CommissionPanel agents={allAgents} onRecorded={vm.reloadQuietly} />
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-3">

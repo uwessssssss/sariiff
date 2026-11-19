@@ -72,7 +72,7 @@ export interface DialogTxn {
 
 // ---------- shared rules & formatting ----------
 
-const ACCOUNT_TYPE_LABEL: Record<number, string> = { 0: "Cash", 1: "Bank account", 2: "Mobile money", 3: "Client", 4: "Expense" };
+const ACCOUNT_TYPE_LABEL: Record<number, string> = { 0: "Cash", 1: "Bank account", 2: "Mobile money", 3: "Client", 4: "Expense", 5: "Income", 6: "Withholding tax" };
 const KIND_LABEL: Record<LedgerKind, string> = { client: "Client account", bank: "Bank account", mpesa: "Mobile money", cash: "Cash" };
 const KIND_TYPE: Record<LedgerKind, number> = { cash: 0, bank: 1, mpesa: 2, client: 3 };
 const CURRENCY_NAME: Record<string, string> = { KES: "Kenyan shilling", USD: "US dollar", UGX: "Ugandan shilling", EUR: "Euro" };

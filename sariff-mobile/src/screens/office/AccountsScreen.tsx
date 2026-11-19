@@ -115,6 +115,45 @@ export default function AccountsScreen() {
     setFormLoading(false);
   };
 
+  // ---- Mobile money commission: income, recorded gross; the tax the network kept is claimed back.
+  const [commissionFor, setCommissionFor] = useState<MpesaAgentDto | null>(null);
+  const [comGross, setComGross] = useState('');
+  const [comTax, setComTax] = useState('');
+  const [comRef, setComRef] = useState('');
+  const [comPin, setComPin] = useState<string | null>(null);   // null = no PIN asked
+  const [comBusy, setComBusy] = useState(false);
+  const openCommission = (a: MpesaAgentDto) => { setCommissionFor(a); setComGross(''); setComTax(''); setComRef(''); setComPin(null); };
+  const comG = parseAmount(comGross);
+  const comT = comTax.trim() === '' ? 0 : parseAmount(comTax);
+  const comProblem = comGross.trim() === '' ? null
+    : !(comG > 0) ? 'Enter the commission earned as a number above zero.'
+    : Number.isNaN(comT) || comT < 0 ? 'Enter the tax withheld as a number, or leave it empty.'
+    : comT >= comG ? 'Tax withheld must be less than the commission earned.' : null;
+  const comReady = comG > 0 && !Number.isNaN(comT) && comT >= 0 && comT < comG;
+  const handleRecordCommission = async () => {
+    const a = commissionFor;
+    if (!a || !comReady) return;
+    const cur = (a as any).currency ?? base;
+    setComBusy(true);
+    try {
+      if (comPin === null) {
+        const st = await api.getTransactionPinStatus();
+        if (st.success && st.data?.isEnabled && st.data?.hasPin) { setComPin(''); return; }   // ask for it, then press again
+      } else {
+        const ok = await api.verifyTransactionPinBackend(comPin);
+        if (!ok.success || ok.data === false) { Toast.show({ type: 'error', text1: 'Wrong PIN', text2: ok.message }); return; }
+      }
+      const res = await api.recordCommission({ destAccountType: 2, destAccountId: a.id, currency: cur, grossAmount: comG, withholdingTax: comT, reference: comRef.trim() || undefined });
+      if (res.success) {
+        Toast.show({ type: 'success', text1: 'Commission recorded', text2: `${formatCurrency(comG - comT, cur)} into ${a.agentName}` });
+        setCommissionFor(null);
+        load();
+      } else Toast.show({ type: 'error', text1: 'Not recorded', text2: res.message });
+    } catch (e: any) {
+      Toast.show({ type: 'error', text1: 'Not recorded', text2: e?.message });
+    } finally { setComBusy(false); }
+  };
+
   const handleCreateMpesa = async () => {
     if (!agentName || !agentPhone || !agentNumber) { Toast.show({ type: 'error', text1: 'Fill required fields' }); return; }
     if (anyBadAmount(mpesaOpenBal)) { Toast.show({ type: 'error', text1: 'Amount not understood', text2: 'Type digits only, e.g. 1500 or 1,500.50' }); return; }
@@ -250,6 +289,7 @@ export default function AccountsScreen() {
           mpesa.map(a => (
             <TouchableOpacity key={a.id} style={[styles.accCard, shadows.sm]} onPress={() => viewStatement('mpesa', a.id, a.agentName)}
               onLongPress={() => Alert.alert(a.agentName, 'Choose action', [
+                { text: 'Record commission', onPress: () => openCommission(a) },
                 { text: 'Edit', onPress: () => openEditMpesa(a) },
                 { text: 'Delete', style: 'destructive', onPress: () => handleDelete('mpesa', a.id, a.agentName) },
                 { text: 'Cancel', style: 'cancel' },
@@ -406,6 +446,23 @@ export default function AccountsScreen() {
           <Input label="" value={cashOpenBal} onChangeText={setCashOpenBal} keyboardType="numeric" icon="cash-outline" placeholder="0.00" />
         </FormSection>
         <ActionBtn title="Create Cash Account" onPress={handleCreateCash} loading={formLoading} icon="checkmark-circle-outline" gradient={['#D97706', '#F59E0B']} />
+      </ModalSheet>
+
+      {/* Record mobile money commission */}
+      <ModalSheet visible={!!commissionFor} onClose={() => setCommissionFor(null)} title="Record commission" icon="cash-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
+        {commissionFor && (() => {
+          const cur = (commissionFor as any).currency ?? base;
+          return (<>
+            <Text style={styles.accMeta}>Paid into {commissionFor.agentName} ({currencyCode(cur)}). Commission is income, recorded gross; tax the network keeps is claimed back.</Text>
+            <Input label={`Commission earned (${currencyCode(cur)})`} value={comGross} onChangeText={setComGross} keyboardType="numeric" icon="cash-outline" placeholder="10,000" />
+            <Input label="Tax withheld (optional)" value={comTax} onChangeText={setComTax} keyboardType="numeric" icon="receipt-outline" placeholder="0" />
+            <Input label="Network reference (optional)" value={comRef} onChangeText={setComRef} icon="document-text-outline" placeholder="" />
+            {comPin !== null && <Input label="Transaction PIN" value={comPin} onChangeText={setComPin} keyboardType="numeric" secureTextEntry icon="lock-closed-outline" placeholder="••••" />}
+            {comProblem ? <Text style={[styles.accMeta, { color: colors.danger }]}>{comProblem}</Text>
+              : comReady ? <Text style={styles.accMeta}>{formatCurrency(comG - comT, cur)} arrives in {commissionFor.agentName}{comT > 0 ? ` · ${formatCurrency(comT, cur)} tax to claim back` : ''}</Text> : null}
+            <ActionBtn title={comPin !== null ? 'Confirm with PIN' : 'Record commission'} onPress={handleRecordCommission} loading={comBusy} disabled={!comReady} icon="checkmark-circle-outline" gradient={['#059669', '#10B981']} />
+          </>);
+        })()}
       </ModalSheet>
     </View>
   );
