@@ -2,7 +2,7 @@ import { type ApiResponse, apiRequest } from "./core";
 import { type AccountType, type Currency } from "./enums";
 
 // ==============================================
-// Income: mobile money commission (recorded gross; the tax the network keeps is a
+// Income: commission, fees, interest, rent, other (recorded gross; tax a payer keeps is a
 // credit to claim back) and the income / float summary, per currency.
 // ==============================================
 
@@ -28,6 +28,34 @@ export interface IncomeCurrencyDto {
   withholdingTaxRecoverable: number; // all time
   eFloat: number; // active wallets now
   cashOnHand: number; // cash tills now
+  netReceived: number; // total income − tax withheld
+  byAccount: IncomeLineDto[]; // each kind of income with something in the period
+}
+
+export interface IncomeLineDto {
+  id: string;
+  name: string;
+  gross: number;
+  withholdingTax: number;
+  net: number;
+}
+
+export interface IncomeAccountDto {
+  id: string;
+  name: string; // Commission, Fee income, Interest received, Rent received, Other income
+}
+
+export interface RecordIncomeDto {
+  incomeAccountId: string;
+  destAccountType: AccountType | number; // till, bank, wallet (or client, for a fee)
+  destAccountId: string;
+  currency: Currency | number;
+  amount: number; // earned, gross
+  withholdingTax: number;
+  date?: string;
+  description?: string;
+  reference?: string;
+  notes?: string;
 }
 
 export interface IncomeSummaryDto {
@@ -46,4 +74,12 @@ export async function getIncomeSummary(startDate?: string, endDate?: string): Pr
   if (endDate) params.append("endDate", endDate);
   const q = params.toString();
   return apiRequest(`/api/income/summary${q ? `?${q}` : ""}`);
+}
+
+export async function getIncomeAccounts(): Promise<ApiResponse<IncomeAccountDto[]>> {
+  return apiRequest("/api/income/accounts");
+}
+
+export async function recordIncome(dto: RecordIncomeDto): Promise<ApiResponse<any>> {
+  return apiRequest("/api/income", { method: "POST", body: JSON.stringify(dto) });
 }

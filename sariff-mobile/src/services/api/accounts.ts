@@ -71,3 +71,8 @@ export const getCashStats = () => apiRequest<any>('/api/cash/stats');
 // Mobile money commission: income, recorded gross; the tax the network kept is claimed back.
 export const recordCommission = (dto: { destAccountType: number; destAccountId: string; currency: number; grossAmount: number; withholdingTax: number; reference?: string }) =>
   apiRequest<any>('/api/income/commission', { method: 'POST', body: JSON.stringify(dto) });
+
+// Any income (commission, fees, interest, rent, other); the kinds come from the server.
+export const getIncomeAccounts = () => apiRequest<{ id: string; name: string }[]>('/api/income/accounts');
+export const recordIncome = (dto: { incomeAccountId: string; destAccountType: number; destAccountId: string; currency: number; amount: number; withholdingTax: number; description?: string; reference?: string }) =>
+  apiRequest<any>('/api/income', { method: 'POST', body: JSON.stringify(dto) });

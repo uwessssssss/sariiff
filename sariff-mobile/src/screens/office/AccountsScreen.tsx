@@ -115,25 +115,39 @@ export default function AccountsScreen() {
     setFormLoading(false);
   };
 
-  // ---- Mobile money commission: income, recorded gross; the tax the network kept is claimed back.
-  const [commissionFor, setCommissionFor] = useState<MpesaAgentDto | null>(null);
+  // ---- Income (commission, fees, interest, rent, other): recorded gross; tax a payer kept is claimed back.
+  type IncomeTarget = { type: number; id: string; name: string; currency: number };
+  const [incomeFor, setIncomeFor] = useState<IncomeTarget | null>(null);
+  const [incomeKinds, setIncomeKinds] = useState<{ id: string; name: string }[]>([]);
+  const [incomeKind, setIncomeKind] = useState('');
   const [comGross, setComGross] = useState('');
   const [comTax, setComTax] = useState('');
   const [comRef, setComRef] = useState('');
   const [comPin, setComPin] = useState<string | null>(null);   // null = no PIN asked
   const [comBusy, setComBusy] = useState(false);
-  const openCommission = (a: MpesaAgentDto) => { setCommissionFor(a); setComGross(''); setComTax(''); setComRef(''); setComPin(null); };
+  const openIncome = async (t: IncomeTarget, preferCommission: boolean) => {
+    setIncomeFor(t); setComGross(''); setComTax(''); setComRef(''); setComPin(null);
+    let kinds = incomeKinds;
+    if (kinds.length === 0) {
+      const r = await api.getIncomeAccounts().catch(() => null);
+      kinds = (r?.success && Array.isArray(r.data)) ? r.data : [];
+      setIncomeKinds(kinds);
+    }
+    const commission = kinds.find(k => /commission/i.test(k.name));
+    const other = kinds.find(k => /other/i.test(k.name));
+    setIncomeKind((preferCommission ? commission : other)?.id ?? kinds[0]?.id ?? '');
+  };
+  const kindName = incomeKinds.find(k => k.id === incomeKind)?.name ?? 'Income';
   const comG = parseAmount(comGross);
   const comT = comTax.trim() === '' ? 0 : parseAmount(comTax);
   const comProblem = comGross.trim() === '' ? null
-    : !(comG > 0) ? 'Enter the commission earned as a number above zero.'
+    : !(comG > 0) ? 'Enter the income as a number above zero.'
     : Number.isNaN(comT) || comT < 0 ? 'Enter the tax withheld as a number, or leave it empty.'
-    : comT >= comG ? 'Tax withheld must be less than the commission earned.' : null;
-  const comReady = comG > 0 && !Number.isNaN(comT) && comT >= 0 && comT < comG;
-  const handleRecordCommission = async () => {
-    const a = commissionFor;
-    if (!a || !comReady) return;
-    const cur = (a as any).currency ?? base;
+    : comT >= comG ? 'Tax withheld must be less than the income.' : null;
+  const comReady = !!incomeKind && comG > 0 && !Number.isNaN(comT) && comT >= 0 && comT < comG;
+  const handleRecordIncome = async () => {
+    const t = incomeFor;
+    if (!t || !comReady) return;
     setComBusy(true);
     try {
       if (comPin === null) {
@@ -143,10 +157,10 @@ export default function AccountsScreen() {
         const ok = await api.verifyTransactionPinBackend(comPin);
         if (!ok.success || ok.data === false) { Toast.show({ type: 'error', text1: 'Wrong PIN', text2: ok.message }); return; }
       }
-      const res = await api.recordCommission({ destAccountType: 2, destAccountId: a.id, currency: cur, grossAmount: comG, withholdingTax: comT, reference: comRef.trim() || undefined });
+      const res = await api.recordIncome({ incomeAccountId: incomeKind, destAccountType: t.type, destAccountId: t.id, currency: t.currency, amount: comG, withholdingTax: comT, reference: comRef.trim() || undefined });
       if (res.success) {
-        Toast.show({ type: 'success', text1: 'Commission recorded', text2: `${formatCurrency(comG - comT, cur)} into ${a.agentName}` });
-        setCommissionFor(null);
+        Toast.show({ type: 'success', text1: `${kindName} recorded`, text2: `${formatCurrency(comG - comT, t.currency)} into ${t.name}` });
+        setIncomeFor(null);
         load();
       } else Toast.show({ type: 'error', text1: 'Not recorded', text2: res.message });
     } catch (e: any) {
@@ -249,6 +263,7 @@ export default function AccountsScreen() {
         {tab === 'cash' && cash.map(a => (
           <TouchableOpacity key={a.id} style={[styles.accCard, shadows.sm]} onPress={() => viewStatement('cash', a.currency, `Cash ${currencyCode(a.currency)}`)}
             onLongPress={() => Alert.alert(`Cash ${currencyCode(a.currency)}`, 'Choose action', [
+              { text: 'Record income', onPress: () => openIncome({ type: 0, id: a.id, name: `Cash ${currencyCode(a.currency)}`, currency: a.currency }, false) },
               { text: 'Delete', style: 'destructive', onPress: () => handleDelete('cash', a.id, `Cash ${currencyCode(a.currency)}`) },
               { text: 'Cancel', style: 'cancel' },
             ])}>
@@ -269,6 +284,7 @@ export default function AccountsScreen() {
           banks.map(a => (
             <TouchableOpacity key={a.id} style={[styles.accCard, shadows.sm]} onPress={() => viewStatement('bank', a.id, a.bankName)}
               onLongPress={() => Alert.alert(a.bankName, 'Choose action', [
+                { text: 'Record income', onPress: () => openIncome({ type: 1, id: a.id, name: a.bankName, currency: (a as any).currency ?? base }, false) },
                 { text: 'Edit', onPress: () => openEditBank(a) },
                 { text: 'Delete', style: 'destructive', onPress: () => handleDelete('bank', a.id, a.bankName) },
                 { text: 'Cancel', style: 'cancel' },
@@ -289,7 +305,7 @@ export default function AccountsScreen() {
           mpesa.map(a => (
             <TouchableOpacity key={a.id} style={[styles.accCard, shadows.sm]} onPress={() => viewStatement('mpesa', a.id, a.agentName)}
               onLongPress={() => Alert.alert(a.agentName, 'Choose action', [
-                { text: 'Record commission', onPress: () => openCommission(a) },
+                { text: 'Record income', onPress: () => openIncome({ type: 2, id: a.id, name: a.agentName, currency: (a as any).currency ?? base }, true) },
                 { text: 'Edit', onPress: () => openEditMpesa(a) },
                 { text: 'Delete', style: 'destructive', onPress: () => handleDelete('mpesa', a.id, a.agentName) },
                 { text: 'Cancel', style: 'cancel' },
@@ -448,21 +464,26 @@ export default function AccountsScreen() {
         <ActionBtn title="Create Cash Account" onPress={handleCreateCash} loading={formLoading} icon="checkmark-circle-outline" gradient={['#D97706', '#F59E0B']} />
       </ModalSheet>
 
-      {/* Record mobile money commission */}
-      <ModalSheet visible={!!commissionFor} onClose={() => setCommissionFor(null)} title="Record commission" icon="cash-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
-        {commissionFor && (() => {
-          const cur = (commissionFor as any).currency ?? base;
-          return (<>
-            <Text style={styles.accMeta}>Paid into {commissionFor.agentName} ({currencyCode(cur)}). Commission is income, recorded gross; tax the network keeps is claimed back.</Text>
-            <Input label={`Commission earned (${currencyCode(cur)})`} value={comGross} onChangeText={setComGross} keyboardType="numeric" icon="cash-outline" placeholder="10,000" />
-            <Input label="Tax withheld (optional)" value={comTax} onChangeText={setComTax} keyboardType="numeric" icon="receipt-outline" placeholder="0" />
-            <Input label="Network reference (optional)" value={comRef} onChangeText={setComRef} icon="document-text-outline" placeholder="" />
-            {comPin !== null && <Input label="Transaction PIN" value={comPin} onChangeText={setComPin} keyboardType="numeric" secureTextEntry icon="lock-closed-outline" placeholder="••••" />}
-            {comProblem ? <Text style={[styles.accMeta, { color: colors.danger }]}>{comProblem}</Text>
-              : comReady ? <Text style={styles.accMeta}>{formatCurrency(comG - comT, cur)} arrives in {commissionFor.agentName}{comT > 0 ? ` · ${formatCurrency(comT, cur)} tax to claim back` : ''}</Text> : null}
-            <ActionBtn title={comPin !== null ? 'Confirm with PIN' : 'Record commission'} onPress={handleRecordCommission} loading={comBusy} disabled={!comReady} icon="checkmark-circle-outline" gradient={['#059669', '#10B981']} />
-          </>);
-        })()}
+      {/* Record income: commission, fees, interest, rent, other */}
+      <ModalSheet visible={!!incomeFor} onClose={() => setIncomeFor(null)} title="Record income" icon="cash-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
+        {incomeFor && (<>
+          <Text style={styles.accMeta}>Into {incomeFor.name} ({currencyCode(incomeFor.currency)}). Income is recorded gross; tax a payer keeps is claimed back.</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
+            {incomeKinds.map(k => (
+              <TouchableOpacity key={k.id} onPress={() => setIncomeKind(k.id)} accessibilityRole="radio" accessibilityState={{ selected: k.id === incomeKind }}
+                style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: k.id === incomeKind ? '#059669' : 'rgba(148,163,184,0.4)', backgroundColor: k.id === incomeKind ? 'rgba(5,150,105,0.15)' : 'transparent' }}>
+                <Text style={{ color: k.id === incomeKind ? '#10B981' : colors.textSecondary, fontWeight: '600' }}>{k.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Input label={`Amount earned (${currencyCode(incomeFor.currency)})`} value={comGross} onChangeText={setComGross} keyboardType="numeric" icon="cash-outline" placeholder="10,000" />
+          <Input label="Tax withheld (optional)" value={comTax} onChangeText={setComTax} keyboardType="numeric" icon="receipt-outline" placeholder="0" />
+          <Input label="Reference (optional)" value={comRef} onChangeText={setComRef} icon="document-text-outline" placeholder="" />
+          {comPin !== null && <Input label="Transaction PIN" value={comPin} onChangeText={setComPin} keyboardType="numeric" secureTextEntry icon="lock-closed-outline" placeholder="••••" />}
+          {comProblem ? <Text style={[styles.accMeta, { color: colors.danger }]}>{comProblem}</Text>
+            : comReady ? <Text style={styles.accMeta}>{formatCurrency(comG - comT, incomeFor.currency)} arrives in {incomeFor.name}{comT > 0 ? ` · ${formatCurrency(comT, incomeFor.currency)} tax to claim back` : ''}</Text> : null}
+          <ActionBtn title={comPin !== null ? 'Confirm with PIN' : 'Record income'} onPress={handleRecordIncome} loading={comBusy} disabled={!comReady} icon="checkmark-circle-outline" gradient={['#059669', '#10B981']} />
+        </>)}
       </ModalSheet>
     </View>
   );

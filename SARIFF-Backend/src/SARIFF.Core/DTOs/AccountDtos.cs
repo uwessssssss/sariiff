@@ -142,13 +142,28 @@ public record CashStatsDto(
     List<CurrencyAccountTotalsDto>? ByCurrency = null   // every cash currency, incl. UGX/EUR
 );
 
-// ==================== INCOME: MOBILE MONEY COMMISSION ====================
+// ==================== INCOME (commission, fees, interest, rent, other) ====================
 
 /// <summary>
-/// Commission the network paid. Gross is the commission earned; WithholdingTax is what the
-/// network kept. The net (gross − tax) lands in the destination (usually a commission or
-/// float wallet; a bank or till also works). Income is recorded gross.
+/// Income the bureau received. Amount is the income earned (gross); WithholdingTax is what the
+/// payer kept (a credit the bureau claims back). The net (amount − tax) lands in the destination:
+/// a till, bank or wallet; or a client account (a fee charged to the client: their balance goes down,
+/// and no tax applies). IncomeAccountId is one of IncomeAccounts' fixed ids (see /api/income/accounts).
 /// </summary>
+public record RecordIncomeDto(
+    Guid IncomeAccountId,
+    AccountType DestAccountType,
+    Guid DestAccountId,
+    Currency Currency,
+    decimal Amount,
+    decimal WithholdingTax = 0,
+    DateTime? Date = null,
+    string? Description = null,
+    string? Reference = null,
+    string? Notes = null
+);
+
+/// <summary>Commission the network paid: the same as RecordIncomeDto with the commission account.</summary>
 public record RecordCommissionDto(
     AccountType DestAccountType,
     Guid DestAccountId,
@@ -160,6 +175,8 @@ public record RecordCommissionDto(
     string? Notes = null
 );
 
+public record IncomeAccountDto(Guid Id, string Name);
+
 public record CommissionResultDto(
     decimal Gross,
     decimal WithholdingTax,
@@ -169,18 +186,23 @@ public record CommissionResultDto(
     TransactionResponseDto? TaxPosting
 );
 
+/// <summary>One income account in one currency for the period.</summary>
+public record IncomeLineDto(Guid Id, string Name, decimal Gross, decimal WithholdingTax, decimal Net);
+
 /// <summary>Income and float position for one currency (never added across currencies).</summary>
 public record IncomeCurrencyDto(
     Currency Currency,
     decimal CommissionGross,          // in the period
-    decimal WithholdingTax,           // kept by the network in the period
-    decimal CommissionNet,            // gross − tax: what actually arrived
+    decimal WithholdingTax,           // kept by payers in the period, on all income
+    decimal CommissionNet,            // commission − the tax withheld on commission
     decimal FeeIncome,                // in the period
-    decimal OtherIncome,              // in the period
-    decimal TotalIncome,              // commission gross + fees + other
+    decimal OtherIncome,              // in the period: interest + rent + other
+    decimal TotalIncome,              // all income, gross
     decimal WithholdingTaxRecoverable,// all time: tax credit still to claim
     decimal EFloat,                   // now: active mobile money wallets
-    decimal CashOnHand                // now: cash tills (the whole bureau's cash)
+    decimal CashOnHand,               // now: cash tills (the whole bureau's cash)
+    decimal NetReceived,              // total income − tax withheld
+    List<IncomeLineDto> ByAccount     // every income account with something in the period
 );
 
 public record IncomeSummaryDto(DateTime FromUtc, DateTime ToUtcExclusive, List<IncomeCurrencyDto> ByCurrency);

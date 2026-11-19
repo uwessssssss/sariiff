@@ -37,11 +37,12 @@ public class TransactionController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, [FromQuery] TransactionType? type = null, [FromQuery] Currency? currency = null, [FromQuery] string? search = null)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null, [FromQuery] TransactionType? type = null, [FromQuery] Currency? currency = null, [FromQuery] string? search = null, [FromQuery] AccountType? accountType = null)
     {
         if (!CompanyId.HasValue) return Unauthorized();
         // The phone's search box sends "search"; it was ignored and every transaction listed.
-        var filter = new ReportFilterDto(startDate, endDate, type, currency, null, null, search);
+        // accountType: postings with that kind of account on either side (e.g. 5 = income).
+        var filter = new ReportFilterDto(startDate, endDate, type, currency, accountType, null, search);
         var result = await _transactionService.GetAllAsync(CompanyId.Value, ClampPage(page), ClampPageSize(pageSize, 1000), filter);
         return Ok(result);
     }

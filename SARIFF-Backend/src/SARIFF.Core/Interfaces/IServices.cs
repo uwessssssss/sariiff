@@ -376,9 +376,10 @@ public interface IClientIdentityService
     Task ForgetDevicesForClientAsync(Guid clientId);
 }
 
-/// <summary>Income the bureau earns: mobile money commission (with withholding tax) and its summary.</summary>
+/// <summary>Income the bureau earns (commission, fees, interest, rent, other; with withholding tax) and its summary.</summary>
 public interface ICommissionService
 {
     Task<ApiResponse<CommissionResultDto>> RecordAsync(Guid companyId, Guid userId, RecordCommissionDto dto);
+    Task<ApiResponse<CommissionResultDto>> RecordIncomeAsync(Guid companyId, Guid userId, RecordIncomeDto dto);
     Task<ApiResponse<IncomeSummaryDto>> SummaryAsync(Guid companyId, DateTime? from, DateTime? to);
 }

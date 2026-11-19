@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Building2, ClipboardCheck, FileText, LayoutDashboard, Loader2, Receipt, Repeat, Settings, Smartphone, Users, Wallet } from "lucide-react";
+import { BarChart3, Building2, ClipboardCheck, FileText, LayoutDashboard, Loader2, Receipt, Repeat, Settings, Smartphone, TrendingUp, Users, Wallet } from "lucide-react";
 import { type DashboardFlow, type DashboardHolding } from "@/lib/api";
 import dynamic from "next/dynamic";
 
@@ -52,6 +52,10 @@ export const OfficeSettings = dynamic(
 );
 export const CashAtHand = dynamic(
   () => import("@/components/office/cash/CashAtHand").then((m) => ({ default: m.CashAtHand })),
+  { ssr: false, loading: TabLoading },
+);
+export const IncomeAccount = dynamic(
+  () => import("@/components/office/income/IncomeAccount").then((m) => ({ default: m.IncomeAccount })),
   { ssr: false, loading: TabLoading },
 );
 export const ExpensesAccount = dynamic(
@@ -135,6 +139,7 @@ export const NAV = [
   { id: "banks", label: "Bank accounts", icon: Building2, href: "/office/banks" },
   { id: "mpesa", label: "Mobile money", icon: Smartphone, href: "/office/mpesa" },
   { id: "expenses", label: "Expenses", icon: Receipt, href: "/office/expenses" },
+  { id: "income", label: "Income", icon: TrendingUp, href: "/office/income" },
   { id: "exchange", label: "Exchange", icon: Repeat, href: "/office/exchange" },
   { id: "reconciliation", label: "Reconciliation", icon: ClipboardCheck, href: "/office/reconciliation" },
   { id: "invoices", label: "Invoices", icon: FileText, href: "/office/invoices" },

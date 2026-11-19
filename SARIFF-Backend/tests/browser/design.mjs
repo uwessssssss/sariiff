@@ -305,7 +305,7 @@ function watch(page, who) {
   const browser = await chromium.launch();
   const desk = { viewport: { width: 1366, height: 860 }, timezoneId: "Africa/Nairobi", locale: "en-KE" };
   const phone = { ...devices["iPhone 13"], timezoneId: "Africa/Nairobi", locale: "en-KE" };
-  const office = ["dashboard", "clients", "cash", "banks", "mpesa", "expenses", "exchange", "reconciliation", "invoices", "reports", "settings"];
+  const office = ["dashboard", "clients", "cash", "banks", "mpesa", "expenses", "income", "exchange", "reconciliation", "invoices", "reports", "settings"];
 
   for (const [size, ctxOpts] of [["desktop", desk], ["phone", phone]]) {
     // ----- login page (signed out)

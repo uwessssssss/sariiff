@@ -1,6 +1,6 @@
 "use client";
 
-import { BankAccounts, CashAtHand, ClientManagement, DashboardStats, EMPTY_STATS, ExchangeSection, ExpensesAccount, InvoiceManagement, MPesaAccounts, NAV, OfficeSettings, OfficeUserDashboardProps, Reconciliation, Reports, TodayTxn, fmt, fmtKES, fmtUSD, greeting, initials, signed } from "./helpers";
+import { BankAccounts, CashAtHand, ClientManagement, DashboardStats, EMPTY_STATS, ExchangeSection, ExpensesAccount, IncomeAccount, InvoiceManagement, MPesaAccounts, NAV, OfficeSettings, OfficeUserDashboardProps, Reconciliation, Reports, TodayTxn, fmt, fmtKES, fmtUSD, greeting, initials, signed } from "./helpers";
 import { Building2, Loader2, LogOut, Plus, RefreshCw, Repeat, Smartphone, Wallet, X } from "lucide-react";
 import { type DashboardHolding, TransactionDto, currencyDecimals, getStoredAuth, getCompanyCurrencies, getCurrencyLabel, getCurrentExchangeRate, getDashboardStats, getRecentTransactions } from "@/lib/api";
 import Link from "next/link";
@@ -183,6 +183,8 @@ export function useOfficeUserDashboard({
         return <MPesaAccounts />;
       case "expenses":
         return <ExpensesAccount />;
+      case "income":
+        return <IncomeAccount />;
       case "exchange":
         return <ExchangeSection />;
       case "reconciliation":

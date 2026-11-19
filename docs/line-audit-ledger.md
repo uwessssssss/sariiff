@@ -466,3 +466,18 @@ Known limits, stated plainly:
 - The phone records commission (long-press a wallet) but does not show the summary table yet; the web does.
 
 **Checked on the real database (19 Nov, "are you sure?").** The xUnit tests use an in-memory database, so commission had never run on PostgreSQL. The accuracy run (Full tests) now records commission into MTN (UGX) and M-Pesa (KES), refuses an impossible tax, reverses a tax posting, and checks the MTN statement still chains: 188 passed, 0 failed. It also exposed an older defect: on a phone-width office dashboard, the "Reversed" badge sat inside the truncated account line and was cut off when the account names were long. The badge is now outside the truncated text (the design gate's cut-off check covers it).
+
+## 20 Nov: any income, not only commission (owner: "I just wanted a way to treat other incomes")
+
+I had built for mobile money commission; the owner wanted a general way to book other income. Corrected:
+
+| Item | What it does | Tests |
+|---|---|---|
+| Income kinds | Commission, Fee income, Interest received, Rent received, Other income (fixed ids, no migration). `GET /api/income/accounts` lists them | xUnit; accuracy |
+| `POST /api/income` | Any kind, into a till, bank or wallet (or charged to a client, for a fee). Gross recorded; tax withheld goes to "withholding tax recoverable"; both postings or neither; PIN when on. A client fee can't carry tax | xUnit; accuracy; web I6; phone I4, I5, I9 |
+| Summary by kind | Per currency: each kind's earned / tax withheld / received, totals, tax to claim (all time). Tax is attributed to the income it was withheld from | xUnit; accuracy; web I7 |
+| Transaction list filter | `GET /api/transaction?accountType=5` lists income postings only. The filter field existed but was ignored | xUnit; accuracy |
+| Web **Income** page | Menu item after Expenses: date range, a card per currency, the postings with Reverse, and "Record income" with the debits and credits shown before saving | web I6–I8; design review |
+| Phone | Long-press a till, bank or wallet → "Record income", choose the kind (a wallet starts on Commission) | phone I4, I5, I9 |
+
+Known limits: the kinds are fixed (adding your own names needs a table, so a migration you'd run); the web form can't charge a fee to a client (the server can; the transaction form or the API does it); reversing an income with tax needs its tax line reversed too.

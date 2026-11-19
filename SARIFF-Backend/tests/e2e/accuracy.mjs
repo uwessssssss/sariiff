@@ -180,6 +180,23 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
     const ugx2 = await income(UGX);
     check("…the tax to claim and the gross both drop by 5,000", eq(round2(ugx1.withholdingTaxRecoverable - ugx2.withholdingTaxRecoverable), 5000) && eq(round2(ugx1.commissionGross - ugx2.commissionGross), 5000), JSON.stringify(ugx2));
   }
+  // ---------- any income on the real database (20 Nov): rent with tax into the bank, interest into the till
+  const kinds = list(await get("/api/income/accounts"));
+  const RENT = kinds.find((k) => /rent/i.test(k.name))?.id, INTEREST = kinds.find((k) => /interest/i.test(k.name))?.id;
+  check("Income kinds listed (commission, fees, interest, rent, other)", kinds.length === 5 && !!RENT && !!INTEREST, JSON.stringify(kinds.map((k) => k.name)));
+  const before = await income(UGX);
+  await op("Rent UGX 400,000 received, 40,000 tax withheld, into the bank",
+    () => api("POST", "/api/income", T, { incomeAccountId: RENT, destAccountType: Acc.Bank, destAccountId: BANK, currency: UGX, amount: 400000, withholdingTax: 40000, description: "Shop 3, November" }),
+    [{ label: "bank", read: () => bal.bank(BANK), delta: 360000 }]);
+  await op("Interest UGX 12,500 received into the till",
+    () => api("POST", "/api/income", T, { incomeAccountId: INTEREST, destAccountType: Acc.Cash, destAccountId: TILL, currency: UGX, amount: 12500, withholdingTax: 0 }),
+    [{ label: "till", read: () => bal.cash(TILL), delta: 12500 }]);
+  const after = await income(UGX);
+  const line = (r, id) => (r.byAccount || []).find((l) => l.id === id) || { gross: 0, withholdingTax: 0 };
+  check("Rent is income gross (+400,000) with its own tax (+40,000)", eq(round2(line(after, RENT).gross - line(before, RENT).gross), 400000) && eq(round2(line(after, RENT).withholdingTax - line(before, RENT).withholdingTax), 40000), JSON.stringify(line(after, RENT)));
+  check("Total income +412,500, net received +372,500", eq(round2(after.totalIncome - before.totalIncome), 412500) && eq(round2(after.netReceived - before.netReceived), 372500), `${after.totalIncome} / ${after.netReceived}`);
+  const incomeOnly = list(await get("/api/transaction?page=1&pageSize=500&accountType=5"));
+  check("The transaction list filtered to income shows only income postings", incomeOnly.length >= 4 && incomeOnly.every((t) => t.sourceAccountType === 5 || t.destAccountType === 5), `${incomeOnly.length} rows`);
   await refused("Expense larger than the account holds",
     () => api("POST", "/api/expense", T, { categoryId: cat.data?.id, description: "Too big", vendorPayee: null, amount: 999999999, currency: UGX, paymentMethod: 0, paymentAccountType: Acc.Cash, paymentAccountId: TILL, reference: null, expenseDate: new Date().toISOString() }),
     [() => bal.cash(TILL)]);

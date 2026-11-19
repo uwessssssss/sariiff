@@ -92,6 +92,7 @@ export async function getTransactions(
     endDate?: string;
     type?: number;
     currency?: number;
+    accountType?: number; // postings with this kind of account on either side (5 = income)
   },
 ): Promise<ApiResponse<PagedResult<TransactionDto>>> {
   let url = `/api/transaction?page=${page}&pageSize=${pageSize}`;
@@ -100,6 +101,7 @@ export async function getTransactions(
     if (filters.endDate) url += `&endDate=${filters.endDate}`;
     if (filters.type !== undefined) url += `&type=${filters.type}`;
     if (filters.currency !== undefined) url += `&currency=${filters.currency}`;
+    if (filters.accountType !== undefined) url += `&accountType=${filters.accountType}`;
   }
   return apiRequest(url);
 }

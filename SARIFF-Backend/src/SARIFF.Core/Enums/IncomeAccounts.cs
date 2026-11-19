@@ -1,7 +1,7 @@
 namespace SARIFF.Core.Enums;
 
 /// <summary>
-/// The bureau's income accounts and its withholding-tax account. They are fixed, the same
+/// The bureau's income accounts (commission, fees, interest, rent, other) and its withholding-tax account. They are fixed, the same
 /// for every bureau, and keep no stored balance: a total is the sum of the postings to it
 /// (each posting carries its CompanyId). Fixed ids mean no new table and no migration.
 ///
@@ -18,16 +18,20 @@ public static class IncomeAccounts
     public static readonly Guid Commission = new("5a1f0000-0000-4000-8000-000000000001");
     public static readonly Guid Fees = new("5a1f0000-0000-4000-8000-000000000002");
     public static readonly Guid Other = new("5a1f0000-0000-4000-8000-000000000003");
+    public static readonly Guid Interest = new("5a1f0000-0000-4000-8000-000000000004");
+    public static readonly Guid Rent = new("5a1f0000-0000-4000-8000-000000000005");
     public static readonly Guid WithholdingTax = new("5a1f0000-0000-4000-8000-000000000010");
 
     public static readonly IReadOnlyList<(Guid Id, string Name)> Income = new[]
     {
-        (Commission, "Mobile money commission"),
+        (Commission, "Commission"),
         (Fees, "Fee income"),
+        (Interest, "Interest received"),
+        (Rent, "Rent received"),
         (Other, "Other income"),
     };
 
-    public static bool IsIncome(Guid id) => id == Commission || id == Fees || id == Other;
+    public static bool IsIncome(Guid id) => Income.Any(i => i.Id == id);
 
     /// <summary>Whether this (type, id) is one of the fixed accounts.</summary>
     public static bool Known(AccountType type, Guid id) => type switch

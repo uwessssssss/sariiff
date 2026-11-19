@@ -29,7 +29,7 @@ public class CommissionTests
 
         var net = r.Data!.NetPosting;   // Cr commission income 9,000
         Assert.Equal(AccountType.Income, net.SourceAccountType);
-        Assert.Equal("Mobile money commission", net.SourceAccountName);
+        Assert.Equal("Commission", net.SourceAccountName);
         Assert.Equal(9_000m, net.Amount);
         var tax = r.Data.TaxPosting!;   // Dr withholding tax 1,000, Cr commission income 1,000
         Assert.Equal(AccountType.TaxRecoverable, tax.DestAccountType);
@@ -182,4 +182,92 @@ public class CommissionTests
         // Paying KES commission into the UGX wallet is refused (its currency doesn't match).
         Assert.False((await Svc(b).RecordAsync(b.Co, b.UserId, new RecordCommissionDto(AccountType.Mpesa, b.Wallet.Id, Currency.KES, 3_000m, 0m))).Success);
     }
+
+    // ---------- any income, not only commission (owner, 20 Nov: "I just wanted a way to treat other incomes")
+
+    private static RecordIncomeDto Income(Guid kind, AccountType dest, Guid destId, decimal amount, decimal tax = 0, string? what = null) =>
+        new(kind, dest, destId, Currency.KES, amount, tax, null, what, null, null);
+
+    [Fact]
+    public async Task Rent_received_with_tax_withheld_lands_net_in_the_bank_and_is_income_gross()
+    {
+        var b = await Bureau.CreateAsync(Currency.KES);
+        var r = await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Rent, AccountType.Bank, b.Bank.Id, 40_000m, 4_000m, "Shop 3, November"));
+        Assert.True(r.Success, r.Message);
+        Assert.Equal(36_000m, b.Db.BankAccounts.Single(x => x.Id == b.Bank.Id).Balance);
+        Assert.Equal("Rent received", r.Data!.NetPosting.SourceAccountName);
+        Assert.Contains("Shop 3, November", r.Data.NetPosting.Description);
+
+        var kes = (await Svc(b).SummaryAsync(b.Co, null, null)).Data!.ByCurrency.Single(x => x.Currency == Currency.KES);
+        var rent = kes.ByAccount.Single(l => l.Id == IncomeAccounts.Rent);
+        Assert.Equal(40_000m, rent.Gross);
+        Assert.Equal(4_000m, rent.WithholdingTax);
+        Assert.Equal(36_000m, rent.Net);
+        Assert.Equal(40_000m, kes.TotalIncome);
+        Assert.Equal(40_000m, kes.OtherIncome);
+        Assert.Equal(36_000m, kes.NetReceived);
+        Assert.Equal(0m, kes.CommissionGross);
+        Assert.Equal(4_000m, kes.WithholdingTaxRecoverable);
+    }
+
+    [Fact]
+    public async Task Tax_is_attributed_to_the_income_it_was_withheld_from()
+    {
+        var b = await Bureau.CreateAsync(Currency.KES);
+        Assert.True((await Svc(b).RecordAsync(b.Co, b.UserId, Paid(b, 10_000m, 1_000m))).Success);
+        Assert.True((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Interest, AccountType.Bank, b.Bank.Id, 2_000m, 300m))).Success);
+        Assert.True((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Other, AccountType.Cash, b.Cash.Id, 500m))).Success);
+
+        var kes = (await Svc(b).SummaryAsync(b.Co, null, null)).Data!.ByCurrency.Single(x => x.Currency == Currency.KES);
+        Assert.Equal(1_000m, kes.ByAccount.Single(l => l.Id == IncomeAccounts.Commission).WithholdingTax);
+        Assert.Equal(300m, kes.ByAccount.Single(l => l.Id == IncomeAccounts.Interest).WithholdingTax);
+        Assert.Equal(0m, kes.ByAccount.Single(l => l.Id == IncomeAccounts.Other).WithholdingTax);
+        Assert.Equal(9_000m, kes.CommissionNet);
+        Assert.Equal(1_300m, kes.WithholdingTax);
+        Assert.Equal(12_500m, kes.TotalIncome);
+        Assert.Equal(11_200m, kes.NetReceived);
+        Assert.Equal(500m, b.Db.CashAccounts.Single(c => c.Id == b.Cash.Id).Balance);
+    }
+
+    [Fact]
+    public async Task A_fee_charged_to_a_client_through_record_income_lowers_their_balance()
+    {
+        var b = await Bureau.CreateAsync(Currency.KES);
+        b.Db.Users.Single(u => u.Id == b.Amina.Id).BalanceKES = 5_000m;
+        await b.Db.SaveChangesAsync();
+        var r = await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Fees, AccountType.Client, b.Amina.Id, 250m, 0m, "Statement fee"));
+        Assert.True(r.Success, r.Message);
+        Assert.Equal(4_750m, b.Db.Users.Single(u => u.Id == b.Amina.Id).BalanceKES);
+        Assert.Equal(250m, (await Svc(b).SummaryAsync(b.Co, null, null)).Data!.ByCurrency.Single(x => x.Currency == Currency.KES).FeeIncome);
+    }
+
+    [Fact]
+    public async Task Refused_unknown_kind_tax_on_a_client_fee_and_an_expense_destination()
+    {
+        var b = await Bureau.CreateAsync(Currency.KES);
+        b.Db.Users.Single(u => u.Id == b.Amina.Id).BalanceKES = 5_000m;
+        await b.Db.SaveChangesAsync();
+        Assert.False((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(Guid.NewGuid(), AccountType.Cash, b.Cash.Id, 100m))).Success);
+        Assert.False((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.WithholdingTax, AccountType.Cash, b.Cash.Id, 100m))).Success);
+        Assert.False((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Fees, AccountType.Client, b.Amina.Id, 100m, 10m))).Success);
+        Assert.False((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Other, AccountType.Expense, Guid.NewGuid(), 100m))).Success);
+        Assert.Empty(b.Db.Transactions);
+        Assert.Equal(5_000m, b.Db.Users.Single(u => u.Id == b.Amina.Id).BalanceKES);
+    }
+
+    [Fact]
+    public async Task The_transaction_list_can_show_only_income_postings()
+    {
+        var b = await Bureau.CreateAsync(Currency.KES);
+        b.Db.CashAccounts.Single(c => c.Id == b.Cash.Id).Balance = 10_000m;
+        await b.Db.SaveChangesAsync();
+        Assert.True((await b.Transactions().CreateAsync(b.Co, b.UserId,
+            Bureau.Posting(TransactionType.Debit, AccountType.Cash, b.Cash.Id, AccountType.Mpesa, b.Wallet.Id, 1_000m))).Success);
+        Assert.True((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Interest, AccountType.Bank, b.Bank.Id, 2_000m, 300m))).Success);
+
+        var only = (await b.Transactions().GetAllAsync(b.Co, 1, 50, new ReportFilterDto(null, null, null, null, AccountType.Income))).Data!;
+        Assert.Equal(2, only.TotalCount);   // the interest and its tax posting, not the cash-to-wallet move
+        Assert.All(only.Items, t => Assert.True(t.SourceAccountType == AccountType.Income || t.DestAccountType == AccountType.Income));
+    }
 }
+
