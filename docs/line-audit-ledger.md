@@ -435,7 +435,7 @@ Each proven in tests/screens/nov19-*.test.js, run in CI on the app before (108c9
 |---|---|---|
 | W71 | Web: the dashboard load depended on the home currency, which is reset at every sign-in. It loaded with KES, then the home currency arrived and the whole dashboard (figures, 100 postings, rates) was thrown away and loaded again. Every sign-in at a Ugandan bureau paid for two loads | The figures do not depend on it; only the extra foreign rates wait for it, in their own request |
 | W72 | Web: the figures waited for the slowest of three requests (the latest postings, each with account names) | Each part is shown as it arrives |
-| W73 | Web: after the code was accepted the browser first downloaded the dashboard's JavaScript (~140 KB) | Fetched in the background while the SMS code is typed |
+| W73 | ~~Web: fetch the dashboard's code while the SMS code is typed~~ **Withdrawn 19 Nov.** It broke sign-in: before sign-in the middleware answers a prefetch of /office/dashboard with a redirect to /login, Next caches that, and after the code the browser stayed on "Loading your dashboard…". Caught by Full tests (browser sign-in, documents, busy-bureau sign-in); green on 108c9b0, red on fa80a93. Reverted | Reverted; no prefetch before sign-in |
 | M39 | Phone: my 18 Nov change (M37) made the dashboard wait for the latest postings as well as the figures, and the sections faded in only after every request. A regression I introduced | Figures show and fade in as soon as they arrive; today's list fills in after |
 | W74 | Web: "Use today's rate" after typing a rate: found while changing the load; the reload now reads the reset flag correctly | Reset before the reload |
 

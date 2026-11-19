@@ -38,22 +38,9 @@ suite(async () => {
       expect(!!shown && shown.todayTransactions === 3, `the dashboard figures wait for the list of postings (still loading): stats = ${JSON.stringify(shown && { todayTransactions: shown.todayTransactions })}`);
     } finally { world.context = undefined; }
   });
-
-  await proof("W73", "Sign-in: the dashboard's code is fetched while the SMS code is being typed", async (expect) => {
-    const router = fromWeb("next/dist/shared/lib/app-router-context.shared-runtime").AppRouterContext._currentValue;
-    const prefetched = []; const before = router.prefetch;
-    router.prefetch = (p) => prefetched.push(p);
-    world.context = { login: async () => ({ success: true, requiresOtp: true, message: "Code sent" }), verifyOtp: async () => ({ success: false }), isLoading: false, user: null };
-    try {
-      const box = (tree, ph) => find(tree, (e) => tag(e) === "input" && ph.test(e.props.placeholder || ""))[0];
-      const m = mount(app("app/login/page").default, {});
-      box(m.tree, /^AFB-2026-0001$/).props.onChange({ target: { value: "KB-2026-0001" } });
-      box(m.render(), /^\+254712345678$/).props.onChange({ target: { value: "+256772123456" } });
-      find(m.render(), (e) => tag(e) === "input" && (e.props.type === "password" || e.props.autoComplete === "current-password"))[0].props.onChange({ target: { value: "Passw0rd!" } });
-      await find(m.render(), (e) => tag(e) === "form")[0].props.onSubmit({ preventDefault() {} });
-      for (let i = 0; i < 4; i++) { await tick(10); m.render(); }
-      expect(/code/i.test(text(m.tree)), "the SMS-code step was not reached");
-      expect(prefetched.includes("/office/dashboard"), `prefetched while typing the code: ${JSON.stringify(prefetched)}`);
-    } finally { router.prefetch = before; world.context = undefined; }
-  });
+  // W73 (prefetching the dashboards on the login page) was withdrawn: before sign-in the
+  // middleware answers those prefetches with a redirect to /login, Next caches that, and the
+  // push to the dashboard after the code then stayed on the login page. The browser
+  // sign-in tests in Full tests caught it.
+});
 });
