@@ -260,9 +260,11 @@ public class CommissionTests
     {
         var b = await Bureau.CreateAsync(Currency.KES);
         b.Db.CashAccounts.Single(c => c.Id == b.Cash.Id).Balance = 10_000m;
+        b.Db.MpesaAgents.Single(w => w.Id == b.Wallet.Id).Balance = 10_000m;   // a customer cash-in needs e-float to send
         await b.Db.SaveChangesAsync();
-        Assert.True((await b.Transactions().CreateAsync(b.Co, b.UserId,
-            Bureau.Posting(TransactionType.Debit, AccountType.Cash, b.Cash.Id, AccountType.Mpesa, b.Wallet.Id, 1_000m))).Success);
+        var move = await b.Transactions().CreateAsync(b.Co, b.UserId,
+            Bureau.Posting(TransactionType.Debit, AccountType.Cash, b.Cash.Id, AccountType.Mpesa, b.Wallet.Id, 1_000m));
+        Assert.True(move.Success, move.Message);
         Assert.True((await Svc(b).RecordIncomeAsync(b.Co, b.UserId, Income(IncomeAccounts.Interest, AccountType.Bank, b.Bank.Id, 2_000m, 300m))).Success);
 
         var only = (await b.Transactions().GetAllAsync(b.Co, 1, 50, new ReportFilterDto(null, null, null, null, AccountType.Income))).Data!;
