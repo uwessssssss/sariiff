@@ -9,7 +9,7 @@ import { type AccountType, type Currency } from "./enums";
 export interface RecordCommissionDto {
   destAccountType: AccountType; // the wallet (or bank / till) the net landed in
   destAccountId: string;
-  currency: Currency;
+  currency: Currency | number; // the wallet's own currency
   grossAmount: number; // commission earned
   withholdingTax: number; // kept by the network
   date?: string;

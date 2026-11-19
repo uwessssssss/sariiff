@@ -43,4 +43,3 @@ suite(async () => {
   // push to the dashboard after the code then stayed on the login page. The browser
   // sign-in tests in Full tests caught it.
 });
-});
