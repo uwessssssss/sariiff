@@ -464,3 +464,5 @@ Known limits, stated plainly:
 - Claiming the tax back (offsetting it against income tax) has no screen yet; the amount to claim is shown.
 - Withholding-tax rates are not coded in; staff enter the amount from the network's statement.
 - The phone records commission (long-press a wallet) but does not show the summary table yet; the web does.
+
+**Checked on the real database (19 Nov, "are you sure?").** The xUnit tests use an in-memory database, so commission had never run on PostgreSQL. The accuracy run (Full tests) now records commission into MTN (UGX) and M-Pesa (KES), refuses an impossible tax, reverses a tax posting, and checks the MTN statement still chains: 188 passed, 0 failed. It also exposed an older defect: on a phone-width office dashboard, the "Reversed" badge sat inside the truncated account line and was cut off when the account names were long. The badge is now outside the truncated text (the design gate's cut-off check covers it).

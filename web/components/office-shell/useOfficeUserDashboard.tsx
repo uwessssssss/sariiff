@@ -523,11 +523,14 @@ export function useOfficeUserDashboard({
                       {t.currency} {fmt(t.amount, t.currency === "KES" || t.currency === "UGX" ? 0 : 2)}
                     </span>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-slate-500">
-                    {new Date(t.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-                    {"  "}
-                    {t.account} to {t.otherSide}
-                    {t.reversed && <span className="ml-2 font-medium text-amber-800">Reversed</span>}
+                  <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                    <span className="min-w-0 truncate">
+                      {new Date(t.time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+                      {"  "}
+                      {t.account} to {t.otherSide}
+                    </span>
+                    {/* Outside the truncated text, so a long account name can't hide it. */}
+                    {t.reversed && <span className="shrink-0 font-medium text-amber-800">Reversed</span>}
                   </div>
                 </li>
               ))}
