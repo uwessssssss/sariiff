@@ -5,7 +5,7 @@
 # 1. Builds the schema exactly as it was BEFORE this release (up to ClientIdentities).
 # 2. Puts data in it the old way: a Ugandan bureau, three wallets with no currency
 #    column at all (it doesn't exist yet), a cash till, transactions.
-# 3. Starts the NEW API on it — start-up applies the WalletCurrency migration and the
+# 3. Starts the NEW API on it — start-up applies the WalletCurrency and IncomeAccounts migrations and the
 #    wallet backfill, exactly as on Render.
 # 4. Checks: migration recorded, column added, right currencies filled in, the wallet
 #    holding money left alone, not one balance or amount changed, API healthy.
@@ -87,7 +87,9 @@ check "API starts on the upgraded database" "$ok" "yes"
 [ "$ok" = yes ] || tail -40 "$LOG"
 
 check "WalletCurrency migration recorded" "$(q "SELECT count(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" LIKE '%_WalletCurrency'")" "1"
-check "No migration left pending (history = 3 entries)" "$(q 'SELECT count(*) FROM "__EFMigrationsHistory"')" "3"
+check "IncomeAccounts migration recorded" "$(q "SELECT count(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" LIKE '%_IncomeAccounts'")" "1"
+check "IncomeAccounts table created, empty" "$(q 'SELECT count(*) FROM "IncomeAccounts"')" "0"
+check "No migration left pending (history = 4 entries)" "$(q 'SELECT count(*) FROM "__EFMigrationsHistory"')" "4"
 cur() { q "SELECT coalesce(\"Currency\"::text,'NULL') FROM \"MpesaAgents\" WHERE \"Code\"='$1'"; }
 check "Unused old M-Pesa wallet -> KES" "$(cur OLD-MP-EMPTY)" "0"
 check "Old M-Pesa wallet holding 350,000 is NOT relabelled (still home UGX)" "$(cur OLD-MP-MONEY)" "NULL"
