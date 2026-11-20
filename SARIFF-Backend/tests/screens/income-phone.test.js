@@ -115,6 +115,9 @@ suite(async () => {
       await draw(m, 3);
       const post = server.requests.find((r) => r.url.endsWith("/api/income/accounts") && r.method === "POST");
       expect(!!post && post.body.name === "Rent received", `sent: ${JSON.stringify(post && post.body)}`);
+      pressText(m, /Commission.*12,000/).props.onPress();
+      await draw(m, 1);
+      expect(/This month/.test(text(m.tree)) && /All time/.test(text(m.tree)), "tapping an account doesn't open its statement");
     } finally { world.context = undefined; }
   });
 
@@ -122,9 +125,9 @@ suite(async () => {
     world.context = office;
     server.reply((url) => (url.includes("/api/income/accounts/a-com/statement") ? statement : url.includes("/api/income/accounts") ? full : undefined));
     try {
-      const m = mount(app("screens/office/IncomeScreen").default, {});
-      await draw(m, 4);
-      pressText(m, /Commission.*12,000/).props.onPress();
+      // Tapping an account opens IncomeStatementView (I11 covers the list); mounted on its own here
+      // because the kit runs effects only for the mounted screen.
+      const m = mount(app("screens/office/IncomeScreen").IncomeStatementView, { account: full[0], onBack() {} });
       await draw(m, 4);
       const t = text(m.tree);
       expect(/Earned before/.test(t) && /10,000/.test(t), `opening: ${t.slice(0, 400)}`);
@@ -148,9 +151,9 @@ suite(async () => {
       : /\/api\/income$/.test(url.split("?")[0]) && method === "POST" ? { id: "t1" }
       : /\/api\/mpesa$/.test(url) ? [wallet] : /\/api\/bank$/.test(url) ? [bank] : /\/api\/cash$/.test(url) ? [] : undefined));
     try {
-      const m = mount(app("screens/office/IncomeScreen").default, {});
-      await draw(m, 4);
-      pressText(m, /Commission.*12,000/).props.onPress();
+      // Tapping an account opens IncomeStatementView (I11 covers the list); mounted on its own here
+      // because the kit runs effects only for the mounted screen.
+      const m = mount(app("screens/office/IncomeScreen").IncomeStatementView, { account: full[0], onBack() {} });
       await draw(m, 4);
       find(m.tree, (e) => e.props.accessibilityLabel === "Record income")[0].props.onPress();
       await draw(m, 4);
