@@ -213,14 +213,15 @@ public class IncomeService : IIncomeService
         foreach (var x in await _context.Users.IgnoreQueryFilters().AsNoTracking().Where(a => clientIds.Contains(a.Id)).Select(a => new { a.Id, a.FullName, a.Code }).ToListAsync())
             names[(AccountType.Client, x.Id)] = $"{x.FullName} ({x.Code}), charged";
 
+        var start = f ?? DateTime.MinValue;   // no start date: everything is "in the period", nothing before it
         var byCurrency = new List<IncomeStatementCurrencyDto>();
         foreach (var g in postings.Select(p => (P: p, M: Moves(new[] { p }).First(m => m.Id == accountId)))
                      .GroupBy(x => x.M.Cur).OrderBy(g => g.Key))
         {
-            var opening = f.HasValue ? g.Where(x => x.P.TransactionDate < f.Value).Sum(x => x.M.Amount) : 0m;
+            var opening = g.Where(x => x.P.TransactionDate < start).Sum(x => x.M.Amount);
             var running = opening;
             var lines = new List<IncomeStatementLineDto>();
-            foreach (var x in g.Where(x => !f.HasValue || x.P.TransactionDate >= f.Value))
+            foreach (var x in g.Where(x => x.P.TransactionDate >= start))
             {
                 running += x.M.Amount;
                 var o = x.P.SourceAccountType == AccountType.Income && x.P.SourceAccountId == accountId
