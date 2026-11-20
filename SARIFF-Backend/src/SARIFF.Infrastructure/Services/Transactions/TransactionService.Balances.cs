@@ -57,8 +57,10 @@ public partial class TransactionService
             // (Any id used to be accepted: cash could leave a till against nothing.)
             AccountType.Expense => await _context.ExpenseCategories.AnyAsync(c => c.Id == accountId && c.CompanyId == companyId && !c.IsDeleted)
                 ? 0m : null,
-            // Income and withholding-tax accounts keep no balance either; only the fixed ids exist.
-            AccountType.Income or AccountType.TaxRecoverable => IncomeAccounts.Known(type, accountId) ? 0m : null,
+            // Income accounts keep no balance either; only the bureau's own (a switched-off one
+            // can still be reversed against; new income into it is refused by IncomeService).
+            AccountType.Income => await _context.IncomeAccounts.AnyAsync(c => c.Id == accountId && c.CompanyId == companyId && !c.IsDeleted)
+                ? 0m : null,
             _ => null
         };
     }
@@ -126,7 +128,6 @@ public partial class TransactionService
                 break;
             case AccountType.Expense:
             case AccountType.Income:
-            case AccountType.TaxRecoverable:
                 // These don't track a running balance - no update needed
                 break;
         }
@@ -157,7 +158,6 @@ public partial class TransactionService
         AccountType.Mpesa => "mobile money account",
         AccountType.Client => "client account",
         AccountType.Income => "income account",
-        AccountType.TaxRecoverable => "withholding tax account",
         _ => "account"
     };
 
@@ -202,6 +202,10 @@ public partial class TransactionService
         if (categoryIds.Count > 0)
             foreach (var c in await _context.ExpenseCategories.IgnoreQueryFilters().AsNoTracking().Where(c => categoryIds.Contains(c.Id)).Select(c => new { c.Id, c.Name }).ToListAsync())
                 _accountNames[(AccountType.Expense, c.Id)] = c.Name;
+        var incomeIds = Of(AccountType.Income);
+        if (incomeIds.Count > 0)
+            foreach (var c in await _context.IncomeAccounts.IgnoreQueryFilters().AsNoTracking().Where(c => incomeIds.Contains(c.Id)).Select(c => new { c.Id, c.Name }).ToListAsync())
+                _accountNames[(AccountType.Income, c.Id)] = c.Name;
     }
 
     private async Task<string> GetAccountNameAsync(AccountType type, Guid accountId)
@@ -215,7 +219,7 @@ public partial class TransactionService
             AccountType.Client => await _context.Users.Where(u => u.Id == accountId).Select(u => u.FullName).FirstOrDefaultAsync() ?? "Client",
             // Expense postings point at their category: show its name, not "Unknown".
             AccountType.Expense => await _context.ExpenseCategories.Where(c => c.Id == accountId).Select(c => c.Name).FirstOrDefaultAsync() ?? "Expense",
-            AccountType.Income or AccountType.TaxRecoverable => IncomeAccounts.Name(type, accountId),
+            AccountType.Income => await _context.IncomeAccounts.IgnoreQueryFilters().Where(c => c.Id == accountId).Select(c => c.Name).FirstOrDefaultAsync() ?? "Income",
             _ => "Unknown"
         };
     }

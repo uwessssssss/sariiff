@@ -157,44 +157,48 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   if (exp?.data?.id)
     await op("Delete the rent expense (reversal)", () => api("DELETE", `/api/expense/${exp.data.id}`, T),
       [{ label: "till", read: () => bal.cash(TILL), delta: 20000 }]);
-  // ---------- mobile money commission on the real database (19 Nov): income gross, tax recoverable
-  const income = async (cur) => (list((await get("/api/income/summary"))?.byCurrency).find((r) => r.currency === cur)) || {};
+  // ---------- income accounts the bureau names itself, on the real database (20 Nov; no tax)
+  const made = async (name) => (await api("POST", "/api/income/accounts", T, { name }))?.data?.id
+    ?? list(await get("/api/income/accounts")).find((a) => a.name === name)?.id;   // a rerun on the same database
+  const COMMISSION = await made("Commission"), RENT = await made("Rent received");
+  check("Income accounts created by the bureau", !!COMMISSION && !!RENT);
+  const dup = await api("POST", "/api/income/accounts", T, { name: "commission" });
+  check("A second \"commission\" is refused (names are unique)", dup?.success === false, JSON.stringify(dup));
+  const income = async (cur) => (list((await get("/api/income/summary"))?.byCurrency).find((r) => r.currency === cur)) || { totalIncome: 0, byAccount: [] };
+  const line = (r, id) => (r.byAccount || []).find((l) => l.id === id) || { amount: 0 };
   const ugx0 = await income(UGX);
-  const com = await op("Commission UGX 50,000 earned, 5,000 tax withheld, paid into MTN",
-    () => api("POST", "/api/income/commission", T, { destAccountType: Acc.Mpesa, destAccountId: MTN, currency: UGX, grossAmount: 50000, withholdingTax: 5000, reference: "MTN-COM-OCT" }),
+  const com = await op("Commission UGX 45,000 into MTN",
+    () => api("POST", "/api/income", T, { incomeAccountId: COMMISSION, destAccountType: Acc.Mpesa, destAccountId: MTN, currency: UGX, amount: 45000, description: "October" }),
     [{ label: "MTN wallet", read: () => bal.wallet(MTN), delta: 45000 }]);
-  const ugx1 = await income(UGX);
-  check("Commission is income, gross: UGX +50,000", eq(round2((ugx1.commissionGross ?? NaN) - (ugx0.commissionGross ?? 0)), 50000), JSON.stringify(ugx1));
-  check("Tax withheld is recoverable: UGX +5,000", eq(round2((ugx1.withholdingTaxRecoverable ?? NaN) - (ugx0.withholdingTaxRecoverable ?? 0)), 5000), JSON.stringify(ugx1));
-  check("E-float in the summary = the wallets' balances", eq(ugx1.eFloat, round2(list(await get("/api/mpesa")).filter((w) => w.isActive && (w.currency ?? UGX) === UGX).reduce((t, w) => t + w.balance, 0))), JSON.stringify(ugx1));
-  await refused("Commission whose tax is not less than it",
-    () => api("POST", "/api/income/commission", T, { destAccountType: Acc.Mpesa, destAccountId: MTN, currency: UGX, grossAmount: 1000, withholdingTax: 1000 }),
-    [() => bal.wallet(MTN)]);
-  await op("Commission KES 3,000 (300 tax) into the M-Pesa (KES) wallet",
-    () => api("POST", "/api/income/commission", T, { destAccountType: Acc.Mpesa, destAccountId: MPESA, currency: Cur.KES, grossAmount: 3000, withholdingTax: 300 }),
-    [{ label: "M-Pesa wallet", read: () => bal.wallet(MPESA), delta: 2700 }]);
-  if (com?.data?.taxPosting?.id) {
-    await op("Reverse the commission's tax posting",
-      () => api("DELETE", `/api/transaction/${com.data.taxPosting.id}`, T, { reason: "Wrong tax amount" }),
-      [{ label: "MTN wallet (untouched)", read: () => bal.wallet(MTN), delta: 0 }]);
-    const ugx2 = await income(UGX);
-    check("…the tax to claim and the gross both drop by 5,000", eq(round2(ugx1.withholdingTaxRecoverable - ugx2.withholdingTaxRecoverable), 5000) && eq(round2(ugx1.commissionGross - ugx2.commissionGross), 5000), JSON.stringify(ugx2));
-  }
-  // ---------- any income on the real database (20 Nov): rent with tax into the bank, interest into the till
-  const kinds = list(await get("/api/income/accounts"));
-  const RENT = kinds.find((k) => /rent/i.test(k.name))?.id, INTEREST = kinds.find((k) => /interest/i.test(k.name))?.id;
-  check("Income kinds listed (commission, fees, interest, rent, other)", kinds.length === 5 && !!RENT && !!INTEREST, JSON.stringify(kinds.map((k) => k.name)));
-  const before = await income(UGX);
-  await op("Rent UGX 400,000 received, 40,000 tax withheld, into the bank",
-    () => api("POST", "/api/income", T, { incomeAccountId: RENT, destAccountType: Acc.Bank, destAccountId: BANK, currency: UGX, amount: 400000, withholdingTax: 40000, description: "Shop 3, November" }),
+  await op("Rent UGX 360,000 into the bank",
+    () => api("POST", "/api/income", T, { incomeAccountId: RENT, destAccountType: Acc.Bank, destAccountId: BANK, currency: UGX, amount: 360000, description: "Shop 3, November" }),
     [{ label: "bank", read: () => bal.bank(BANK), delta: 360000 }]);
-  await op("Interest UGX 12,500 received into the till",
-    () => api("POST", "/api/income", T, { incomeAccountId: INTEREST, destAccountType: Acc.Cash, destAccountId: TILL, currency: UGX, amount: 12500, withholdingTax: 0 }),
-    [{ label: "till", read: () => bal.cash(TILL), delta: 12500 }]);
-  const after = await income(UGX);
-  const line = (r, id) => (r.byAccount || []).find((l) => l.id === id) || { gross: 0, withholdingTax: 0 };
-  check("Rent is income gross (+400,000) with its own tax (+40,000)", eq(round2(line(after, RENT).gross - line(before, RENT).gross), 400000) && eq(round2(line(after, RENT).withholdingTax - line(before, RENT).withholdingTax), 40000), JSON.stringify(line(after, RENT)));
-  check("Total income +412,500, net received +372,500", eq(round2(after.totalIncome - before.totalIncome), 412500) && eq(round2(after.netReceived - before.netReceived), 372500), `${after.totalIncome} / ${after.netReceived}`);
+  await op("Commission KES 2,700 into the M-Pesa (KES) wallet",
+    () => api("POST", "/api/income", T, { incomeAccountId: COMMISSION, destAccountType: Acc.Mpesa, destAccountId: MPESA, currency: Cur.KES, amount: 2700 }),
+    [{ label: "M-Pesa wallet", read: () => bal.wallet(MPESA), delta: 2700 }]);
+  await refused("Income of zero", () => api("POST", "/api/income", T, { incomeAccountId: RENT, destAccountType: Acc.Cash, destAccountId: TILL, currency: UGX, amount: 0 }), [() => bal.cash(TILL)]);
+  const ugx1 = await income(UGX);
+  check("Summary: commission +45,000, rent +360,000, total +405,000 (UGX only)",
+    eq(round2(line(ugx1, COMMISSION).amount - line(ugx0, COMMISSION).amount), 45000) && eq(round2(line(ugx1, RENT).amount - line(ugx0, RENT).amount), 360000)
+      && eq(round2(ugx1.totalIncome - ugx0.totalIncome), 405000), JSON.stringify(ugx1));
+  check("E-float in the summary = the wallets' balances", eq(ugx1.eFloat, round2(list(await get("/api/mpesa")).filter((w) => w.isActive && (w.currency ?? UGX) === UGX).reduce((t, w) => t + w.balance, 0))), JSON.stringify(ugx1));
+  if (com?.data?.id) {
+    await op("Reverse the commission into MTN",
+      () => api("DELETE", `/api/transaction/${com.data.id}`, T, { reason: "Wrong month" }),
+      [{ label: "MTN wallet", read: () => bal.wallet(MTN), delta: -45000 }]);
+  }
+  const st = (await get(`/api/income/accounts/${COMMISSION}/statement`));
+  const stU = list(st?.byCurrency).find((c) => c.currency === UGX), stK = list(st?.byCurrency).find((c) => c.currency === Cur.KES);
+  check("Commission statement, UGX: +45,000 then −45,000, closing 0; the original marked reversed",
+    !!stU && stU.lines.length === 2 && eq(stU.lines[0].amount, 45000) && stU.lines[0].isReversed && eq(stU.lines[1].amount, -45000) && eq(stU.closing, 0), JSON.stringify(stU));
+  check("Commission statement, KES kept apart: closing 2,700", !!stK && eq(stK.closing, 2700), JSON.stringify(stK));
+  check("Running totals add up line by line", !!stU && stU.lines.every((l, i) => eq(l.runningTotal, round2(stU.opening + stU.lines.slice(0, i + 1).reduce((t, x) => t + x.amount, 0)))));
+  const off = await api("PUT", `/api/income/accounts/${RENT}`, T, { isActive: false });
+  check("Rent switched off", off?.success === true, JSON.stringify(off));
+  await refused("Income into a switched-off account", () => api("POST", "/api/income", T, { incomeAccountId: RENT, destAccountType: Acc.Cash, destAccountId: TILL, currency: UGX, amount: 1000 }), [() => bal.cash(TILL)]);
+  const del = await api("DELETE", `/api/income/accounts/${RENT}`, T);
+  check("An income account with postings can't be deleted", del?.success === false, JSON.stringify(del));
+  await api("PUT", `/api/income/accounts/${RENT}`, T, { isActive: true });
   const incomeOnly = list(await get("/api/transaction?page=1&pageSize=500&accountType=5"));
   check("The transaction list filtered to income shows only income postings", incomeOnly.length >= 4 && incomeOnly.every((t) => t.sourceAccountType === 5 || t.destAccountType === 5), `${incomeOnly.length} rows`);
   await refused("Expense larger than the account holds",

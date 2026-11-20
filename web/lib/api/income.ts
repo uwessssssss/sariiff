@@ -2,84 +2,96 @@ import { type ApiResponse, apiRequest } from "./core";
 import { type AccountType, type Currency } from "./enums";
 
 // ==============================================
-// Income: commission, fees, interest, rent, other (recorded gross; tax a payer keeps is a
-// credit to claim back) and the income / float summary, per currency.
+// Income: accounts the bureau names itself ("Commission", "Rent received"...), income received
+// into them (Dr till/bank/wallet or client, Cr the income account), statements, and the summary.
 // ==============================================
 
-export interface RecordCommissionDto {
-  destAccountType: AccountType; // the wallet (or bank / till) the net landed in
-  destAccountId: string;
-  currency: Currency | number; // the wallet's own currency
-  grossAmount: number; // commission earned
-  withholdingTax: number; // kept by the network
-  date?: string;
-  reference?: string; // the network's statement reference
-  notes?: string;
-}
-
-export interface IncomeCurrencyDto {
-  currency: Currency;
-  commissionGross: number;
-  withholdingTax: number;
-  commissionNet: number;
-  feeIncome: number;
-  otherIncome: number;
-  totalIncome: number;
-  withholdingTaxRecoverable: number; // all time
-  eFloat: number; // active wallets now
-  cashOnHand: number; // cash tills now
-  netReceived: number; // total income − tax withheld
-  byAccount: IncomeLineDto[]; // each kind of income with something in the period
-}
-
-export interface IncomeLineDto {
-  id: string;
-  name: string;
-  gross: number;
-  withholdingTax: number;
-  net: number;
-}
+export interface CurrencyAmount { currency: Currency; currencyCode: string; amount: number }
 
 export interface IncomeAccountDto {
   id: string;
-  name: string; // Commission, Fee income, Interest received, Rent received, Other income
+  name: string;
+  description?: string | null;
+  isActive: boolean;
+  postings: number;
+  totals: CurrencyAmount[]; // earned per currency, all time
 }
 
 export interface RecordIncomeDto {
   incomeAccountId: string;
-  destAccountType: AccountType | number; // till, bank, wallet (or client, for a fee)
+  destAccountType: AccountType | number; // till, bank, wallet, or a client (a fee)
   destAccountId: string;
   currency: Currency | number;
-  amount: number; // earned, gross
-  withholdingTax: number;
+  amount: number;
   date?: string;
   description?: string;
   reference?: string;
   notes?: string;
 }
 
-export interface IncomeSummaryDto {
-  fromUtc: string;
+export interface IncomeLineDto { id: string; name: string; amount: number; postings: number }
+
+export interface IncomeCurrencyDto {
+  currency: Currency;
+  totalIncome: number; // in the period
+  byAccount: IncomeLineDto[];
+  eFloat: number; // active wallets now
+  cashOnHand: number; // cash tills now
+}
+
+export interface IncomeSummaryDto { fromUtc: string; toUtcExclusive: string; byCurrency: IncomeCurrencyDto[] }
+
+export interface IncomeStatementLineDto {
+  transactionId: string;
+  code: string;
+  date: string;
+  description: string;
+  reference?: string | null;
+  receivedInto: string;
+  amount: number; // + income, − reversal
+  runningTotal: number;
+  isReversal: boolean;
+  isReversed: boolean;
+}
+
+export interface IncomeStatementCurrencyDto { currency: Currency; opening: number; inPeriod: number; closing: number; lines: IncomeStatementLineDto[] }
+
+export interface IncomeStatementDto {
+  accountId: string;
+  accountName: string;
+  description?: string | null;
+  isActive: boolean;
+  fromUtc?: string | null;
   toUtcExclusive: string;
-  byCurrency: IncomeCurrencyDto[];
+  byCurrency: IncomeStatementCurrencyDto[];
 }
 
-export async function recordCommission(dto: RecordCommissionDto): Promise<ApiResponse<any>> {
-  return apiRequest("/api/income/commission", { method: "POST", body: JSON.stringify(dto) });
-}
-
-export async function getIncomeSummary(startDate?: string, endDate?: string): Promise<ApiResponse<IncomeSummaryDto>> {
-  const params = new URLSearchParams();
-  if (startDate) params.append("startDate", startDate);
-  if (endDate) params.append("endDate", endDate);
-  const q = params.toString();
-  return apiRequest(`/api/income/summary${q ? `?${q}` : ""}`);
-}
+const qs = (startDate?: string, endDate?: string) => {
+  const p = new URLSearchParams();
+  if (startDate) p.append("startDate", startDate);
+  if (endDate) p.append("endDate", endDate);
+  const q = p.toString();
+  return q ? `?${q}` : "";
+};
 
 export async function getIncomeAccounts(): Promise<ApiResponse<IncomeAccountDto[]>> {
   return apiRequest("/api/income/accounts");
 }
-
+export async function createIncomeAccount(dto: { name: string; description?: string }): Promise<ApiResponse<IncomeAccountDto>> {
+  return apiRequest("/api/income/accounts", { method: "POST", body: JSON.stringify(dto) });
+}
+export async function updateIncomeAccount(id: string, dto: { name?: string; description?: string; isActive?: boolean }): Promise<ApiResponse<IncomeAccountDto>> {
+  return apiRequest(`/api/income/accounts/${id}`, { method: "PUT", body: JSON.stringify(dto) });
+}
+export async function deleteIncomeAccount(id: string): Promise<ApiResponse<boolean>> {
+  return apiRequest(`/api/income/accounts/${id}`, { method: "DELETE" });
+}
+export async function getIncomeStatement(id: string, startDate?: string, endDate?: string): Promise<ApiResponse<IncomeStatementDto>> {
+  return apiRequest(`/api/income/accounts/${id}/statement${qs(startDate, endDate)}`);
+}
 export async function recordIncome(dto: RecordIncomeDto): Promise<ApiResponse<any>> {
   return apiRequest("/api/income", { method: "POST", body: JSON.stringify(dto) });
+}
+export async function getIncomeSummary(startDate?: string, endDate?: string): Promise<ApiResponse<IncomeSummaryDto>> {
+  return apiRequest(`/api/income/summary${qs(startDate, endDate)}`);
 }

@@ -376,10 +376,14 @@ public interface IClientIdentityService
     Task ForgetDevicesForClientAsync(Guid clientId);
 }
 
-/// <summary>Income the bureau earns (commission, fees, interest, rent, other; with withholding tax) and its summary.</summary>
-public interface ICommissionService
+/// <summary>The bureau's own income accounts, income received into them, statements and the summary.</summary>
+public interface IIncomeService
 {
-    Task<ApiResponse<CommissionResultDto>> RecordAsync(Guid companyId, Guid userId, RecordCommissionDto dto);
-    Task<ApiResponse<CommissionResultDto>> RecordIncomeAsync(Guid companyId, Guid userId, RecordIncomeDto dto);
+    Task<ApiResponse<List<IncomeAccountResponseDto>>> GetAccountsAsync(Guid companyId);
+    Task<ApiResponse<IncomeAccountResponseDto>> CreateAccountAsync(Guid companyId, CreateIncomeAccountDto dto);
+    Task<ApiResponse<IncomeAccountResponseDto>> UpdateAccountAsync(Guid companyId, Guid id, UpdateIncomeAccountDto dto);
+    Task<ApiResponse<bool>> DeleteAccountAsync(Guid companyId, Guid id);
+    Task<ApiResponse<TransactionResponseDto>> RecordAsync(Guid companyId, Guid userId, RecordIncomeDto dto);
     Task<ApiResponse<IncomeSummaryDto>> SummaryAsync(Guid companyId, DateTime? from, DateTime? to);
+    Task<ApiResponse<IncomeStatementDto>> StatementAsync(Guid companyId, Guid accountId, DateTime? from, DateTime? to);
 }

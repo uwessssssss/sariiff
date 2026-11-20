@@ -142,13 +142,16 @@ public record CashStatsDto(
     List<CurrencyAccountTotalsDto>? ByCurrency = null   // every cash currency, incl. UGX/EUR
 );
 
-// ==================== INCOME (commission, fees, interest, rent, other) ====================
+// ==================== INCOME ====================
+
+/// <summary>A kind of income the bureau created, with what it has earned per currency (all time).</summary>
+public record IncomeAccountResponseDto(Guid Id, string Name, string? Description, bool IsActive, int Postings, List<CurrencyAmountDto> Totals);
+public record CreateIncomeAccountDto(string Name, string? Description = null);
+public record UpdateIncomeAccountDto(string? Name = null, string? Description = null, bool? IsActive = null);
 
 /// <summary>
-/// Income the bureau received. Amount is the income earned (gross); WithholdingTax is what the
-/// payer kept (a credit the bureau claims back). The net (amount − tax) lands in the destination:
-/// a till, bank or wallet; or a client account (a fee charged to the client: their balance goes down,
-/// and no tax applies). IncomeAccountId is one of IncomeAccounts' fixed ids (see /api/income/accounts).
+/// Income received: Dr the till / bank / wallet (or the client, for a fee: their balance goes down),
+/// Cr the income account.
 /// </summary>
 public record RecordIncomeDto(
     Guid IncomeAccountId,
@@ -156,53 +159,33 @@ public record RecordIncomeDto(
     Guid DestAccountId,
     Currency Currency,
     decimal Amount,
-    decimal WithholdingTax = 0,
     DateTime? Date = null,
     string? Description = null,
     string? Reference = null,
     string? Notes = null
 );
 
-/// <summary>Commission the network paid: the same as RecordIncomeDto with the commission account.</summary>
-public record RecordCommissionDto(
-    AccountType DestAccountType,
-    Guid DestAccountId,
-    Currency Currency,
-    decimal GrossAmount,
-    decimal WithholdingTax,
-    DateTime? Date = null,
-    string? Reference = null,
-    string? Notes = null
-);
-
-public record IncomeAccountDto(Guid Id, string Name);
-
-public record CommissionResultDto(
-    decimal Gross,
-    decimal WithholdingTax,
-    decimal Net,
-    Currency Currency,
-    TransactionResponseDto NetPosting,
-    TransactionResponseDto? TaxPosting
-);
-
 /// <summary>One income account in one currency for the period.</summary>
-public record IncomeLineDto(Guid Id, string Name, decimal Gross, decimal WithholdingTax, decimal Net);
+public record IncomeLineDto(Guid Id, string Name, decimal Amount, int Postings);
 
 /// <summary>Income and float position for one currency (never added across currencies).</summary>
 public record IncomeCurrencyDto(
     Currency Currency,
-    decimal CommissionGross,          // in the period
-    decimal WithholdingTax,           // kept by payers in the period, on all income
-    decimal CommissionNet,            // commission − the tax withheld on commission
-    decimal FeeIncome,                // in the period
-    decimal OtherIncome,              // in the period: interest + rent + other
-    decimal TotalIncome,              // all income, gross
-    decimal WithholdingTaxRecoverable,// all time: tax credit still to claim
+    decimal TotalIncome,              // in the period
+    List<IncomeLineDto> ByAccount,    // every income account with something in the period
     decimal EFloat,                   // now: active mobile money wallets
-    decimal CashOnHand,               // now: cash tills (the whole bureau's cash)
-    decimal NetReceived,              // total income − tax withheld
-    List<IncomeLineDto> ByAccount     // every income account with something in the period
+    decimal CashOnHand                // now: cash tills (the whole bureau's cash)
 );
 
 public record IncomeSummaryDto(DateTime FromUtc, DateTime ToUtcExclusive, List<IncomeCurrencyDto> ByCurrency);
+
+/// <summary>One line of an income account's statement. Amount is + for income, − for a reversal.</summary>
+public record IncomeStatementLineDto(
+    Guid TransactionId, string Code, DateTime Date, string Description, string? Reference,
+    string ReceivedInto, decimal Amount, decimal RunningTotal, bool IsReversal, bool IsReversed);
+
+/// <summary>An income account's statement in one currency: earned before, each posting, earned to the end date.</summary>
+public record IncomeStatementCurrencyDto(Currency Currency, decimal Opening, decimal InPeriod, decimal Closing, List<IncomeStatementLineDto> Lines);
+
+public record IncomeStatementDto(Guid AccountId, string AccountName, string? Description, bool IsActive,
+    DateTime? FromUtc, DateTime ToUtcExclusive, List<IncomeStatementCurrencyDto> ByCurrency);

@@ -28,6 +28,10 @@ public static class AccountActivity
                 var category = await db.ExpenseCategories.Where(c => c.Id == id && c.CompanyId == companyId)
                     .Select(c => new { c.Name, c.IsActive }).FirstOrDefaultAsync();
                 return category is { IsActive: false } ? $"Expense category {category.Name} is switched off." : null;
+            case AccountType.Income:
+                var income = await db.IncomeAccounts.Where(c => c.Id == id && c.CompanyId == companyId)
+                    .Select(c => new { c.Name, c.IsActive }).FirstOrDefaultAsync();
+                return income is { IsActive: false } ? $"Income account {income.Name} is switched off." : null;
             default:
                 return null;
         }

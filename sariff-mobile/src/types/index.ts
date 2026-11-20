@@ -59,7 +59,7 @@ export const balanceRowsFrom = (p: any, includeZeroKesUsd = false): CurrencyBala
   return rows.filter((r) => (includeZeroKesUsd && r.currency <= 1) || r.balance || r.totalIn || r.totalOut);
 };
 export const TransactionType = { Debit: 0, Credit: 1 };
-export const AccountType = { Cash: 0, Bank: 1, Mpesa: 2, Client: 3, Expense: 4, Income: 5, TaxRecoverable: 6 };
+export const AccountType = { Cash: 0, Bank: 1, Mpesa: 2, Client: 3, Expense: 4, Income: 5 };
 export const ClientType = { Permanent: 0, WalkIn: 1 };
 export const ReconciliationStatus = { Pending: 0, Matched: 1, Unmatched: 2 };
 export const ExchangeDirection = { UsdToKes: 0, KesToUsd: 1 };
@@ -417,7 +417,6 @@ export const getAccountTypeLabel = (t: number) => {
     case AccountType.Client: return 'Client';
     case AccountType.Expense: return 'Expense';
     case AccountType.Income: return 'Income';
-    case AccountType.TaxRecoverable: return 'Withholding tax';
     default: return 'Unknown';
   }
 };

@@ -113,8 +113,7 @@ export const AccountType = {
   Mpesa: 2,
   Client: 3,
   Expense: 4,
-  Income: 5, // commission, fees: keeps no balance
-  TaxRecoverable: 6, // withholding tax the network kept: claimed back from tax
+  Income: 5, // the bureau's own income accounts: keep no balance
 } as const;
 export type AccountType = (typeof AccountType)[keyof typeof AccountType];
 export const ReconciliationStatus = {

@@ -63,7 +63,7 @@ public static class DependencyInjection
         services.AddScoped<IMpesaAgentService, MpesaAgentService>();
         services.AddScoped<ICashAccountService, CashAccountService>();
         services.AddScoped<IExpenseService, ExpenseService>();
-        services.AddScoped<ICommissionService, CommissionService>();
+        services.AddScoped<IIncomeService, IncomeService>();
         
         // Services with transaction dependency
         services.AddScoped<IExchangeRateService, ExchangeRateService>();

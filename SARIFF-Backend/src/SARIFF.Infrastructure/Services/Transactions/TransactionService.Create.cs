@@ -368,7 +368,6 @@ public partial class TransactionService
             AccountType.Expense => false, // Expense accounts are not asset accounts
             // Income and withholding tax keep no stored balance, so there is nothing to guard.
             AccountType.Income => false,
-            AccountType.TaxRecoverable => false,
             _ => true
         };
     }

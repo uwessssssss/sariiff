@@ -115,36 +115,28 @@ export default function AccountsScreen() {
     setFormLoading(false);
   };
 
-  // ---- Income (commission, fees, interest, rent, other): recorded gross; tax a payer kept is claimed back.
+  // ---- Income into the bureau's own income accounts: Dr this till/bank/wallet, Cr the income account.
   type IncomeTarget = { type: number; id: string; name: string; currency: number };
   const [incomeFor, setIncomeFor] = useState<IncomeTarget | null>(null);
   const [incomeKinds, setIncomeKinds] = useState<{ id: string; name: string }[]>([]);
   const [incomeKind, setIncomeKind] = useState('');
   const [comGross, setComGross] = useState('');
-  const [comTax, setComTax] = useState('');
   const [comRef, setComRef] = useState('');
   const [comPin, setComPin] = useState<string | null>(null);   // null = no PIN asked
   const [comBusy, setComBusy] = useState(false);
   const openIncome = async (t: IncomeTarget, preferCommission: boolean) => {
-    setIncomeFor(t); setComGross(''); setComTax(''); setComRef(''); setComPin(null);
-    let kinds = incomeKinds;
-    if (kinds.length === 0) {
-      const r = await api.getIncomeAccounts().catch(() => null);
-      kinds = (r?.success && Array.isArray(r.data)) ? r.data : [];
-      setIncomeKinds(kinds);
-    }
+    setIncomeFor(t); setComGross(''); setComRef(''); setComPin(null);
+    // Always fresh: an account may have been added or switched off on the web.
+    const r = await api.getIncomeAccounts().catch(() => null);
+    const kinds = (r?.success && Array.isArray(r.data)) ? r.data.filter(k => k.isActive !== false) : [];
+    setIncomeKinds(kinds);
     const commission = kinds.find(k => /commission/i.test(k.name));
-    const other = kinds.find(k => /other/i.test(k.name));
-    setIncomeKind((preferCommission ? commission : other)?.id ?? kinds[0]?.id ?? '');
+    setIncomeKind((preferCommission ? commission : undefined)?.id ?? kinds[0]?.id ?? '');
   };
   const kindName = incomeKinds.find(k => k.id === incomeKind)?.name ?? 'Income';
   const comG = parseAmount(comGross);
-  const comT = comTax.trim() === '' ? 0 : parseAmount(comTax);
-  const comProblem = comGross.trim() === '' ? null
-    : !(comG > 0) ? 'Enter the income as a number above zero.'
-    : Number.isNaN(comT) || comT < 0 ? 'Enter the tax withheld as a number, or leave it empty.'
-    : comT >= comG ? 'Tax withheld must be less than the income.' : null;
-  const comReady = !!incomeKind && comG > 0 && !Number.isNaN(comT) && comT >= 0 && comT < comG;
+  const comProblem = comGross.trim() === '' ? null : !(comG > 0) ? 'Enter the amount as a number above zero.' : null;
+  const comReady = !!incomeKind && comG > 0;
   const handleRecordIncome = async () => {
     const t = incomeFor;
     if (!t || !comReady) return;
@@ -157,9 +149,9 @@ export default function AccountsScreen() {
         const ok = await api.verifyTransactionPinBackend(comPin);
         if (!ok.success || ok.data === false) { Toast.show({ type: 'error', text1: 'Wrong PIN', text2: ok.message }); return; }
       }
-      const res = await api.recordIncome({ incomeAccountId: incomeKind, destAccountType: t.type, destAccountId: t.id, currency: t.currency, amount: comG, withholdingTax: comT, reference: comRef.trim() || undefined });
+      const res = await api.recordIncome({ incomeAccountId: incomeKind, destAccountType: t.type, destAccountId: t.id, currency: t.currency, amount: comG, reference: comRef.trim() || undefined });
       if (res.success) {
-        Toast.show({ type: 'success', text1: `${kindName} recorded`, text2: `${formatCurrency(comG - comT, t.currency)} into ${t.name}` });
+        Toast.show({ type: 'success', text1: `${kindName} recorded`, text2: `${formatCurrency(comG, t.currency)} into ${t.name}` });
         setIncomeFor(null);
         load();
       } else Toast.show({ type: 'error', text1: 'Not recorded', text2: res.message });
@@ -467,7 +459,8 @@ export default function AccountsScreen() {
       {/* Record income: commission, fees, interest, rent, other */}
       <ModalSheet visible={!!incomeFor} onClose={() => setIncomeFor(null)} title="Record income" icon="cash-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
         {incomeFor && (<>
-          <Text style={styles.accMeta}>Into {incomeFor.name} ({currencyCode(incomeFor.currency)}). Income is recorded gross; tax a payer keeps is claimed back.</Text>
+          <Text style={styles.accMeta}>Into {incomeFor.name} ({currencyCode(incomeFor.currency)}). Choose the income account.</Text>
+          {incomeKinds.length === 0 && <Text style={[styles.accMeta, { color: colors.danger }]}>No income accounts yet. Create one on the web (Income → New income account).</Text>}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
             {incomeKinds.map(k => (
               <TouchableOpacity key={k.id} onPress={() => setIncomeKind(k.id)} accessibilityRole="radio" accessibilityState={{ selected: k.id === incomeKind }}
@@ -476,12 +469,11 @@ export default function AccountsScreen() {
               </TouchableOpacity>
             ))}
           </View>
-          <Input label={`Amount earned (${currencyCode(incomeFor.currency)})`} value={comGross} onChangeText={setComGross} keyboardType="numeric" icon="cash-outline" placeholder="10,000" />
-          <Input label="Tax withheld (optional)" value={comTax} onChangeText={setComTax} keyboardType="numeric" icon="receipt-outline" placeholder="0" />
+          <Input label={`Amount (${currencyCode(incomeFor.currency)})`} value={comGross} onChangeText={setComGross} keyboardType="numeric" icon="cash-outline" placeholder="10,000" />
           <Input label="Reference (optional)" value={comRef} onChangeText={setComRef} icon="document-text-outline" placeholder="" />
           {comPin !== null && <Input label="Transaction PIN" value={comPin} onChangeText={setComPin} keyboardType="numeric" secureTextEntry icon="lock-closed-outline" placeholder="••••" />}
           {comProblem ? <Text style={[styles.accMeta, { color: colors.danger }]}>{comProblem}</Text>
-            : comReady ? <Text style={styles.accMeta}>{formatCurrency(comG - comT, incomeFor.currency)} arrives in {incomeFor.name}{comT > 0 ? ` · ${formatCurrency(comT, incomeFor.currency)} tax to claim back` : ''}</Text> : null}
+            : comReady ? <Text style={styles.accMeta}>Dr {incomeFor.name} {formatCurrency(comG, incomeFor.currency)} · Cr {kindName} {formatCurrency(comG, incomeFor.currency)}</Text> : null}
           <ActionBtn title={comPin !== null ? 'Confirm with PIN' : 'Record income'} onPress={handleRecordIncome} loading={comBusy} disabled={!comReady} icon="checkmark-circle-outline" gradient={['#059669', '#10B981']} />
         </>)}
       </ModalSheet>

@@ -62,6 +62,7 @@ public class StatementHelper
         var clientIds = wanted.Where(k => k.Item1 == AccountType.Client).Select(k => k.Item2).Distinct().ToList();
         var bankIds = wanted.Where(k => k.Item1 == AccountType.Bank).Select(k => k.Item2).Distinct().ToList();
         var agentIds = wanted.Where(k => k.Item1 == AccountType.Mpesa).Select(k => k.Item2).Distinct().ToList();
+        var incomeIds = wanted.Where(k => k.Item1 == AccountType.Income).Select(k => k.Item2).Distinct().ToList();
 
         if (clientIds.Count > 0)
             foreach (var c in await _context.Users.IgnoreQueryFilters().AsNoTracking()
@@ -78,6 +79,11 @@ public class StatementHelper
                          .Where(x => agentIds.Contains(x.Id))
                          .Select(x => new { x.Id, x.AgentName, x.AgentNumber, x.Code }).ToListAsync())
                 _related[(AccountType.Mpesa, m.Id)] = ($"{m.AgentName} - {m.AgentNumber}", m.Code, null);
+        if (incomeIds.Count > 0)
+            foreach (var i in await _context.IncomeAccounts.IgnoreQueryFilters().AsNoTracking()
+                         .Where(x => incomeIds.Contains(x.Id))
+                         .Select(x => new { x.Id, x.Name }).ToListAsync())
+                _related[(AccountType.Income, i.Id)] = (i.Name, "INCOME", null);
     }
 
     /// <summary>
@@ -265,9 +271,8 @@ public class StatementHelper
                 accountCode = "CASH";
                 break;
             case AccountType.Income:
-            case AccountType.TaxRecoverable:
-                accountName = IncomeAccounts.Name(relatedType, relatedId);
-                accountCode = relatedType == AccountType.Income ? "INCOME" : "WHT";
+                accountName = "Income";   // the name comes from the preload above when known
+                accountCode = "INCOME";
                 break;
         }
 
@@ -427,7 +432,6 @@ public class StatementHelper
             AccountType.Client => false,
             AccountType.Expense => false, // Expense accounts are not asset accounts
             AccountType.Income => false,
-            AccountType.TaxRecoverable => false,
             _ => true
         };
     }

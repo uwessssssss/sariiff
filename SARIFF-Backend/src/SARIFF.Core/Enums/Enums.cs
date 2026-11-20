@@ -64,15 +64,11 @@ public enum AccountType
     Client = 3,
     Expense = 4,
     /// <summary>
-    /// Income the bureau earns: mobile money commission, fees charged to clients, other.
-    /// Keeps no stored balance (like Expense); the account id is one of IncomeAccounts' fixed ids.
+    /// Income the bureau earns, other than from exchange (commission, fees, rent...).
+    /// The account id is one of the bureau's own IncomeAccounts. Like Expense, it keeps no
+    /// stored balance: its total is the sum of its postings.
     /// </summary>
-    Income = 5,
-    /// <summary>
-    /// Withholding tax the network kept from commission: an asset, a credit against the
-    /// bureau's income tax. No stored balance; the id is IncomeAccounts.WithholdingTax.
-    /// </summary>
-    TaxRecoverable = 6
+    Income = 5
 }
 
 /// <summary>

@@ -481,3 +481,16 @@ I had built for mobile money commission; the owner wanted a general way to book 
 | Phone | Long-press a till, bank or wallet → "Record income", choose the kind (a wallet starts on Commission) | phone I4, I5, I9 |
 
 Known limits: the kinds are fixed (adding your own names needs a table, so a migration you'd run); the web form can't charge a fee to a client (the server can; the transaction form or the API does it); reversing an income with tax needs its tax line reversed too.
+
+## 20 Nov (later): income accounts the bureau creates, statements, tax removed
+
+Owner: "Leave about tax please. I want to create type of income account. There should be statements of particular income."
+
+- **Tax removed everywhere**: no withholding-tax account type, field, posting or column (web, phone, API, tests). The fixed list of income kinds is gone too.
+- **Income accounts are now the bureau's own**: new table `IncomeAccounts` (name unique per bureau ignoring case, description, switched on/off). Migration `20261120120000_IncomeAccounts` was **written by hand** (no `dotnet ef` here); CI's `has-pending-model-changes` step confirms it matches the model exactly, and the upgrade job applies it to an existing database. The owner may delete it and regenerate it himself; the result is the same table.
+- An account with postings can't be deleted (switch it off; its statement stays). A switched-off account takes no new income, from the Income page or the general transaction form, but its postings can still be reversed.
+- **Statement per income account** (`GET /api/income/accounts/{id}/statement`): per currency, earned before the start date, each posting (date, code, description, where it was received) with a running total, reversals in minus with the original marked, earned to the end date. Web: Income → an account → Statement (print, reverse a line).
+- Mobile money page: the commission panel is now just **Float** (e-float, cash, total per currency).
+- Phone: long-press a till, bank or wallet → Record income → the bureau's switched-on accounts. No statement on the phone yet.
+
+Tests: xUnit IncomeTests (11); accuracy run on PostgreSQL (accounts, recording, refusals, reversal, statements, switch-off, delete refused, filter); web I1–I6; phone I7–I9; design review includes Income.

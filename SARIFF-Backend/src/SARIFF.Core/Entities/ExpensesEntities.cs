@@ -35,3 +35,16 @@ public class Expense : BaseEntity
     public DateTime ExpenseDate { get; set; }
     public Guid CreatedByUserId { get; set; }
 }
+
+/// <summary>
+/// A kind of income the bureau names itself ("Commission", "Rent received", "Consultancy"...).
+/// Postings to it: source = Income (this id), destination = the till, bank, wallet or client.
+/// Like an expense category it keeps no stored balance; its statement sums its postings.
+/// </summary>
+public class IncomeAccount : BaseEntity
+{
+    public Guid CompanyId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsActive { get; set; } = true;
+}

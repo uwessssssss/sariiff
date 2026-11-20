@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<CashAccount> CashAccounts => Set<CashAccount>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
+    public DbSet<IncomeAccount> IncomeAccounts => Set<IncomeAccount>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
@@ -232,6 +233,17 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.DestAccountId);
             e.HasIndex(x => new { x.CompanyId, x.Code }).IsUnique();
             
+            e.HasQueryFilter(x => !x.IsDeleted);
+        });
+
+        // =====================================================
+        // INCOME ACCOUNT (the bureau's own kinds of income)
+        // =====================================================
+        modelBuilder.Entity<IncomeAccount>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Name).HasMaxLength(100);
+            e.HasIndex(x => x.CompanyId);
             e.HasQueryFilter(x => !x.IsDeleted);
         });
 
@@ -561,6 +573,7 @@ public class AppDbContext : DbContext
         ToCompany<CashAccount>(b);
         ToCompany<Transaction>(b);
         ToCompany<ExpenseCategory>(b);
+        ToCompany<IncomeAccount>(b);
         ToCompany<Expense>(b);
         ToCompany<ExchangeRate>(b);
         ToCompany<ExchangeFloat>(b);
