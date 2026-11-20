@@ -47,7 +47,7 @@ suite(async () => {
       const t = text(m.tree);
       expect(/Commission/.test(t) && /Rent received/.test(t) && !/Old income/.test(t), `accounts offered: ${(t.match(/Choose the income account.{0,120}/) || ["?"])[0]}`);
       expect(!/Tax withheld/.test(t), "there is still a tax field");
-      field(m.tree, /^Amount/).props.onChangeText("9,000");
+      field(m.tree, /Amount \(/).props.onChangeText("9,000");
       await draw(m, 1);
       expect(/Dr M-Pesa Moi Ave .*9,000.* · Cr Commission .*9,000/.test(text(m.tree)), "the entry is not shown");
       await pressText(m, /^\s*Record income\s*$/).props.onPress();
@@ -65,7 +65,7 @@ suite(async () => {
       const m = await openSheet(/^\s*Banks?\s*$/, /KCB/);
       tappable(m.tree, /^\s*Rent received\s*$/).props.onPress();
       await draw(m, 1);
-      field(m.tree, /^Amount/).props.onChangeText("40,000");
+      field(m.tree, /Amount \(/).props.onChangeText("40,000");
       await draw(m, 1);
       await pressText(m, /^\s*Record income\s*$/).props.onPress();
       await draw(m, 4);
@@ -81,7 +81,7 @@ suite(async () => {
     try {
       const m = await openSheet(/^\s*Mobile money\s*$/, /M-Pesa Moi Ave/);
       expect(/No income accounts yet/.test(text(m.tree)), "no explanation");
-      field(m.tree, /^Amount/).props.onChangeText("100");
+      field(m.tree, /Amount \(/).props.onChangeText("100");
       await draw(m, 1);
       const press = pressText(m, /^\s*Record income\s*$/);
       if (press) await press.props.onPress();
