@@ -501,3 +501,14 @@ Tests: xUnit IncomeTests (11); accuracy run on PostgreSQL (accounts, recording, 
 |---|---|---|
 | Phone **Income** screen (More → Income) | The bureau's income accounts with their totals and postings; New creates one by name; long-press switches one off/on. Tap an account for its **statement**: This month / Last month / All time, earned before, each line (date, code, where it was received) with a running total, reversals in minus and the original marked, earned to the end. **Record** from the statement: choose the till, bank or wallet, the amount; Dr that account, Cr the income account; the transaction PIN is asked when the bureau has one | phone I11–I14 |
 | Web: **charge a fee to a client** | Record income → "Charge a client (a fee)": search by name/code/phone, pick the client and the currency; Dr the client (their balance goes down), Cr the income account | web I10; accuracy (charged to client B and reversed on PostgreSQL) |
+
+## 21 Nov: remaining tests and the last two phone gaps
+
+| Item | What it does | Tests |
+|---|---|---|
+| Income with the transaction PIN on (server, real PostgreSQL) | PIN off at start; super admin sets it; income without the PIN refused; a wrong PIN accepted by nothing; nothing reaches the till; right PIN → recorded once; the next income asks again; a form error hands the approval back; PIN switched back off for the later suites | requirements.mjs |
+| Web Record income with the PIN on | Nothing sent until the PIN box confirms; then sent once | web I16 |
+| Phone Record income with the PIN on | The PIN is asked; a wrong PIN sends nothing; the right one sends once | phone I17 |
+| Phone statement: **Reverse** | On each line that isn't a reversal or already reversed: reason (and PIN when set); a till/bank/wallet line by the general reversal, a client fee through the client's statement | phone I18 |
+| Phone: **charge a fee to a client** | Statement → Record → "Charge a client (a fee)": search, pick, currency; Dr client (balance down), Cr the income account | phone I19 |
+| Requirements list | Income accounts and income summary added to the features that must answer with real data | requirements.mjs |

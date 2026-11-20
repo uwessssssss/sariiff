@@ -177,4 +177,101 @@ suite(async () => {
     const m = periodDates("month", new Date(2026, 10, 20));
     expect(m.from === "2026-11-01" && m.to === "2026-11-20", JSON.stringify(m));
   });
+
+  await proof("I17", "Phone: record income with the PIN on — the PIN is asked, checked, then the income is sent once", async (expect) => {
+    world.context = office;
+    server.reply((url, body, method) => (url.includes("/currencies") ? { baseCurrency: KES, currencies: [] }
+      : url.includes("/api/income/accounts") ? accounts
+      : url.includes("/api/transaction-pin/status") ? { isEnabled: true, hasPin: true }
+      : url.includes("/api/transaction-pin/verify") ? (body.pin === "4821")
+      : /\/api\/income$/.test(url.split("?")[0]) && method === "POST" ? { id: "t1" }
+      : /\/api\/mpesa$/.test(url) ? [wallet] : /\/api\/bank$/.test(url) ? [bank] : /\/api\/cash$/.test(url) ? [] : undefined));
+    try {
+      const m = await openSheet(/^\s*Mobile money\s*$/, /M-Pesa Moi Ave/);
+      field(m.tree, /Amount \(/).props.onChangeText("9,000");
+      await draw(m, 1);
+      await pressText(m, /^\s*Record income\s*$/).props.onPress();
+      await draw(m, 3);
+      expect(/Transaction PIN/.test(text(m.tree)) && /Confirm with PIN/.test(text(m.tree)), "the PIN is not asked");
+      expect(!server.requests.some(isPost), "sent before the PIN");
+      field(m.tree, /Transaction PIN/).props.onChangeText("0000");
+      await draw(m, 1);
+      await pressText(m, /^\s*Confirm with PIN\s*$/).props.onPress();
+      await draw(m, 3);
+      expect(!server.requests.some(isPost), "sent after a wrong PIN");
+      field(m.tree, /Transaction PIN/).props.onChangeText("4821");
+      await draw(m, 1);
+      await pressText(m, /^\s*Confirm with PIN\s*$/).props.onPress();
+      await draw(m, 4);
+      const posts = server.requests.filter(isPost);
+      expect(posts.length === 1 && posts[0].body.amount === 9000, `posts: ${posts.length}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("I18", "Phone statement: Reverse a line — a till/bank/wallet line by the general reversal, a client fee through the client's statement", async (expect) => {
+    world.context = office;
+    const st = { ...statement, byCurrency: [{ ...statement.byCurrency[0], lines: [
+      ...statement.byCurrency[0].lines.map((l) => ({ ...l, receivedIntoType: 1, receivedIntoId: "b1" })),
+      { transactionId: "t-fee", code: "TXN-0104", date: "2026-11-06T08:00:00Z", description: "Statement fee", receivedInto: "Amina Yusuf (KB-C-001), charged",
+        amount: 300, runningTotal: 12300, isReversal: false, isReversed: false, receivedIntoType: 3, receivedIntoId: "c-amina" }] }] };
+    server.reply((url, body, method) => (url.includes("/statement") ? st
+      : url.includes("/api/transaction-pin/status") ? { isEnabled: false, hasPin: false }
+      : method === "DELETE" ? true : undefined));
+    try {
+      const m = mount(app("screens/office/IncomeScreen").IncomeStatementView, { account: full[0], onBack() {} });
+      await draw(m, 4);
+      const rev = (code) => find(m.tree, (e) => e.props.accessibilityLabel === `Reverse ${code}`)[0];
+      expect(!rev("TXN-0101") && !rev("TXN-0102") && !!rev("TXN-0103") && !!rev("TXN-0104"), "Reverse offered on a reversed line or a reversal");
+      rev("TXN-0103").props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Reason/).props.onChangeText("Wrong amount");
+      await draw(m, 1);
+      await pressText(m, /^\s*Reverse\s*$/).props.onPress();
+      await draw(m, 3);
+      rev("TXN-0104").props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Reason/).props.onChangeText("Fee waived");
+      await draw(m, 1);
+      await pressText(m, /^\s*Reverse\s*$/).props.onPress();
+      await draw(m, 3);
+      const dels = server.requests.filter((r) => r.method === "DELETE").map((r) => `${r.url.split("?")[0].replace(/^.*\/api/, "/api")} ${r.body && r.body.reason}`);
+      expect(dels.length === 2 && dels[0] === "/api/transaction/t3 Wrong amount" && dels[1] === "/api/client/c-amina/transaction/t-fee Fee waived", `sent: ${JSON.stringify(dels)}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("I19", "Phone: charge a fee to a client from the statement — find her, pick the currency, Dr client (balance down), Cr the income account", async (expect) => {
+    world.context = office;
+    server.reply((url, body, method) => (url.includes("/statement") ? statement
+      : url.includes("/currencies") ? { baseCurrency: KES, currencies: [] }
+      : url.includes("/api/client?") ? { items: [{ id: "c-amina", fullName: "Amina Yusuf", code: "KB-C-001" }], totalCount: 1 }
+      : url.includes("/api/transaction-pin/status") ? { isEnabled: false, hasPin: false }
+      : /\/api\/income$/.test(url.split("?")[0]) && method === "POST" ? { id: "t9" }
+      : /\/api\/mpesa$/.test(url) ? [wallet] : /\/api\/bank$/.test(url) ? [bank] : /\/api\/cash$/.test(url) ? [] : undefined));
+    try {
+      const m = mount(app("screens/office/IncomeScreen").IncomeStatementView, { account: full[0], onBack() {} });
+      await draw(m, 4);
+      find(m.tree, (e) => e.props.accessibilityLabel === "Record income")[0].props.onPress();
+      await draw(m, 4);
+      tappable(m.tree, /^\s*Charge a client \(a fee\)\s*$/).props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Client \(name/).props.onChangeText("Ami");
+      for (let i = 0; i < 4; i++) await draw(m, 2), await tick(120);
+      const hit = pressText(m, /Amina Yusuf \(KB-C-001\)/);
+      expect(!!hit, `no search result: ${text(m.tree).slice(-300)}`);
+      await hit.props.onPress();
+      await draw(m, 1);
+      tappable(m.tree, /^\s*USD\s*$/).props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Amount \(/).props.onChangeText("5");
+      await draw(m, 1);
+      expect(/Dr Amina Yusuf \(KB-C-001\) .*5.* \(their balance goes down\) · Cr Commission/.test(text(m.tree)), "the entry is not shown");
+      await pressText(m, /^\s*Record income\s*$/).props.onPress();
+      await draw(m, 4);
+      const post = server.requests.find(isPost);
+      expect(!!post && post.body.destAccountType === 3 && post.body.destAccountId === "c-amina" && post.body.currency === 1 && post.body.amount === 5 && post.body.incomeAccountId === "a-com",
+        `sent: ${JSON.stringify(post && post.body)}`);
+      const search = server.requests.find((r) => r.url.includes("/api/client?"));
+      expect(!!search && /Ami/.test(search.url), `searched: ${search && search.url}`);
+    } finally { world.context = undefined; }
+  });
 });

@@ -177,4 +177,24 @@ suite(async () => {
     expect(!!del && path(del).endsWith("/api/client/c-amina/transaction/t-fee") && del.body.reason === "Fee waived", `sent: ${del && del.method} ${del && del.url} ${JSON.stringify(del && del.body)}`);
     expect(done === 1, `onDone called ${done} times`);
   });
+
+  await proof("I16", "Record income with the PIN on: nothing is sent until the PIN is verified, then it is sent once", async (expect) => {
+    server.reply((url, body, method) => (url.includes("/api/transaction-pin/status") ? { isEnabled: true, hasPin: true }
+      : /\/api\/income$/.test(url.split("?")[0]) && method === "POST" ? { id: "t1" } : undefined));
+    let saved = 0;
+    await withBrowser(async () => {
+      const m = mount(RecordIncomeModal, { accounts: accounts.filter((a) => a.isActive), receivers, onClose() {}, onSaved: () => { saved++; } });
+      type(m, "income-amount", "5,000");
+      await submit(m);
+      const pinBox = () => find(m.tree, (e) => e.props && e.props.title === "Enter Transaction PIN")[0];
+      expect(!!pinBox() && pinBox().props.isOpen === true, "the PIN box did not open");
+      expect(!server.requests.some((r) => /\/api\/income$/.test(path(r)) && r.method === "POST"), "sent before the PIN");
+      pinBox().props.onVerified();
+      for (let i = 0; i < 6; i++) { await tick(10); m.render(); }
+      expect(pinBox().props.isOpen === false, "the PIN box stayed open");
+    });
+    const posts = server.requests.filter((r) => /\/api\/income$/.test(path(r)) && r.method === "POST");
+    expect(posts.length === 1 && posts[0].body.amount === 5000, `posts: ${posts.length} ${JSON.stringify(posts[0] && posts[0].body)}`);
+    expect(saved === 1, `onSaved called ${saved} times`);
+  });
 });

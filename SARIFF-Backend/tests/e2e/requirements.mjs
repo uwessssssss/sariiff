@@ -51,7 +51,7 @@ const { check, done } = reporter("REQUIREMENTS");
     ["Portal: dashboard", CL, "/api/portal/dashboard"], ["Portal: profile", CL, "/api/portal/profile"], ["Portal: transactions", CL, "/api/portal/transactions"], ...(ptx ? [["Portal: transaction", CL, `/api/portal/transactions/${ptx.id}`], ["Portal: receipt", CL, `/api/portal/transactions/${ptx.id}/receipt`]] : []),
     ["Portal: statement", CL, "/api/portal/statement"], ["Portal: statement text", CL, "/api/portal/statement/text"], ["Portal: CSV export", CL, "/api/portal/transactions/export"],
     ["Portal: alerts", CL, "/api/portal/alerts"], ["Portal: unread alerts", CL, "/api/portal/alerts/unread-count"], ["Portal: analytics", CL, "/api/portal/analytics"],
-    ["Trusted devices", UG, "/api/trusted-devices"], ["Balance alerts", UG, "/api/balance-alerts"], ["Transaction PIN status", UG, "/api/transaction-pin/status"], ["Phone login switch", null, "/api/identity/enabled"],
+    ["Trusted devices", UG, "/api/trusted-devices"], ["Balance alerts", UG, "/api/balance-alerts"], ["Transaction PIN status", UG, "/api/transaction-pin/status"], ["Income accounts", UG, "/api/income/accounts"], ["Income summary", UG, "/api/income/summary"], ["Phone login switch", null, "/api/identity/enabled"],
   ];
   let working = 0;
   for (const [name, tok, path] of features) {
@@ -93,6 +93,42 @@ const { check, done } = reporter("REQUIREMENTS");
   if (ptx) {
     const rc = await fetch(BASE + `/api/portal/transactions/${ptx.id}/receipt`, { headers: { Authorization: `Bearer ${CL}` } });
     check("Receipt downloads for a transaction", rc.status === 200 && (await rc.arrayBuffer()).byteLength > 200, `${rc.status}`);
+  }
+
+  // ---------- recording income with the transaction PIN switched on (21 Nov): the server gate, on PostgreSQL
+  const pinStatus = (await api("GET", "/api/transaction-pin/status", UG)).data;
+  if (!check("The Ugandan bureau starts with the PIN off (so this test can switch it on and back off)", pinStatus && !pinStatus.isEnabled, JSON.stringify(pinStatus))) return done();
+  const till = list((await api("GET", "/api/cash", UG)).data).find((c) => c.currency === Cur.UGX);
+  const acct = (await api("POST", "/api/income/accounts", UG, { name: "PIN test income" })).data?.id
+    ?? list((await api("GET", "/api/income/accounts", UG)).data).find((a) => a.name === "PIN test income")?.id;
+  const income = (n) => api("POST", "/api/income", UG, { incomeAccountId: acct, destAccountType: 0, destAccountId: till?.id, currency: Cur.UGX, amount: n, description: "PIN test" });
+  const tillBal = async () => (await api("GET", `/api/cash/${till?.id}`, UG)).data?.balance;
+  const set = await api("POST", "/api/transaction-pin/set", SA, { pin: "4821", companyId: S.ugOffice.companyId });
+  try {
+    check("Super admin sets the bureau's PIN (it switches on)", set.success === true && (await api("GET", "/api/transaction-pin/status", UG)).data?.isEnabled === true, JSON.stringify(set));
+    const b0 = await tillBal();
+    const noPin = await income(1000);
+    check("PIN on: income without the PIN is refused", noPin.success === false && /PIN/i.test(noPin.message || ""), `${noPin.status} ${noPin.message}`);
+    const wrong = await api("POST", "/api/transaction-pin/verify", UG, { pin: "0000" });
+    check("A wrong PIN is not accepted", wrong.data === false, JSON.stringify(wrong));
+    const stillNo = await income(1000);
+    check("…and income is still refused after a wrong PIN", stillNo.success === false, `${stillNo.status} ${stillNo.message}`);
+    check("Nothing reached the till", (await tillBal()) === b0, `before ${b0}, after ${await tillBal()}`);
+    const right = await api("POST", "/api/transaction-pin/verify", UG, { pin: "4821" });
+    check("The right PIN is accepted", right.data === true, JSON.stringify(right));
+    const ok = await income(1000);
+    check("PIN on: income after the right PIN is recorded", ok.success === true, `${ok.status} ${ok.message}`);
+    check("The till got UGX 1,000", (await tillBal()) === b0 + 1000, `before ${b0}, after ${await tillBal()}`);
+    const again = await income(1000);
+    check("One PIN approves one posting: the next income asks again", again.success === false && /PIN/i.test(again.message || ""), `${again.status} ${again.message}`);
+    const bad = await api("POST", "/api/transaction-pin/verify", UG, { pin: "4821" });
+    const formError = await api("POST", "/api/income", UG, { incomeAccountId: acct, destAccountType: 0, destAccountId: till?.id, currency: Cur.UGX, amount: 0 });
+    const retry = await income(500);
+    check("A form error hands the PIN approval back (no second PIN for the corrected entry)", bad.data === true && formError.success === false && retry.success === true, `${formError.message} / ${retry.message}`);
+    if (ok.data?.id) await api("DELETE", `/api/transaction/${ok.data.id}`, UG, { reason: "PIN test" }).catch(() => {});
+  } finally {
+    const off = await api("POST", `/api/transaction-pin/toggle?companyId=${S.ugOffice.companyId}`, SA);
+    check("PIN switched back off for the suites after this one", off.success === true && (await api("GET", "/api/transaction-pin/status", UG)).data?.isEnabled === false, JSON.stringify(off));
   }
   done();
 })().catch((e) => { check("requirements check crashed", false, e.stack); done(); });

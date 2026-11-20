@@ -6,14 +6,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import * as api from '../../services/api';
-import { formatCurrency, formatDate, currencyCode } from '../../types';
+import { formatCurrency, formatDate, currencyCode, allowedCurrenciesFor } from '../../types';
+import { useBaseCurrency } from '../../hooks/useBaseCurrency';
 import { Input, EmptyState, LoadingScreen, ModalSheet, ChipGroup, ActionBtn } from '../../components/ui';
 import { colors, spacing, borderRadius, fontSize, fontWeight, shadows } from '../../theme';
 import { localDate } from '../../utils/dates';
 import { parseAmount } from '../../utils/amount';
 
 type Account = { id: string; name: string; description?: string | null; isActive: boolean; postings: number; totals: { currency: number; amount: number }[] };
-type Line = { transactionId: string; code: string; date: string; description: string; receivedInto: string; amount: number; runningTotal: number; isReversal: boolean; isReversed: boolean };
+type Line = { transactionId: string; code: string; date: string; description: string; receivedInto: string; amount: number; runningTotal: number; isReversal: boolean; isReversed: boolean; receivedIntoType?: number; receivedIntoId?: string };
 type StatementCurrency = { currency: number; opening: number; inPeriod: number; closing: number; lines: Line[] };
 type Receiver = { type: number; id: string; name: string; currency: number };
 type Period = 'month' | 'last' | 'all';
@@ -128,6 +129,47 @@ export function IncomeStatementView({ account, onBack }: { account: Account; onB
   const [busy, setBusy] = useState(false);
   const [pin, setPin] = useState<string | null>(null);   // null = no PIN asked
   const [version, setVersion] = useState(0);
+  // A fee charged to a client: Dr the client (their balance goes down), Cr the income account.
+  const { base } = useBaseCurrency();
+  const [mode, setMode] = useState<'account' | 'client'>('account');
+  const [clientQuery, setClientQuery] = useState('');
+  const [clientHits, setClientHits] = useState<{ id: string; fullName: string; code: string }[]>([]);
+  const [client, setClient] = useState<{ id: string; fullName: string; code: string } | null>(null);
+  const [clientCurrency, setClientCurrency] = useState<number | null>(null);
+  useEffect(() => {
+    if (!recording || mode !== 'client' || client || clientQuery.trim().length < 2) { setClientHits([]); return; }
+    let live = true;
+    const t = setTimeout(async () => {
+      const r = await api.getClients(1, 8, clientQuery.trim()).catch(() => null);
+      const items = (r?.success && (r.data as any)?.items) || [];
+      if (live) setClientHits(items.map((c: any) => ({ id: c.id, fullName: c.fullName, code: c.code })));
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [recording, mode, client, clientQuery]);
+  // Reversing a line: a client line goes through the client's statement, like every client posting.
+  const [reversing, setReversing] = useState<Line | null>(null);
+  const [reason, setReason] = useState('');
+  const [revPin, setRevPin] = useState<string | null>(null);
+  const [revBusy, setRevBusy] = useState(false);
+  const reverse = async () => {
+    const l = reversing;
+    if (!l || reason.trim().length < 3) return;
+    setRevBusy(true);
+    try {
+      if (revPin === null) {
+        const st = await api.getTransactionPinStatus().catch(() => null);
+        if (st?.success && st.data?.isEnabled && st.data?.hasPin) { setRevPin(''); return; }
+      } else {
+        const ok = await api.verifyTransactionPinBackend(revPin);
+        if (!ok.success || ok.data === false) { Toast.show({ type: 'error', text1: 'Wrong PIN', text2: ok.message }); return; }
+      }
+      const r = l.receivedIntoType === 3 && l.receivedIntoId
+        ? await api.reverseClientTransaction(l.receivedIntoId, l.transactionId, reason.trim())
+        : await api.deleteTransaction(l.transactionId, reason.trim());
+      if (r.success) { Toast.show({ type: 'success', text1: `${l.code} reversed` }); setReversing(null); setVersion((v) => v + 1); }
+      else Toast.show({ type: 'error', text1: 'Not reversed', text2: r.message });
+    } finally { setRevBusy(false); }
+  };
   const { from, to } = periodDates(period);
 
   useEffect(() => {
@@ -140,7 +182,7 @@ export function IncomeStatementView({ account, onBack }: { account: Account; onB
   }, [account.id, from, to, version]);
 
   const openRecord = async () => {
-    setRecording(true); setAmount(''); setWhat(''); setPin(null);
+    setRecording(true); setAmount(''); setWhat(''); setPin(null); setMode('account'); setClient(null); setClientQuery(''); setClientCurrency(null);
     const [c, b, m] = await Promise.all([api.getCashAccounts().catch(() => null), api.getBankAccounts().catch(() => null), api.getMpesaAgents().catch(() => null)]);
     const list: Receiver[] = [
       ...((c?.success && Array.isArray(c.data) && c.data) || []).map((x: any) => ({ type: 0, id: x.id, name: `Cash ${currencyCode(x.currency)}`, currency: x.currency })),
@@ -150,7 +192,8 @@ export function IncomeStatementView({ account, onBack }: { account: Account; onB
     setReceivers(list);
     setInto(list[0] ? `${list[0].type}:${list[0].id}` : '');
   };
-  const receiver = receivers.find((r) => `${r.type}:${r.id}` === into);
+  const receiver: Receiver | undefined = mode === 'account' ? receivers.find((r) => `${r.type}:${r.id}` === into)
+    : client ? { type: 3, id: client.id, name: `${client.fullName} (${client.code})`, currency: clientCurrency ?? base } : undefined;
   const a = parseAmount(amount);
   const ready = !!receiver && a > 0 && account.isActive;
 
@@ -166,7 +209,10 @@ export function IncomeStatementView({ account, onBack }: { account: Account; onB
         if (!ok.success || ok.data === false) { Toast.show({ type: 'error', text1: 'Wrong PIN', text2: ok.message }); return; }
       }
       const r = await api.recordIncome({ incomeAccountId: account.id, destAccountType: receiver.type, destAccountId: receiver.id, currency: receiver.currency, amount: a, description: what.trim() || undefined });
-      if (r.success) { Toast.show({ type: 'success', text1: `${account.name} recorded`, text2: `${formatCurrency(a, receiver.currency)} into ${receiver.name}` }); setRecording(false); setVersion((v) => v + 1); }
+      if (r.success) {
+        Toast.show({ type: 'success', text1: `${account.name} recorded`, text2: `${formatCurrency(a, receiver.currency)} ${receiver.type === 3 ? 'charged to' : 'into'} ${receiver.name}` });
+        setRecording(false); setVersion((v) => v + 1);
+      }
       else Toast.show({ type: 'error', text1: 'Not recorded', text2: r.message });
     } finally { setBusy(false); }
   };
@@ -206,6 +252,11 @@ export function IncomeStatementView({ account, onBack }: { account: Account; onB
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={[styles.amount, l.amount < 0 && { color: colors.danger }]}>{l.amount < 0 ? `−${formatCurrency(-l.amount, c.currency)}` : formatCurrency(l.amount, c.currency)}</Text>
                   <Text style={styles.meta}>{formatCurrency(l.runningTotal, c.currency)}</Text>
+                  {!l.isReversal && !l.isReversed && (
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Reverse ${l.code}`} onPress={() => { setReversing(l); setReason(''); setRevPin(null); }}>
+                      <Text style={styles.reverse}>Reverse</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             ))}
@@ -215,14 +266,42 @@ export function IncomeStatementView({ account, onBack }: { account: Account; onB
       </ScrollView>
 
       <ModalSheet visible={recording} onClose={() => setRecording(false)} title={`Record ${account.name}`} icon="cash-outline" iconColor="#059669" iconBg="rgba(57,217,176,0.12)">
-        <Text style={styles.meta}>Received into</Text>
-        <ChipGroup options={receivers.map((r) => ({ value: `${r.type}:${r.id}`, label: `${r.name} (${currencyCode(r.currency)})` }))} selected={into} onSelect={setInto} />
+        <ChipGroup options={[{ value: 'account', label: 'Till, bank or wallet' }, { value: 'client', label: 'Charge a client (a fee)' }]} selected={mode} onSelect={(v) => setMode(v as 'account' | 'client')} />
+        {mode === 'account' ? (<>
+          <Text style={styles.meta}>Received into</Text>
+          <ChipGroup options={receivers.map((r) => ({ value: `${r.type}:${r.id}`, label: `${r.name} (${currencyCode(r.currency)})` }))} selected={into} onSelect={setInto} />
+        </>) : (<>
+          {client ? (
+            <View style={styles.row}>
+              <Text style={styles.cardTitle}>{client.fullName} ({client.code})</Text>
+              <TouchableOpacity accessibilityRole="button" onPress={() => { setClient(null); setClientQuery(''); }}><Text style={styles.reverse}>Change</Text></TouchableOpacity>
+            </View>
+          ) : (<>
+            <Input label="Client (name, code or phone)" value={clientQuery} onChangeText={setClientQuery} icon="person-outline" placeholder="Type 2 letters" />
+            {clientHits.map((h) => (
+              <TouchableOpacity key={h.id} accessibilityRole="button" onPress={() => setClient(h)} style={styles.hit}>
+                <Text style={styles.lineTitle}>{h.fullName} ({h.code})</Text>
+              </TouchableOpacity>
+            ))}
+          </>)}
+          <Text style={styles.meta}>Currency</Text>
+          <ChipGroup options={allowedCurrenciesFor(base).map((c) => ({ value: String(c), label: currencyCode(c) }))} selected={String(clientCurrency ?? base)} onSelect={(v) => setClientCurrency(Number(v))} />
+        </>)}
         <Input label={`Amount${receiver ? ` (${currencyCode(receiver.currency)})` : ''}`} value={amount} onChangeText={setAmount} keyboardType="numeric" icon="cash-outline" placeholder="10,000" />
         <Input label="Description (optional)" value={what} onChangeText={setWhat} icon="document-text-outline" placeholder="" />
         {pin !== null && <Input label="Transaction PIN" value={pin} onChangeText={setPin} keyboardType="numeric" secureTextEntry icon="lock-closed-outline" placeholder="••••" />}
         {amount.trim() !== '' && !(a > 0) ? <Text style={[styles.meta, { color: colors.danger }]}>Enter the amount as a number above zero.</Text>
-          : ready && receiver ? <Text style={styles.meta}>Dr {receiver.name} {formatCurrency(a, receiver.currency)} · Cr {account.name} {formatCurrency(a, receiver.currency)}</Text> : null}
+          : ready && receiver ? <Text style={styles.meta}>Dr {receiver.name} {formatCurrency(a, receiver.currency)}{receiver.type === 3 ? ' (their balance goes down)' : ''} · Cr {account.name} {formatCurrency(a, receiver.currency)}</Text> : null}
         <ActionBtn title={pin !== null ? 'Confirm with PIN' : 'Record income'} onPress={record} loading={busy} disabled={!ready} icon="checkmark-circle-outline" gradient={['#059669', '#10B981']} />
+      </ModalSheet>
+
+      <ModalSheet visible={!!reversing} onClose={() => setReversing(null)} title={reversing ? `Reverse ${reversing.code}` : 'Reverse'} icon="return-down-back-outline" iconColor={colors.danger} iconBg="rgba(239,68,68,0.12)">
+        {reversing && (<>
+          <Text style={styles.meta}>{reversing.description}. The money comes back out of {reversing.receivedInto}.</Text>
+          <Input label="Reason" value={reason} onChangeText={setReason} icon="create-outline" placeholder="At least 3 letters" />
+          {revPin !== null && <Input label="Transaction PIN" value={revPin} onChangeText={setRevPin} keyboardType="numeric" secureTextEntry icon="lock-closed-outline" placeholder="••••" />}
+          <ActionBtn title={revPin !== null ? 'Confirm with PIN' : 'Reverse'} onPress={reverse} loading={revBusy} disabled={reason.trim().length < 3} icon="return-down-back-outline" gradient={['#DC2626', '#EF4444']} />
+        </>)}
       </ModalSheet>
     </View>
   );
@@ -244,4 +323,6 @@ const styles = StyleSheet.create({
   line: { flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   lineTitle: { color: colors.text, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
   amount: { color: colors.text, fontSize: fontSize.sm, fontWeight: fontWeight.semibold },
+  reverse: { color: colors.danger, fontSize: fontSize.sm, fontWeight: fontWeight.semibold, marginTop: 4 },
+  hit: { paddingVertical: spacing.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
 });
