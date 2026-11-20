@@ -5,10 +5,11 @@ import { ArrowLeft, FileText, Loader2, Pencil, Plus, Power, Printer, Trash2, X }
 import { toast } from "sonner";
 import {
   AccountType, createIncomeAccount, currencyCode, deleteIncomeAccount, deleteTransaction, formatMoney, getBankAccounts,
-  getCashAccounts, getIncomeAccounts, getIncomeStatement, getIncomeSummary, getMpesaAgents, recordIncome, updateIncomeAccount,
+  getCashAccounts, getClients, getIncomeAccounts, getIncomeStatement, getIncomeSummary, getMpesaAgents, recordIncome, updateIncomeAccount,
   type IncomeAccountDto, type IncomeCurrencyDto, type IncomeStatementDto, type IncomeStatementLineDto,
 } from "@/lib/api";
 import { PinModal, checkPinStatus } from "@/components/ui/PinModal";
+import { useAllowedCurrencies } from "@/lib/useBaseCurrency";
 
 /** "1,500.50" → 1500.5; empty or anything else → NaN. */
 export function parseAmount(text: string): number {
@@ -102,7 +103,7 @@ export function IncomeAccount() {
             className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             <Plus className="h-4 w-4" /> New income account
           </button>
-          <button type="button" onClick={() => setRecording("")} disabled={active.length === 0 || receivers.length === 0}
+          <button type="button" onClick={() => setRecording("")} disabled={active.length === 0}
             className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
             <Plus className="h-4 w-4" /> Record income
           </button>
@@ -180,7 +181,7 @@ export function IncomeAccount() {
                       <FileText className="h-4 w-4" /> Statement
                     </button>
                     {a.isActive && (
-                      <button type="button" onClick={() => setRecording(a.id)} disabled={receivers.length === 0} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                      <button type="button" onClick={() => setRecording(a.id)} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50">
                         <Plus className="h-4 w-4" /> Record
                       </button>
                     )}
@@ -280,7 +281,23 @@ export function RecordIncomeModal({ accounts, receivers, startOn, onClose, onSav
   onSaved: () => void | Promise<void>;
 }) {
   const [accountId, setAccountId] = useState(startOn ?? accounts[0]?.id ?? "");
+  const [mode, setMode] = useState<"account" | "client">(receivers.length ? "account" : "client");
   const [receiverKey, setReceiverKey] = useState(receivers[0] ? `${receivers[0].type}:${receivers[0].id}` : "");
+  // A fee charged to a client: Dr the client (their balance goes down), Cr the income account.
+  const { allowed: currencies, base } = useAllowedCurrencies();
+  const [clientQuery, setClientQuery] = useState("");
+  const [clientHits, setClientHits] = useState<{ id: string; fullName: string; code: string }[]>([]);
+  const [client, setClient] = useState<{ id: string; fullName: string; code: string } | null>(null);
+  const [clientCurrency, setClientCurrency] = useState<number | null>(null);
+  useEffect(() => {
+    if (mode !== "client" || client || clientQuery.trim().length < 2) { setClientHits([]); return; }
+    let live = true;
+    const t = setTimeout(async () => {
+      const r = await getClients(1, 8, clientQuery.trim()).catch(() => null);
+      if (live) setClientHits(r?.success && r.data ? (r.data.items || []).map((c: any) => ({ id: c.id, fullName: c.fullName, code: c.code })) : []);
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [mode, client, clientQuery]);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [reference, setReference] = useState("");
@@ -288,7 +305,9 @@ export function RecordIncomeModal({ accounts, receivers, startOn, onClose, onSav
   const [busy, setBusy] = useState(false);
   const { gate, modal } = usePinGate();
 
-  const receiver = receivers.find((r) => `${r.type}:${r.id}` === receiverKey);
+  const picked = receivers.find((r) => `${r.type}:${r.id}` === receiverKey);
+  const receiver: Receiver | undefined = mode === "account" ? picked
+    : client ? { type: AccountType.Client, id: client.id, name: `${client.fullName} (${client.code})`, currency: clientCurrency ?? base } : undefined;
   const account = accounts.find((k) => k.id === accountId);
   const a = parseAmount(amount);
   const problem = useMemo(() => (amount.trim() !== "" && !(a > 0) ? "Enter the amount as a number above zero." : null), [amount, a]);
@@ -309,7 +328,9 @@ export function RecordIncomeModal({ accounts, receivers, startOn, onClose, onSav
         amount: a, date: date || undefined, description: description.trim() || undefined, reference: reference.trim() || undefined,
       });
       if (r.success) {
-        toast.success(`${account.name}: ${formatMoney(a, receiver.currency)} into ${receiver.name}`);
+        toast.success(receiver.type === AccountType.Client
+          ? `${account.name}: ${formatMoney(a, receiver.currency)} charged to ${receiver.name}`
+          : `${account.name}: ${formatMoney(a, receiver.currency)} into ${receiver.name}`);
         await onSaved();
       } else toast.error(r.message || "Couldn't record the income");
     } catch (e: any) {
@@ -339,13 +360,56 @@ export function RecordIncomeModal({ accounts, receivers, startOn, onClose, onSav
                 {accounts.map((k) => <option key={k.id} value={k.id}>{k.name}</option>)}
               </select>
             </div>
-            <div>
-              <label htmlFor="income-into" className="block text-sm font-medium text-slate-700">Received into</label>
-              <select id="income-into" value={receiverKey} onChange={(e) => setReceiverKey(e.target.value)} className={field}>
-                {receivers.map((r) => <option key={`${r.type}:${r.id}`} value={`${r.type}:${r.id}`}>{r.name}</option>)}
-              </select>
-            </div>
+            {mode === "account" ? (
+              <div>
+                <label htmlFor="income-into" className="block text-sm font-medium text-slate-700">Received into</label>
+                <select id="income-into" value={receiverKey} onChange={(e) => setReceiverKey(e.target.value)} className={field}>
+                  {receivers.map((r) => <option key={`${r.type}:${r.id}`} value={`${r.type}:${r.id}`}>{r.name}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="income-client-currency" className="block text-sm font-medium text-slate-700">Currency</label>
+                <select id="income-client-currency" value={clientCurrency ?? base} onChange={(e) => setClientCurrency(Number(e.target.value))} className={field}>
+                  {currencies.map((c) => <option key={c} value={c}>{currencyCode(c)}</option>)}
+                </select>
+              </div>
+            )}
           </div>
+          <div role="radiogroup" aria-label="Where the income comes from" className="flex flex-wrap gap-2">
+            {([["account", "Into a till, bank or wallet"], ["client", "Charge a client (a fee)"]] as const).map(([m, label]) => (
+              <button key={m} type="button" role="radio" aria-checked={mode === m} onClick={() => setMode(m)} disabled={m === "account" && receivers.length === 0}
+                className={`rounded-full border px-3 py-1.5 text-sm font-medium ${mode === m ? "border-emerald-700 bg-emerald-50 text-emerald-800" : "border-slate-300 text-slate-700 hover:bg-slate-50"} disabled:opacity-50`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {mode === "client" && (
+            <div>
+              <label htmlFor="income-client-search" className="block text-sm font-medium text-slate-700">Client</label>
+              {client ? (
+                <div className="mt-1 flex items-center justify-between rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900" data-testid="income-client">
+                  <span>{client.fullName} <span className="text-slate-500">({client.code})</span></span>
+                  <button type="button" onClick={() => { setClient(null); setClientQuery(""); }} className="text-sm font-medium text-emerald-800 hover:underline">Change</button>
+                </div>
+              ) : (
+                <>
+                  <input id="income-client-search" value={clientQuery} onChange={(e) => setClientQuery(e.target.value)} placeholder="Name, code or phone" autoComplete="off" className={field} />
+                  {clientHits.length > 0 && (
+                    <ul className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white">
+                      {clientHits.map((c) => (
+                        <li key={c.id}>
+                          <button type="button" onClick={() => setClient(c)} className="w-full px-3 py-2 text-left text-sm text-slate-900 hover:bg-slate-50">
+                            {c.fullName} <span className="text-slate-500">({c.code})</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="income-amount" className="block text-sm font-medium text-slate-700">Amount{receiver ? ` (${currencyCode(receiver.currency)})` : ""}</label>
@@ -369,7 +433,7 @@ export function RecordIncomeModal({ accounts, receivers, startOn, onClose, onSav
             <p role="alert" className="text-sm text-red-700">{problem}</p>
           ) : ready && receiver && account ? (
             <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700" data-testid="income-entry">
-              Dr {receiver.name} {formatMoney(a, receiver.currency)} · Cr {account.name} {formatMoney(a, receiver.currency)}
+              Dr {receiver.name} {formatMoney(a, receiver.currency)}{receiver.type === AccountType.Client ? " (their balance goes down)" : ""} · Cr {account.name} {formatMoney(a, receiver.currency)}
             </p>
           ) : null}
         </div>

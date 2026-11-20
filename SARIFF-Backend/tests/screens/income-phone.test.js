@@ -89,4 +89,89 @@ suite(async () => {
       expect(!server.requests.some(isPost), "it was sent anyway");
     } finally { world.context = undefined; }
   });
+
+  // ---------- the phone Income screen: accounts and their statements
+  const full = [{ id: "a-com", name: "Commission", description: null, isActive: true, postings: 3, totals: [{ currency: KES, amount: 12000 }] },
+    { id: "a-new", name: "Consultancy", description: "Advisory", isActive: true, postings: 0, totals: [] }];
+  const statement = { accountId: "a-com", accountName: "Commission", isActive: true, toUtcExclusive: "", byCurrency: [{ currency: KES, opening: 10000, inPeriod: 2000, closing: 12000, lines: [
+    { transactionId: "t1", code: "TXN-0101", date: "2026-11-03T08:00:00Z", description: "Commission: October", receivedInto: "M-Pesa Moi Ave - 123456", amount: 5000, runningTotal: 15000, isReversal: false, isReversed: true },
+    { transactionId: "t2", code: "TXN-0102", date: "2026-11-04T08:00:00Z", description: "Reversal of TXN-0101", receivedInto: "M-Pesa Moi Ave - 123456", amount: -5000, runningTotal: 10000, isReversal: true, isReversed: false },
+    { transactionId: "t3", code: "TXN-0103", date: "2026-11-05T08:00:00Z", description: "Commission: corrected", receivedInto: "KCB - 001", amount: 2000, runningTotal: 12000, isReversal: false, isReversed: false }] }] };
+
+  await proof("I11", "Phone Income: accounts with their totals; New creates one by name", async (expect) => {
+    world.context = office;
+    server.reply((url, body, method) => (url.endsWith("/api/income/accounts") && method === "POST" ? { id: "x", name: body.name }
+      : url.includes("/api/income/accounts") ? full : undefined));
+    try {
+      const m = mount(app("screens/office/IncomeScreen").default, {});
+      await draw(m, 4);
+      const t = text(m.tree);
+      expect(/Commission/.test(t) && /12,000/.test(t) && /3 postings/.test(t) && /Consultancy/.test(t) && /Nothing recorded yet/.test(t), `list: ${t.slice(0, 400)}`);
+      find(m.tree, (e) => e.props.accessibilityLabel === "New income account")[0].props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Name/).props.onChangeText("  Rent received ");
+      await draw(m, 1);
+      await pressText(m, /^\s*Create\s*$/).props.onPress();
+      await draw(m, 3);
+      const post = server.requests.find((r) => r.url.endsWith("/api/income/accounts") && r.method === "POST");
+      expect(!!post && post.body.name === "Rent received", `sent: ${JSON.stringify(post && post.body)}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("I12", "Phone Income: an account's statement — earned before, each line with its running total, a reversal in minus, earned to date", async (expect) => {
+    world.context = office;
+    server.reply((url) => (url.includes("/api/income/accounts/a-com/statement") ? statement : url.includes("/api/income/accounts") ? full : undefined));
+    try {
+      const m = mount(app("screens/office/IncomeScreen").default, {});
+      await draw(m, 4);
+      pressText(m, /Commission.*12,000/).props.onPress();
+      await draw(m, 4);
+      const t = text(m.tree);
+      expect(/Earned before/.test(t) && /10,000/.test(t), `opening: ${t.slice(0, 400)}`);
+      expect(/Commission: October\s*· Reversed/.test(t) && /15,000/.test(t), "the reversed line");
+      expect(/−\s*KES\s*5,000|−KES 5,000|−.*5,000/.test(t), "the reversal in minus");
+      expect(/Earned to/.test(t) && /12,000/.test(t), "closing");
+      const asked = server.requests.find((r) => r.url.includes("/statement"));
+      expect(!!asked && /startDate=\d{4}-\d{2}-01/.test(asked.url), `asked: ${asked && asked.url}`);
+      tappable(m.tree, /^\s*All time\s*$/).props.onPress();
+      await draw(m, 3);
+      const again = server.requests.filter((r) => r.url.includes("/statement")).pop();
+      expect(!!again && !/startDate/.test(again.url), `all time asked: ${again && again.url}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("I13", "Phone Income: record from a statement — choose where it was received, Dr that account, Cr the income account", async (expect) => {
+    world.context = office;
+    server.reply((url, body, method) => (url.includes("/api/income/accounts/a-com/statement") ? statement
+      : url.includes("/api/income/accounts") ? full
+      : url.includes("/api/transaction-pin/status") ? { isEnabled: false, hasPin: false }
+      : /\/api\/income$/.test(url.split("?")[0]) && method === "POST" ? { id: "t1" }
+      : /\/api\/mpesa$/.test(url) ? [wallet] : /\/api\/bank$/.test(url) ? [bank] : /\/api\/cash$/.test(url) ? [] : undefined));
+    try {
+      const m = mount(app("screens/office/IncomeScreen").default, {});
+      await draw(m, 4);
+      pressText(m, /Commission.*12,000/).props.onPress();
+      await draw(m, 4);
+      find(m.tree, (e) => e.props.accessibilityLabel === "Record income")[0].props.onPress();
+      await draw(m, 4);
+      tappable(m.tree, /^\s*KCB \(KES\)\s*$/).props.onPress();
+      await draw(m, 1);
+      field(m.tree, /Amount \(/).props.onChangeText("2,500");
+      await draw(m, 1);
+      expect(/Dr KCB .*2,500.* · Cr Commission .*2,500/.test(text(m.tree)), "the entry is not shown");
+      await pressText(m, /^\s*Record income\s*$/).props.onPress();
+      await draw(m, 4);
+      const post = server.requests.find(isPost);
+      expect(!!post && post.body.incomeAccountId === "a-com" && post.body.destAccountType === 1 && post.body.destAccountId === "b1" && post.body.amount === 2500,
+        `sent: ${JSON.stringify(post && post.body)}`);
+    } finally { world.context = undefined; }
+  });
+
+  await proof("I14", "Phone Income: 'Last month' asks for the whole of last month", async (expect) => {
+    const { periodDates } = app("screens/office/IncomeScreen");
+    const r = periodDates("last", new Date(2026, 0, 15));   // 15 Jan 2026
+    expect(r.from === "2025-12-01" && r.to === "2025-12-31", JSON.stringify(r));
+    const m = periodDates("month", new Date(2026, 10, 20));
+    expect(m.from === "2026-11-01" && m.to === "2026-11-20", JSON.stringify(m));
+  });
 });

@@ -199,6 +199,14 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
   const del = await api("DELETE", `/api/income/accounts/${RENT}`, T);
   check("An income account with postings can't be deleted", del?.success === false, JSON.stringify(del));
   await api("PUT", `/api/income/accounts/${RENT}`, T, { isActive: true });
+  const fee = await op("Statement fee UGX 1,000 charged to client B (Dr client, Cr income)",
+    () => api("POST", "/api/income", T, { incomeAccountId: COMMISSION, destAccountType: Acc.Client, destAccountId: B, currency: UGX, amount: 1000, description: "Statement fee" }),
+    [{ label: "client B", read: () => bal.client(B, UGX), delta: -1000 }]);
+  if (fee?.data?.id) {
+    await op("…and reversed: client B back where she was",
+      () => api("DELETE", `/api/transaction/${fee.data.id}`, T, { reason: "Fee waived" }),
+      [{ label: "client B", read: () => bal.client(B, UGX), delta: 1000 }]);
+  }
   const incomeOnly = list(await get("/api/transaction?page=1&pageSize=500&accountType=5"));
   check("The transaction list filtered to income shows only income postings", incomeOnly.length >= 4 && incomeOnly.every((t) => t.sourceAccountType === 5 || t.destAccountType === 5), `${incomeOnly.length} rows`);
   await refused("Expense larger than the account holds",

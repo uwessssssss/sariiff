@@ -14,6 +14,7 @@ import ProfileScreen from '../screens/shared/ProfileScreen';
 // Office sub-screens (accessed from More tab)
 import AccountsScreen from '../screens/office/AccountsScreen';
 import ExpensesScreen from '../screens/office/ExpensesScreen';
+import IncomeScreen from '../screens/office/IncomeScreen';
 import InvoicesScreen from '../screens/office/InvoicesScreen';
 import ReconciliationScreen from '../screens/office/ReconciliationScreen';
 import ReportsScreen from '../screens/office/ReportsScreen';
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Accounts: undefined;
   Expenses: undefined;
+  Income: undefined;
   Invoices: undefined;
   Reconciliation: undefined;
   Reports: undefined;
@@ -80,6 +82,8 @@ export function RootNavigator() {
             <Stack.Screen name="Accounts" component={AccountsScreen}
               options={{ animation: 'slide_from_right', presentation: 'card' }} />
             <Stack.Screen name="Expenses" component={ExpensesScreen}
+              options={{ animation: 'slide_from_right', presentation: 'card' }} />
+            <Stack.Screen name="Income" component={IncomeScreen}
               options={{ animation: 'slide_from_right', presentation: 'card' }} />
             <Stack.Screen name="Invoices" component={InvoicesScreen}
               options={{ animation: 'slide_from_right', presentation: 'card' }} />

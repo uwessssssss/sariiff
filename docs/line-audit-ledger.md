@@ -494,3 +494,10 @@ Owner: "Leave about tax please. I want to create type of income account. There s
 - Phone: long-press a till, bank or wallet → Record income → the bureau's switched-on accounts. No statement on the phone yet.
 
 Tests: xUnit IncomeTests (11); accuracy run on PostgreSQL (accounts, recording, refusals, reversal, statements, switch-off, delete refused, filter); web I1–I6; phone I7–I9; design review includes Income.
+
+## 20 Nov (last): the two gaps left open, built
+
+| Item | What it does | Tests |
+|---|---|---|
+| Phone **Income** screen (More → Income) | The bureau's income accounts with their totals and postings; New creates one by name; long-press switches one off/on. Tap an account for its **statement**: This month / Last month / All time, earned before, each line (date, code, where it was received) with a running total, reversals in minus and the original marked, earned to the end. **Record** from the statement: choose the till, bank or wallet, the amount; Dr that account, Cr the income account; the transaction PIN is asked when the bureau has one | phone I11–I14 |
+| Web: **charge a fee to a client** | Record income → "Charge a client (a fee)": search by name/code/phone, pick the client and the currency; Dr the client (their balance goes down), Cr the income account | web I10; accuracy (charged to client B and reversed on PostgreSQL) |

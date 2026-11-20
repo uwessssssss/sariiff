@@ -72,3 +72,11 @@ export const getCashStats = () => apiRequest<any>('/api/cash/stats');
 export const getIncomeAccounts = () => apiRequest<{ id: string; name: string; isActive: boolean }[]>('/api/income/accounts');
 export const recordIncome = (dto: { incomeAccountId: string; destAccountType: number; destAccountId: string; currency: number; amount: number; description?: string; reference?: string }) =>
   apiRequest<any>('/api/income', { method: 'POST', body: JSON.stringify(dto) });
+export const createIncomeAccount = (dto: { name: string; description?: string }) =>
+  apiRequest<any>('/api/income/accounts', { method: 'POST', body: JSON.stringify(dto) });
+export const updateIncomeAccount = (id: string, dto: { name?: string; description?: string; isActive?: boolean }) =>
+  apiRequest<any>(`/api/income/accounts/${id}`, { method: 'PUT', body: JSON.stringify(dto) });
+export const getIncomeStatement = (id: string, startDate?: string, endDate?: string) => {
+  const q = [startDate ? `startDate=${startDate}` : '', endDate ? `endDate=${endDate}` : ''].filter(Boolean).join('&');
+  return apiRequest<any>(`/api/income/accounts/${id}/statement${q ? `?${q}` : ''}`);
+};

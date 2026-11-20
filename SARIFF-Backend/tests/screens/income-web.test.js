@@ -135,4 +135,31 @@ suite(async () => {
     expect(/KES 50,000/.test(row("KES")) && !/UGX/.test(row("KES")), `KES: ${row("KES")}`);
     expect(!/commission|tax/i.test(text(m.tree)), "the float panel still talks about commission or tax");
   });
+
+  await proof("I10", "Record income: charge a fee to a client — find her, Dr client (balance down), Cr the income account", async (expect) => {
+    server.reply((url, body, method) => (url.includes("/api/client?") ? { items: [{ id: "c-amina", fullName: "Amina Yusuf", code: "KB-C-001" }], totalCount: 1, page: 1, pageSize: 8 }
+      : /\/api\/income$/.test(url.split("?")[0]) && method === "POST" ? { id: "t9" } : undefined));
+    let saved = 0;
+    await withBrowser(async () => {
+      const m = mount(RecordIncomeModal, { accounts: accounts.filter((a) => a.isActive), receivers, onClose() {}, onSaved: () => { saved++; } });
+      find(m.tree, (e) => tag(e) === "button" && e.props.role === "radio" && /Charge a client/.test(text(e)))[0].props.onClick();
+      m.render();
+      type(m, "income-client-search", "Ami");
+      for (let i = 0; i < 6; i++) { await tick(80); m.render(); }
+      const hit = find(m.tree, (e) => tag(e) === "button" && /Amina Yusuf/.test(text(e)))[0];
+      expect(!!hit, `no search result: ${text(m.tree).slice(0, 300)}`);
+      hit.props.onClick();
+      m.render();
+      pick(m, "income-account", "a-com");
+      type(m, "income-amount", "300");
+      expect(/Dr Amina Yusuf \(KB-C-001\) KES 300 \(their balance goes down\) · Cr Commission KES 300/.test(text(m.tree)), `entry: ${text(m.tree).slice(0, 500)}`);
+      await submit(m);
+    });
+    const search = server.requests.find((r) => r.url.includes("/api/client?"));
+    expect(!!search && /search=Ami/.test(search.url), `searched: ${search && search.url}`);
+    const post = server.requests.find((r) => /\/api\/income$/.test(path(r)) && r.method === "POST");
+    expect(!!post && post.body.destAccountType === 3 && post.body.destAccountId === "c-amina" && post.body.amount === 300 && post.body.currency === KES && post.body.incomeAccountId === "a-com",
+      `sent: ${JSON.stringify(post && post.body)}`);
+    expect(saved === 1 && toasts.some(([k, msg]) => k === "success" && /charged to Amina Yusuf/.test(msg)), `saved ${saved}, toasts ${JSON.stringify(toasts)}`);
+  });
 });

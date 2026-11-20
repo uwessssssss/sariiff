@@ -18,6 +18,7 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { id: 'accounts', label: 'Accounts', subtitle: 'Cash, bank, mobile money balances', icon: 'wallet-outline', gradient: ['#10B981', '#0D9488'], screen: 'Accounts' },
   { id: 'expenses', label: 'Expenses', subtitle: 'Track business expenses', icon: 'receipt-outline', gradient: ['#EF4444', '#DC2626'], screen: 'Expenses' },
+  { id: 'income', label: 'Income', subtitle: 'Income accounts and their statements', icon: 'trending-up-outline', gradient: ['#059669', '#10B981'], screen: 'Income' },
   { id: 'invoices', label: 'Invoices', subtitle: 'Manage client invoices', icon: 'document-text-outline', gradient: ['#3B82F6', '#4F46E5'], screen: 'Invoices' },
   { id: 'reconciliation', label: 'Reconciliation', subtitle: 'Match and verify transactions', icon: 'checkmark-done-outline', gradient: ['#F59E0B', '#D97706'], screen: 'Reconciliation' },
   { id: 'reports', label: 'Reports', subtitle: 'Daily reports & exchange summaries', icon: 'bar-chart-outline', gradient: ['#8B5CF6', '#7C3AED'], screen: 'Reports' },
