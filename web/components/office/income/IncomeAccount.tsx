@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, FileText, Loader2, Pencil, Plus, Power, Printer, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
-  AccountType, createIncomeAccount, currencyCode, deleteIncomeAccount, deleteTransaction, formatMoney, getBankAccounts,
+  AccountType, createIncomeAccount, currencyCode, deleteIncomeAccount, deleteTransaction, reverseClientTransaction, formatMoney, getBankAccounts,
   getCashAccounts, getClients, getIncomeAccounts, getIncomeStatement, getIncomeSummary, getMpesaAgents, recordIncome, updateIncomeAccount,
   type IncomeAccountDto, type IncomeCurrencyDto, type IncomeStatementDto, type IncomeStatementLineDto,
 } from "@/lib/api";
@@ -565,14 +565,17 @@ export function IncomeStatement({ account, initialFrom, initialTo, onBack }: { a
 }
 
 /** Reverse one income posting; asks for a reason and the PIN if the bureau has one. */
-function ReverseLine({ line, onClose, onDone }: { line: IncomeStatementLineDto; onClose: () => void; onDone: () => void }) {
+export function ReverseLine({ line, onClose, onDone }: { line: IncomeStatementLineDto; onClose: () => void; onDone: () => void }) {
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const { gate, modal } = usePinGate();
   const go = async () => {
     setBusy(true);
     try {
-      const r = await deleteTransaction(line.transactionId, reason.trim());
+      // A fee charged to a client is reversed the way every client posting is: from the client's statement.
+      const r = line.receivedIntoType === AccountType.Client
+        ? await reverseClientTransaction(line.receivedIntoId, line.transactionId, reason.trim())
+        : await deleteTransaction(line.transactionId, reason.trim());
       if (r.success) { toast.success(`${line.code} reversed`); onDone(); } else toast.error(r.message || "Couldn't reverse it");
     } catch (e: any) { toast.error(e?.message || "Couldn't reverse it"); } finally { setBusy(false); }
   };

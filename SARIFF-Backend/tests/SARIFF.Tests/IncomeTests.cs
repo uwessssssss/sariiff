@@ -82,6 +82,11 @@ public class IncomeTests
         Assert.Equal(42_500m, kes.ByAccount.Single(l => l.Id == rent).Amount);
         Assert.Equal(300m, kes.ByAccount.Single(l => l.Id == fees).Amount);
         Assert.Equal(42_800m, kes.TotalIncome);
+        // The fee's statement line says it went to the client, so the screen reverses it from her statement.
+        var feeLine = (await Svc(b).StatementAsync(b.Co, fees, null, null)).Data!.ByCurrency.Single().Lines.Single();
+        Assert.Equal(AccountType.Client, feeLine.ReceivedIntoType);
+        Assert.Equal(b.Amina.Id, feeLine.ReceivedIntoId);
+        Assert.Contains("charged", feeLine.ReceivedInto);
     }
 
     [Fact]

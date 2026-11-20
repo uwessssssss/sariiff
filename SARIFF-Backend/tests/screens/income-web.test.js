@@ -162,4 +162,19 @@ suite(async () => {
       `sent: ${JSON.stringify(post && post.body)}`);
     expect(saved === 1 && toasts.some(([k, msg]) => k === "success" && /charged to Amina Yusuf/.test(msg)), `saved ${saved}, toasts ${JSON.stringify(toasts)}`);
   });
+
+  await proof("I15", "Statement: reversing a fee charged to a client goes through the client's statement (the only way client postings are reversed)", async (expect) => {
+    const { ReverseLine } = app("components/office/income/IncomeAccount");
+    server.reply((url, body, method) => (method === "DELETE" ? true : undefined));
+    let done = 0;
+    await withBrowser(async () => {
+      const m = mount(ReverseLine, { line: { transactionId: "t-fee", code: "TXN-0200", description: "Statement fee", receivedInto: "Amina Yusuf (KB-C-001), charged",
+        amount: 300, runningTotal: 300, isReversal: false, isReversed: false, receivedIntoType: 3, receivedIntoId: "c-amina" }, onClose() {}, onDone: () => { done++; } });
+      type(m, "reverse-reason", "Fee waived");
+      await submit(m);
+    });
+    const del = server.requests.find((r) => r.method === "DELETE");
+    expect(!!del && path(del).endsWith("/api/client/c-amina/transaction/t-fee") && del.body.reason === "Fee waived", `sent: ${del && del.method} ${del && del.url} ${JSON.stringify(del && del.body)}`);
+    expect(done === 1, `onDone called ${done} times`);
+  });
 });

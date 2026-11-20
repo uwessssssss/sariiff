@@ -204,7 +204,7 @@ const txn = (type, srcType, srcId, dstType, dstId, amount, currency, description
     [{ label: "client B", read: () => bal.client(B, UGX), delta: -1000 }]);
   if (fee?.data?.id) {
     await op("…and reversed: client B back where she was",
-      () => api("DELETE", `/api/transaction/${fee.data.id}`, T, { reason: "Fee waived" }),
+      () => api("DELETE", `/api/client/${B}/transaction/${fee.data.id}`, T, { reason: "Fee waived" }),
       [{ label: "client B", read: () => bal.client(B, UGX), delta: 1000 }]);
   }
   const incomeOnly = list(await get("/api/transaction?page=1&pageSize=500&accountType=5"));

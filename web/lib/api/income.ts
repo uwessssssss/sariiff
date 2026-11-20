@@ -52,6 +52,8 @@ export interface IncomeStatementLineDto {
   runningTotal: number;
   isReversal: boolean;
   isReversed: boolean;
+  receivedIntoType: number; // 3 = a client: reversed through the client's statement
+  receivedIntoId: string;
 }
 
 export interface IncomeStatementCurrencyDto { currency: Currency; opening: number; inPeriod: number; closing: number; lines: IncomeStatementLineDto[] }

@@ -182,7 +182,8 @@ public record IncomeSummaryDto(DateTime FromUtc, DateTime ToUtcExclusive, List<I
 /// <summary>One line of an income account's statement. Amount is + for income, − for a reversal.</summary>
 public record IncomeStatementLineDto(
     Guid TransactionId, string Code, DateTime Date, string Description, string? Reference,
-    string ReceivedInto, decimal Amount, decimal RunningTotal, bool IsReversal, bool IsReversed);
+    string ReceivedInto, decimal Amount, decimal RunningTotal, bool IsReversal, bool IsReversed,
+    AccountType ReceivedIntoType, Guid ReceivedIntoId);   // a client line is reversed from the client's statement
 
 /// <summary>An income account's statement in one currency: earned before, each posting, earned to the end date.</summary>
 public record IncomeStatementCurrencyDto(Currency Currency, decimal Opening, decimal InPeriod, decimal Closing, List<IncomeStatementLineDto> Lines);

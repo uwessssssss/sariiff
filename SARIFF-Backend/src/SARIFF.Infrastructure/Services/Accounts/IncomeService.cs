@@ -228,7 +228,7 @@ public class IncomeService : IIncomeService
                     ? (x.P.DestAccountType, x.P.DestAccountId) : (x.P.SourceAccountType, x.P.SourceAccountId);
                 lines.Add(new IncomeStatementLineDto(x.P.Id, x.P.Code, x.P.TransactionDate, x.P.Description, string.IsNullOrEmpty(x.P.Reference) ? null : x.P.Reference,
                     names.GetValueOrDefault(o, "Account"), x.M.Amount, running,
-                    x.P.Reference.StartsWith("REV-"), x.P.DeletedAt.HasValue && !x.P.IsDeleted));
+                    x.P.Reference.StartsWith("REV-"), x.P.DeletedAt.HasValue && !x.P.IsDeleted, o.Item1, o.Item2));
             }
             byCurrency.Add(new IncomeStatementCurrencyDto(g.Key, opening, running - opening, running, lines));
         }
